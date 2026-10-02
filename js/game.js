@@ -5,6 +5,7 @@ class Game{
     this.f=[p1,p2];
     this.projectiles=[]; this.zones=[]; this.particles=[]; this.floats=[]; this.delayed=[];
     this.slashes=[]; this.beams=[]; this.rings=[]; this.trails=[];
+    this.marks=[]; this.fallers=[]; this.erupts=[]; this.portals=[]; this.ultFx=null; // ультимейти й портали
     this.time=0; this.shake=0; this._shx=0; this._shy=0;
     this.hitstop=0; this.slowmo=0; // завмирання при влучанні, сповільнення на KO
     this.round=1; this.roundTimer=90;
@@ -57,11 +58,19 @@ class Game{
   beam(x1,y1,x2,y2,color){ this.beams.push({x1,y1,x2,y2,t:0.25,color}); }
   ring(x,y,r,color){ this.rings.push({x,y,r,t:0.35,color}); }
   trail(x1,x2,y,color){ this.trails.push({x1,x2,y,t:0.25,color}); }
+  // позначка на землі: сюди за T секунд прилетить ультимейт — тікай із кола
+  mark(x,r,T,color){ this.marks.push({x,r,t:T,T,color}); }
+  // предмет із неба (молот, метеор, інфернал): летить T секунд від (x0,y0) до землі в x1, потім onHit
+  fall(kind,x0,y0,x1,T,color,onHit){ this.fallers.push({kind,x0,y0,x1,x:x0,y:y0,t:0,T,color,onHit}); }
+  erupt(x){ this.erupts.push({x,t:0.7,T:0.7}); }                 // гуль виривається з-під землі
+  portal(x,y,color){ this.portals.push({x,y,t:0.55,T:0.55,color}); }
+  smoke(x,y){ for(let i=0;i<16;i++){ const a=rnd(0,7), s=rnd(20,90); this.particles.push({x:x+rnd(-14,14),y:y+rnd(-40,40),vx:Math.cos(a)*s,vy:Math.sin(a)*s-30,t:rnd(.3,.6),color:i%3?'#3a3448':'#6a5a8a',size:rnd(4,8),g:-40}); } }
   dust(x,y){ for(let i=0;i<8;i++){ const d=i<4?-1:1; this.particles.push({x:x+d*rnd(4,16),y:y-2,vx:d*rnd(40,110),vy:-rnd(10,60),t:rnd(.25,.45),color:'#b8a890',size:rnd(3,6),g:120}); } }
 
   spawnProj(owner,a,x,y,dir,dmgM){
     this.projectiles.push({
       x,y,vx:dir*a.speed*PROJ_SPEED,dmg:a.dmg*dmgM,color:a.pcolor||owner.color,size:a.psize||10,
+      slot:owner.abilities.indexOf(a), school:PROJ_SCHOOL[a.name]||null,
       owner,riders:{stun:a.stun,slow:a.slow,dot:a.dot,healFrac:a.healFrac,selfHeal:a.selfHeal,aoeOnHit:a.aoeOnHit},
       kind:owner.model.style==='bow'?'arrow':(a.name==='Pistol Shot'?'bullet':'orb'),
     });
@@ -92,6 +101,7 @@ class Game{
     this.round++;
     this.roundTimer=90;
     this.projectiles=[]; this.zones=[]; this.delayed=[];
+    this.marks=[]; this.fallers=[]; this.erupts=[]; this.portals=[]; this.ultFx=null;
     this.f[0].reset(WORLD_W/2-START_GAP,1); this.f[1].reset(WORLD_W/2+START_GAP,-1);
     this.phase='intro'; this.phaseT=3.6;
     sfx('round');
@@ -100,6 +110,7 @@ class Game{
   update(dt){
     this.shake=Math.max(0,this.shake-dt*30);
     this.koFlash=Math.max(0,(this.koFlash||0)-dt);
+    if(this.ultFx){ this.ultFx.t-=dt; if(this.ultFx.t<=0) this.ultFx=null; }   // банер ультимейта йде й під час кінопаузи
     // хітстоп: увесь світ завмирає на кілька кадрів після влучання
     if(this.hitstop>0){ this.hitstop-=dt; this.updateCam(dt); return; }
     if(this.slowmo>0){ this.slowmo-=dt; dt*=0.3; }
@@ -136,6 +147,7 @@ class Game{
       if(foe.alive && Math.abs(p.x-foe.x)<foe.w/2+p.size && p.y>foe.y-foe.h-p.size && p.y<foe.y+p.size){
         p.dead=true;
         const dealt=foe.takeDamage(p.dmg,p.owner,this,{stun:p.riders.stun,slow:p.riders.slow,dot:p.riders.dot});
+        if(p.slot===0&&dealt>0&&!foe.lastBlocked) p.owner.cancelT=CANCEL_WIN;   // влучний легкий — вікно скасування
         if(p.riders.healFrac) p.owner.healSelf(dealt*p.riders.healFrac,this,true);
         if(p.riders.selfHeal) p.owner.healSelf(p.riders.selfHeal,this,true);
         if(p.riders.aoeOnHit) this.ring(p.x,p.y,p.riders.aoeOnHit,p.color);
@@ -156,6 +168,17 @@ class Game{
       }
     }
     this.zones=this.zones.filter(z=>z.t>0);
+
+    // ультимейти: позначки, падіння з неба, гулі, портали
+    for(const m of this.marks) m.t-=dt; this.marks=this.marks.filter(m=>m.t>0);
+    for(const f of this.fallers){
+      f.t+=dt; const k=Math.min(1,f.t/f.T);
+      f.x=f.x0+(f.x1-f.x0)*k; f.y=f.y0+(GROUND-30-f.y0)*k*k;
+      if(k>=1){ f.done=true; f.onHit(); }
+    }
+    this.fallers=this.fallers.filter(f=>!f.done);
+    for(const e of this.erupts) e.t-=dt; this.erupts=this.erupts.filter(e=>e.t>0);
+    for(const q of this.portals) q.t-=dt; this.portals=this.portals.filter(q=>q.t>0);
 
     // частинки та ефекти
     for(const p of this.particles){ p.t-=dt; p.x+=p.vx*dt; p.y+=p.vy*dt; p.vy+=(p.g??400)*dt; }
@@ -192,48 +215,16 @@ class Game{
   }
 
   drawWorld(){
-    const th=this.theme;
-    // небо та світило — в екранних координатах
-    const sky=ctx.createLinearGradient(0,0,0,H);
-    sky.addColorStop(0,th.sky1); sky.addColorStop(1,th.sky2);
-    ctx.fillStyle=sky; ctx.fillRect(0,0,W,H);
-    ctx.fillStyle='rgba(255,240,200,.25)';
-    ctx.beginPath(); ctx.arc(W*0.78,110,55,0,7); ctx.fill();
-    ctx.fillStyle='rgba(255,240,200,.5)';
-    ctx.beginPath(); ctx.arc(W*0.78,110,38,0,7); ctx.fill();
-
-    // світ — через камеру
-    ctx.save();
     const shx=this.shake>0?rnd(-this.shake,this.shake):0;
     const shy=this.shake>0?rnd(-this.shake,this.shake):0;
     this._shx=shx; this._shy=shy;
+    // небо, гори, земля, смолоскипи — піксельні шари (arena.js)
+    drawArenaBG(this,shx,shy);
+
+    // світ — через камеру
+    ctx.save();
     ctx.translate(this.cam.offX+shx,this.cam.offY+shy);
     ctx.scale(this.cam.scale,this.cam.scale);
-
-    // пагорби
-    ctx.fillStyle=th.hill;
-    ctx.beginPath(); ctx.moveTo(-400,GROUND);
-    for(let x=-400;x<=WORLD_W+400;x+=80) ctx.lineTo(x,GROUND-60-Math.sin(x*0.013)*70-Math.sin(x*0.031)*30);
-    ctx.lineTo(WORLD_W+400,GROUND); ctx.closePath(); ctx.fill();
-
-    // земля
-    ctx.fillStyle=th.ground; ctx.fillRect(-400,GROUND,WORLD_W+800,500);
-    ctx.strokeStyle=th.line; ctx.lineWidth=3;
-    ctx.beginPath(); ctx.moveTo(-400,GROUND); ctx.lineTo(WORLD_W+400,GROUND); ctx.stroke();
-    ctx.strokeStyle='rgba(0,0,0,.2)'; ctx.lineWidth=1;
-    for(let x=40;x<WORLD_W;x+=110){ ctx.beginPath(); ctx.moveTo(x,GROUND+14); ctx.lineTo(x+60,GROUND+14); ctx.stroke(); }
-
-    // смолоскипи вздовж арени
-    const torches=[];
-    for(let tx=150;tx<WORLD_W;tx+=400) torches.push(tx);
-    for(const tx of torches){
-      ctx.fillStyle='#3a3040'; ctx.fillRect(tx-4,GROUND-120,8,120);
-      const fl=Math.sin(this.time*11+tx)*3;
-      ctx.fillStyle='#ff9440';
-      ctx.beginPath(); ctx.ellipse(tx,GROUND-130+fl,7,14,0,0,7); ctx.fill();
-      ctx.fillStyle='#ffe27a';
-      ctx.beginPath(); ctx.ellipse(tx,GROUND-127+fl,3.5,8,0,0,7); ctx.fill();
-    }
 
     // зони
     for(const z of this.zones){
@@ -250,6 +241,52 @@ class Game{
         const sx=z.x+rnd(-z.r,z.r);
         ctx.fillRect(sx,GROUND-rnd(0,50),2,6);
       }
+      ctx.restore();
+    }
+
+    // залп: стріли сиплються в зону
+    for(const z of this.zones) if(z.kind==='arrows'){
+      ctx.save(); ctx.strokeStyle='#d8e8ff'; ctx.fillStyle='#ffffff'; ctx.lineWidth=2;
+      for(let i=0;i<9;i++){
+        const ph=(this.time*1.7+i*0.37)%1, ax=z.x+((i*53)%(z.r*2))-z.r+ph*30, ay=GROUND-260+ph*262;
+        ctx.globalAlpha=Math.min(1,(1-ph)*4);
+        ctx.beginPath(); ctx.moveTo(ax-10,ay-26); ctx.lineTo(ax,ay); ctx.stroke();
+        ctx.fillRect(ax-1.5,ay-2,4,4);
+      }
+      ctx.restore();
+    }
+    // позначки ультимейтів: коло пульсує, внутрішнє кільце стискається до удару
+    for(const m of this.marks){
+      const k=m.t/m.T, pulse=0.5+Math.sin(this.time*18)*0.5;
+      ctx.save();
+      ctx.globalAlpha=0.18+(1-k)*0.3; ctx.fillStyle=m.color;
+      ctx.beginPath(); ctx.ellipse(m.x,GROUND+4,m.r,15,0,0,7); ctx.fill();
+      ctx.globalAlpha=0.6+pulse*0.4; ctx.strokeStyle=m.color; ctx.lineWidth=3;
+      ctx.beginPath(); ctx.ellipse(m.x,GROUND+4,m.r,15,0,0,7); ctx.stroke();
+      ctx.globalAlpha=0.9; ctx.strokeStyle='#ffffff'; ctx.lineWidth=2;
+      ctx.beginPath(); ctx.ellipse(m.x,GROUND+4,Math.max(4,m.r*k),Math.max(2,15*k),0,0,7); ctx.stroke();
+      ctx.restore();
+    }
+    // портали (Blink, Demonic Circle, поява петів): вертикальний овал відкривається й закривається
+    for(const q of this.portals){
+      const k=1-q.t/q.T, open=k<0.35?k/0.35:(k>0.7?(1-k)/0.3:1);
+      ctx.save(); ctx.globalCompositeOperation='lighter';
+      ctx.strokeStyle=q.color; ctx.lineWidth=5; ctx.globalAlpha=0.9;
+      ctx.beginPath(); ctx.ellipse(q.x,q.y-58,22*open,58*open,0,0,7); ctx.stroke();
+      ctx.lineWidth=2; ctx.strokeStyle='#ffffff'; ctx.beginPath(); ctx.ellipse(q.x,q.y-58,13*open,46*open,0,0,7); ctx.stroke();
+      ctx.fillStyle=q.color; ctx.globalAlpha=0.25*open; ctx.beginPath(); ctx.ellipse(q.x,q.y-58,20*open,56*open,0,0,7); ctx.fill();
+      for(let i=0;i<6;i++){ const a=this.time*7+i*1.05; ctx.globalAlpha=open; ctx.fillRect(q.x+Math.cos(a)*22*open-2,q.y-58+Math.sin(a)*58*open-2,4,4); }
+      ctx.restore();
+    }
+    // гулі виривають із землі: рука з пазурами піднімається й ховається
+    for(const e of this.erupts){
+      const k=1-e.t/e.T, up=k<0.3?k/0.3:(k>0.7?(1-k)/0.3:1), h=70*up;
+      ctx.save();
+      ctx.fillStyle='#3a2e22'; ctx.beginPath(); ctx.ellipse(e.x,GROUND+3,30,8,0,0,7); ctx.fill();
+      ctx.fillStyle='#8a9a72'; ctx.fillRect(e.x-7,GROUND-h,14,h);
+      ctx.fillStyle='#5a6a4a'; ctx.fillRect(e.x-7,GROUND-h,4,h);
+      for(let i=-1;i<=1;i++){ ctx.fillStyle='#e4dcc4'; ctx.fillRect(e.x+i*6-1.5,GROUND-h-14,3,14); }
+      ctx.fillStyle='#7cff6b'; ctx.globalAlpha=0.5*up; ctx.fillRect(e.x-12,GROUND-h-4,24,4);
       ctx.restore();
     }
 
@@ -299,6 +336,8 @@ class Game{
 
     // снаряди
     for(const p of this.projectiles) drawProjectile(p,this.time);
+    // з неба: молот світла, метеор, інфернал
+    for(const f of this.fallers) drawFaller(f,this.time);
 
     // частинки
     for(const p of this.particles){
@@ -341,6 +380,7 @@ class Game{
       const k=clamp((1.3-this.koFlash)/0.18,0,1);
       bannerText('K.O.!','#ff4a3a',Math.round(170-50*k));
     } else if(this.phase==='roundEnd') bannerText(this.banner,'#ffd23a',52);
+    if(this.ultFx) drawUltBanner(this.ultFx);
     if(state.paused){
       ctx.fillStyle='rgba(5,8,14,.45)'; ctx.fillRect(0,0,W,H);
     }
@@ -352,7 +392,7 @@ class Game{
       const bx=left?30:W-30-460, bw=460;
       // рамка
       ctx.fillStyle='rgba(8,12,20,.75)';
-      roundRect(bx-6,22,bw+12,54,10); ctx.fill();
+      roundRect(bx-6,22,bw+12,68,10); ctx.fill();
       // hp
       const frac=f.hp/f.maxHp;
       ctx.fillStyle='#3a1010'; roundRect(bx,28,bw,22,6); ctx.fill();
@@ -384,6 +424,27 @@ class Game{
       ctx.font='13px "Tiny5",sans-serif'; ctx.fillStyle='#cfd8e8';
       ctx.textAlign=left?'right':'left';
       ctx.fillText(`${Math.ceil(f.hp)}`,left?bx+bw-6:bx+6,44);
+      // супершкала: заповнена — пульсує, поруч кнопка ультимейта
+      { const fr=clamp(f.meter/ULT_MAX,0,1), full=fr>=1, mw=bw*0.62, mx=left?bx:bx+bw-mw, my=76;
+        ctx.fillStyle='rgba(20,16,30,.95)'; ctx.fillRect(mx,my,mw,8); ctx.strokeStyle='#4a3e2a'; ctx.lineWidth=1; ctx.strokeRect(mx-0.5,my-0.5,mw+1,9);
+        const g=ctx.createLinearGradient(0,my,0,my+8); g.addColorStop(0,full?'#fff4b0':'#ffd23a'); g.addColorStop(1,full?'#ffb03a':'#a8700a');
+        ctx.fillStyle=g; left?ctx.fillRect(mx,my,mw*fr,8):ctx.fillRect(mx+mw*(1-fr),my,mw*fr,8);
+        for(let q=1;q<4;q++){ ctx.fillStyle='rgba(8,12,20,.7)'; ctx.fillRect(mx+mw*q/4-1,my,2,8); }
+        if(full){ ctx.save(); ctx.globalAlpha=0.35+Math.sin(this.time*8)*0.25; ctx.strokeStyle='#fff4b0'; ctx.lineWidth=2; ctx.strokeRect(mx-1,my-1,mw+2,10); ctx.restore(); }
+        ctx.font='11px "Tiny5",sans-serif'; ctx.textAlign=left?'left':'right'; ctx.fillStyle=full?'#fff4b0':'#8b95a8';
+        const usePadU=padConnected[i]&&!f.isAI, key=TOUCH.on||f.isAI?'':` · ${usePadU?'RT':(i===0?'O':'6')}`;
+        ctx.fillText(full?`${ULTS[f.cls.id].ua.toUpperCase()}${key}`:'УЛЬТА',left?mx+mw+8:mx-8,my+8); }
+      // комбо-лічильник: «3 УДАРИ» під своєю панеллю
+      if(f.combo>=2){
+        const n=f.combo, pop=1+Math.max(0,f.comboT-0.85)*1.6;
+        const word=n%10===1&&n%100!==11?'УДАР':(n%10>=2&&n%10<=4&&(n%100<10||n%100>=20)?'УДАРИ':'УДАРІВ');
+        ctx.save(); ctx.globalAlpha=clamp(f.comboT*2.5,0,1);
+        ctx.translate(left?bx+60:bx+bw-60,140); ctx.scale(pop,pop);
+        ctx.textAlign='center'; ctx.lineWidth=6; ctx.strokeStyle='rgba(0,0,0,.85)';
+        ctx.font='40px "Tiny5",sans-serif'; ctx.strokeText(`${n}`,0,0); ctx.fillStyle=n>=4?'#ff7a3a':'#ffd23a'; ctx.fillText(`${n}`,0,0);
+        ctx.font='15px "Tiny5",sans-serif'; ctx.strokeText(word,0,18); ctx.fillStyle='#fff4d0'; ctx.fillText(word,0,18);
+        ctx.restore();
+      }
       // раундові перемоги
       for(let r=0;r<2;r++){
         const px=left?bx+bw+16+r*20:bx-16-r*20;
@@ -396,8 +457,8 @@ class Game{
       ctx.font='13px "Tiny5",sans-serif'; ctx.textAlign='left';
       const showB=(txt,color)=>{
         const px=left?bx+bi*64:bx+bw-64-bi*64;
-        ctx.fillStyle='rgba(8,12,20,.7)'; roundRect(px,80,58,20,5); ctx.fill();
-        ctx.fillStyle=color; ctx.fillText(txt,px+5,95); bi++;
+        ctx.fillStyle='rgba(8,12,20,.7)'; roundRect(px,94,58,20,5); ctx.fill();
+        ctx.fillStyle=color; ctx.fillText(txt,px+5,109); bi++;
       };
       if(f.buffs.dmg.t>0) showB(`⚔ ${f.buffs.dmg.t.toFixed(0)}с`,'#ffb03a');
       if(f.buffs.spd.t>0) showB(`💨 ${f.buffs.spd.t.toFixed(0)}с`,'#7de0ff');
@@ -509,46 +570,6 @@ function bannerText(txt,color,size){
   ctx.restore();
 }
 
-
-/* ---------- Снаряди: стріла, куля або енергетична сфера з хвостом ---------- */
-function drawProjectile(p,time){
-  const dir=Math.sign(p.vx)||1;
-  ctx.save();
-  ctx.translate(p.x,p.y);
-  if(p.kind==='arrow'){
-    ctx.scale(dir,1);
-    ctx.strokeStyle='#6b4a2a'; ctx.lineWidth=3;
-    ctx.beginPath(); ctx.moveTo(-34,0); ctx.lineTo(6,0); ctx.stroke();
-    ctx.fillStyle='#e8eef8';
-    ctx.beginPath(); ctx.moveTo(6,-5); ctx.lineTo(16,0); ctx.lineTo(6,5); ctx.closePath(); ctx.fill();
-    ctx.fillStyle=p.color;
-    ctx.beginPath(); ctx.moveTo(-34,0); ctx.lineTo(-40,-6); ctx.lineTo(-28,0); ctx.lineTo(-40,6); ctx.closePath(); ctx.fill();
-    ctx.globalAlpha=0.35; ctx.strokeStyle=p.color; ctx.lineWidth=4;
-    ctx.beginPath(); ctx.moveTo(-80,0); ctx.lineTo(-36,0); ctx.stroke();
-  } else if(p.kind==='bullet'){
-    ctx.scale(dir,1);
-    ctx.globalAlpha=0.5; ctx.strokeStyle=p.color; ctx.lineWidth=3;
-    ctx.beginPath(); ctx.moveTo(-60,0); ctx.lineTo(0,0); ctx.stroke();
-    ctx.globalAlpha=1; ctx.fillStyle='#fff'; ctx.fillRect(-4,-3,10,6);
-  } else {
-    const r=p.size;
-    // хвіст із загасаючих кіл
-    for(let i=6;i>=1;i--){
-      ctx.globalAlpha=0.12+0.1*(6-i)/6;
-      ctx.fillStyle=p.color;
-      const k=1-i/8;
-      ctx.beginPath(); ctx.arc(-dir*i*r*0.9+Math.sin(time*30+i)*1.5,Math.cos(time*27+i)*1.5,r*k,0,7); ctx.fill();
-    }
-    ctx.globalAlpha=1;
-    ctx.shadowColor=p.color; ctx.shadowBlur=16;
-    ctx.fillStyle=p.color;
-    ctx.beginPath(); ctx.arc(0,0,r*1.05,0,7); ctx.fill();
-    ctx.shadowBlur=0;
-    ctx.fillStyle='rgba(255,255,255,.9)';
-    ctx.beginPath(); ctx.arc(dir*r*0.2,0,r*0.5,0,7); ctx.fill();
-  }
-  ctx.restore();
-}
 
 /* ---------- Ефект удару: розпечений серп або укол ---------- */
 function drawSlash(s){

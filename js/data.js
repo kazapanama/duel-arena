@@ -37,11 +37,13 @@ const CLASSES = [
    { name:'Fury', em:'🔥', role:'Бій',
      classAb: mk.leap('Heroic Leap','🦘',8,60,125,{slow:{mult:0.6,dur:2}}),
      abilities:[
-     mk.melee('Raging Blow','👊',1.1,52),
-     mk.melee('Bloodthirst','🩸',5,135,{selfHeal:40}),
+     mk.melee('Raging Blow','👊',1.1,57),
+     mk.melee('Bloodthirst','🩸',5,148,{selfHeal:50}),
      mk.buff('Recklessness','😡',15,6,{dmgMult:1.35,spdMult:1.15}),
    ]},
-   { name:'Protection', em:'🛡️', role:'Танк', abilities:[
+   { name:'Protection', em:'🛡️', role:'Танк',
+     classAb: mk.aoe('Intimidating Shout','😱',14,20,170,{fear:{dur:1.6,brk:60}}),
+     abilities:[
      mk.melee('Shield Slam','🛡️',1.3,54,{knockback:90}),
      mk.aoe('Thunder Clap','⛈️',6,85,155,{slow:{mult:0.5,dur:3}}),
      mk.shield('Shield Block','🔰',12,190,6),
@@ -51,16 +53,20 @@ const CLASSES = [
   classAb: mk.heal('Flash of Light','💛',9,90,{cast:1.0}),   // загальна для паладинів: короткий каст, невелике лікування
   specs:[
    { name:'Holy', em:'🌟', role:'Лікар', abilities:[
-     mk.proj('Holy Shock','✨',1.6,50,{selfHeal:10,pcolor:'#fff2b0',speed:900}),
+     mk.proj('Holy Shock','✨',1.5,60,{selfHeal:15,pcolor:'#fff2b0',speed:900}),
      mk.heal('Holy Light','✨',10,210,{cast:1.5}),
-     mk.aoe('Holy Prism','🔆',9,110,160,{selfHeal:30}),
+     mk.aoe('Holy Prism','🔆',9,135,170,{selfHeal:40}),
    ]},
-   { name:'Protection', em:'🛡️', role:'Танк', abilities:[
+   { name:'Protection', em:'🛡️', role:'Танк',
+     classAb: mk.curse('Hammer of Justice','🔨',14,{dmg:30,stun:1.2,range:340}),
+     abilities:[
      mk.melee('Hammer of the Righteous','🔨',1.3,56),
      mk.proj("Avenger's Shield",'🛡️',7,140,{stun:0.8,speed:920,pcolor:'#9fd7ff',psize:13}),
      mk.zone('Consecration','🔥',9,60,125,5,{at:'self',zcolor:'#ffd97a'}),
    ]},
-   { name:'Retribution', em:'⚔️', role:'Бій', abilities:[
+   { name:'Retribution', em:'⚔️', role:'Бій',
+     classAb: mk.dash('Divine Steed','🐎',7,{move:true,dist:360}),
+     abilities:[
      mk.melee('Crusader Strike','⚔️',1.2,60),
      mk.melee("Templar's Verdict",'⚖️',6,195),
      mk.buff('Avenging Wrath','😇',15,6,{dmgMult:1.35,selfHeal:40,wings:true}),   // поки діє — золоті крила
@@ -69,10 +75,12 @@ const CLASSES = [
 { id:'hunter', name:'Мисливець', em:'🏹', color:'#AAD372',
   classAb: mk.dash('Disengage','🦘',5,{back:true,dist:280}),
   specs:[
-   { name:'Beast Mastery', em:'🐻', role:'Бій', abilities:[
+   { name:'Beast Mastery', em:'🐻', role:'Бій',
+     classAb: mk.curse('Intimidation','🐺',12,{dmg:25,stun:1.0,range:520}),
+     abilities:[
      mk.proj('Cobra Shot','🐍',1.3,50,{speed:880,pcolor:'#9dff70'}),
      mk.proj('Kill Command','🐺',5,135,{speed:1100,pcolor:'#ff8866',psize:13}),
-     mk.pet('Dire Beast','🐺',14,10,{pemoji:'🐺',pdmg:22,pcd:1.0,pcolor:'#ff8866'}),
+     mk.pet('Dire Beast','🐺',14,10,{pkind:'wolf',pdmg:15,pcd:1.25}),
    ]},
    { name:'Marksmanship', em:'🎯', role:'Бій', abilities:[
      mk.proj('Steady Shot','🏹',1.3,58,{speed:880,pcolor:'#d8e8ff'}),
@@ -82,15 +90,17 @@ const CLASSES = [
    { name:'Survival', em:'🗡️', role:'Бій',
      classAb: mk.dash('Harpoon','🪝',7,{toEnemy:true,dmg:20,slow:{mult:0.3,dur:1.5}}),
      abilities:[
-     mk.melee('Raptor Strike','🦖',1.2,52,{range:108}),
-     mk.proj('Wildfire Bomb','💣',6,110,{aoeOnHit:100,dot:{dps:15,dur:3},speed:700,pcolor:'#ffae42',psize:12}),
+     mk.melee('Raptor Strike','🦖',1.15,58,{range:112}),
+     mk.proj('Wildfire Bomb','💣',6,128,{aoeOnHit:100,dot:{dps:15,dur:3},speed:700,pcolor:'#ffae42',psize:12}),
      mk.buff('Coordinated Assault','🦅',15,6,{dmgMult:1.35,spdMult:1.15}),
    ]},
   ]},
 { id:'rogue', name:'Розбійник', em:'🗡️', color:'#FFF468',
   classAb: mk.tele('Shadowstep','👣',5,'behind',{gcd:0}),   // без глобального КД: одразу можна бити
   specs:[
-   { name:'Assassination', em:'☠️', role:'Бій', abilities:[
+   { name:'Assassination', em:'☠️', role:'Бій',
+     classAb: mk.melee('Kidney Shot','👊',12,30,{stun:1.0}),
+     abilities:[
      mk.melee('Mutilate','🔪',1.2,50,{dot:{dps:8,dur:3}}),
      mk.melee('Envenom','🧪',5,125,{dot:{dps:18,dur:4}}),
      mk.buff('Vendetta','🎯',15,6,{dmgMult:1.4}),
@@ -111,7 +121,9 @@ const CLASSES = [
 { id:'priest', name:'Жрець', em:'✨', color:'#eeeeee',
   classAb: mk.heal('Flash Heal','💚',9,100,{cast:1.0}),   // Discipline і Holy: швидке невелике лікування (Shadow має Dispersion)
   specs:[
-   { name:'Discipline', em:'🛡️', role:'Лікар', abilities:[
+   { name:'Discipline', em:'🛡️', role:'Лікар',
+     classAb: mk.buff('Angelic Feather','🪶',8,3,{spdMult:1.6,feather:true}),
+     abilities:[
      mk.proj('Smite','✨',1.5,54,{pcolor:'#fff6cf',speed:820}),
      mk.multi('Penance','🌠',6,52,3,{pcolor:'#ffe9a3',chan:{dur:1.5}}),
      mk.shield('Power Word: Shield','🔮',12,170,8),
@@ -137,15 +149,19 @@ const CLASSES = [
      mk.melee('Death Strike','⚰️',5,120,{selfHeal:45}),
      mk.shield('Vampiric Blood','🦇',16,160,8),
    ]},
-   { name:'Frost', em:'❄️', role:'Бій', abilities:[
+   { name:'Frost', em:'❄️', role:'Бій',
+     classAb: mk.curse('Chains of Ice','⛓️',9,{dmg:20,slow:{mult:0.35,dur:3},range:520}),
+     abilities:[
      mk.melee('Frost Strike','🗡️',1.2,56),
      mk.melee('Obliterate','⚔️',5,180),
      mk.buff('Pillar of Frost','🧊',15,6,{dmgMult:1.4}),
    ]},
-   { name:'Unholy', em:'🧟', role:'Бій', abilities:[
+   { name:'Unholy', em:'🧟', role:'Бій',
+     classAb: mk.buff("Death's Advance",'💀',10,4,{spdMult:1.4,dmgTakenMult:0.85}),
+     abilities:[
      mk.melee('Scourge Strike','🦠',1.2,48,{dot:{dps:8,dur:3}}),
      mk.proj('Death Coil','🟢',5,95,{pcolor:'#7cff6b'}),
-     mk.pet('Apocalypse','🧟',14,9,{pemoji:'🧟',pdmg:22,pcd:1.0,pcolor:'#7cff6b'}),
+     mk.pet('Apocalypse','🧟',14,9,{pkind:'ghoul',pdmg:15,pcd:1.25}),
    ]},
   ]},
 { id:'shaman', name:'Шаман', em:'⚡', color:'#0070DD',
@@ -164,10 +180,10 @@ const CLASSES = [
      abilities:[
      mk.melee('Stormstrike','⚡',1.2,56),
      mk.melee('Lava Lash','🔥',5,150,{dot:{dps:12,dur:3}}),
-     mk.pet('Feral Spirit','🐺',14,9,{pemoji:'🐺',pdmg:26,pcd:1.0,pcolor:'#a8c8ff'}),
+     mk.pet('Feral Spirit','🐺',15,8,{pkind:'spiritwolf',pdmg:12,pcd:1.3}),
    ]},
    { name:'Restoration', em:'💧', role:'Лікар', abilities:[
-     mk.proj('Lightning Bolt','⚡',1.4,50,{speed:950,pcolor:'#8fd0ff'}),
+     mk.proj('Lightning Bolt','⚡',1.35,57,{speed:950,pcolor:'#8fd0ff'}),
      mk.heal('Healing Surge','💙',9,205,{cast:1.1}),
      mk.heal('Riptide','🌊',8,50,{hot:{tick:12,dur:5}}),
    ]},
@@ -180,14 +196,18 @@ const CLASSES = [
      mk.multi('Arcane Barrage','🌌',6,45,4,{pcolor:'#b48cff'}),
      mk.buff('Arcane Power','⚛️',15,6,{dmgMult:1.4}),
    ]},
-   { name:'Fire', em:'🔥', role:'Бій', abilities:[
+   { name:'Fire', em:'🔥', role:'Бій',
+     classAb: mk.knock("Dragon's Breath",'🐉',12,50,0,{front:true,range:210,push:0,stun:1.0,pcolor:'#ff9440'}),
+     abilities:[
      mk.proj('Fire Blast','🔥',1.4,46,{dot:{dps:8,dur:2},pcolor:'#ff9440'}),
      mk.proj('Pyroblast','☄️',7,250,{cast:1.3,speed:560,psize:16,pcolor:'#ff6a2a'}),
      mk.buff('Combustion','💥',15,5,{dmgMult:1.45}),
    ]},
-   { name:'Frost', em:'❄️', role:'Бій', abilities:[
+   { name:'Frost', em:'❄️', role:'Бій',
+     classAb: mk.shield('Ice Barrier','🧊',14,115,6),
+     abilities:[
      mk.proj('Frostbolt','❄️',1.4,50,{slow:{mult:0.6,dur:2.5},pcolor:'#aee8ff'}),
-     mk.proj('Glacial Spike','🧊',6,230,{cast:1.0,stun:0.5,speed:700,psize:15,pcolor:'#aee8ff'}),
+     mk.proj('Glacial Spike','🧊',6,212,{cast:1.0,stun:0.5,speed:700,psize:15,pcolor:'#aee8ff'}),
      mk.aoe('Frost Nova','❄️',9,55,160,{root:{dur:2.5,kind:'ice'}}),
    ]},
   ]},
@@ -200,12 +220,16 @@ const CLASSES = [
      mk.drain('Drain Life','🩸',6,27,{chan:{dur:2.4,ticks:6},healFrac:0.5,pcolor:'#7cff4a'}),   // зелений промінь, як у WoW
      mk.curse('Agony','😖',8,{dot:{dps:18,dur:6}}),
    ]},
-   { name:'Demonology', em:'👿', role:'Бій', abilities:[
+   { name:'Demonology', em:'👿', role:'Бій',
+     classAb: mk.tele('Demonic Circle','🌀',7,'away',{dist:300}),
+     abilities:[
      mk.proj('Demonbolt','🟢',1.4,50,{pcolor:'#9dff70'}),
      mk.proj("Hand of Gul'dan",'☄️',6,160,{cast:1.0,aoeOnHit:95,speed:640,pcolor:'#7cff6b',psize:13}),
-     mk.pet('Summon Felguard','👹',14,10,{pemoji:'👹',pdmg:24,pcd:1.0,pcolor:'#9dff70'}),
+     mk.pet('Summon Felguard','👹',14,10,{pkind:'felguard',pdmg:17,pcd:1.25}),
    ]},
-   { name:'Destruction', em:'🔥', role:'Бій', abilities:[
+   { name:'Destruction', em:'🔥', role:'Бій',
+     classAb: mk.aoe('Shadowfury','🌑',12,40,160,{stun:1.0}),
+     abilities:[
      mk.proj('Incinerate','🔥',1.4,48,{dot:{dps:6,dur:2},pcolor:'#ffb03a'}),
      mk.proj('Chaos Bolt','🌈',7,270,{cast:1.4,speed:520,psize:16,pcolor:'#ff5ad0'}),
      mk.proj('Conflagrate','💥',6,90,{stun:0.4,speed:1000,pcolor:'#ffb03a'}),
@@ -245,13 +269,60 @@ const CLASSES = [
        ],
        classAb: mk.dash('Pounce','🐆',7,{toEnemy:true,dmg:30,stun:0.8}),
      }},
+   /* Restoration: гуманоїд — Wrath/Regrowth/Ironbark; Дерево життя — міцніше й повільніше, лікує без кастів */
    { name:'Restoration', em:'🌿', role:'Лікар', abilities:[
      mk.proj('Wrath','🌞',1.4,50,{pcolor:'#ffe27a'}),
      mk.heal('Regrowth','🌿',9,190,{cast:1.1,hot:{tick:10,dur:4}}),
      mk.buff('Ironbark','🪵',14,5,{dmgTakenMult:0.5}),
-   ]},
+   ],
+     form:{ id:'tree', name:'Дерево життя', em:'🌳', h:128, passive:{dr:0.92,spd:0.85},
+       note:'−8% отримуваної шкоди, повільніше; лікування без кастів',
+       abilities:[
+         mk.proj('Wrath','🌞',1.4,46,{pcolor:'#ffe27a'}),
+         mk.heal('Wild Growth','🌱',12,60,{hot:{tick:12,dur:5}}),
+         mk.curse('Entangling Roots','🌱',10,{cast:1.2,dmg:15,root:{dur:2.2,kind:'vine'},dot:{dps:8,dur:3}}),
+       ],
+       classAb: mk.heal('Swiftmend','🍃',15,90),
+     }},
   ]},
 ];
+
+/* ============================================================
+   УЛЬТИМЕЙТИ: по одному на клас, коли повна супершкала (кнопка O / Num6 / RT).
+   Механіка — у Fighter.runUlt; тут назви, іконки й опис для меню.
+   ============================================================ */
+const ULTS={
+  warrior:{name:'Avatar',ua:'Аватар',icon:'🗿',ic:'Abilities/Avatar.png',
+    d:'Стрибок до ворога: 150 шкоди довкола й оглушення 0.7с; 8с боєць більшає: +30% шкоди, +20% швидкості'},
+  paladin:{name:'Final Reckoning',ua:'Остаточна розплата',icon:'🔨',ic:'Spells/AuraOfLight.png',
+    d:'Позначає місце під ворогом; за 0.95с з неба падає молот світла: 230 шкоди й оглушення 1с. Не блокується — тікай із кола'},
+  hunter:{name:'Volley',ua:'Залп',icon:'🏹',ic:'Abilities/WildQuiver.png',
+    d:'4с дощ стріл на місці ворога: 55 шкоди/с і сповільнення'},
+  rogue:{name:'Death from Above',ua:'Смерть згори',icon:'🗡️',ic:'Abilities/Ambush.png',
+    d:'Злітає за кадр і за пів секунди падає на ворога: 210 шкоди, оглушення 0.8с. Не блокується — тікай із кола'},
+  priest:{name:'Halo',ua:'Ореол',icon:'⭕',ic:'Spells/HolyNova.png',
+    d:'Кільце світла (у Shadow — тіні) на 420: 170 шкоди ворогу й 170 лікування собі'},
+  dk:{name:'Army of the Dead',ua:'Армія мертвих',icon:'🧟',ic:'Spells/ArmyOfTheDead.png',
+    d:'Четверо гулів по черзі виривають із землі під ворогом: по 55 шкоди й сповільнення'},
+  shaman:{name:'Ascendance',ua:'Піднесення',icon:'⚡',ic:'Spells/CallStorm.png',
+    d:'Блискавка з неба: 110 шкоди (не блокується); 8с: +40% шкоди, −30% отримуваної'},
+  mage:{name:'Meteor',ua:'Метеор',icon:'☄️',ic:'Spells/MeteorStorm.png',
+    d:'За 1с метеор падає на позначене місце: 240 шкоди й вогняна зона на 3с. Не блокується'},
+  warlock:{name:'Summon Infernal',ua:'Інфернал',icon:'🔥',ic:'Spells/SummonInfernal.png',
+    d:'Інфернал падає на позначене місце: 170 шкоди, оглушення 1.2с, потім 8с бʼється поруч'},
+  druid:{name:'Convoke the Spirits',ua:'Заклик духів',icon:'🌳',ic:'Abilities/ForceofNature.png',
+    d:'2.4с шквал із 12 випадкових чар: Wrath, Starsurge, Moonfire і лікування'},
+};
+// снаряди Заклику духів
+const CONVOKE={
+  wrath:mk.proj('Wrath','🌞',0,18,{pcolor:'#ffe27a'}),
+  starsurge:mk.proj('Starsurge','⭐',0,45,{speed:820,psize:13,pcolor:'#b8c8ff'}),
+};
+
+/* Раси на вибір (екран вибору бійця, клавіша X). '' — як задумано сетом */
+const RACES=[['','Як у сету'],['human','Людина'],['dwarf','Дворф'],['nelf','Нічний ельф'],['draenei','Дреней'],
+  ['belf','Ельф крові'],['orc','Орк'],['undead','Нежить'],['tauren','Таурен'],['troll','Троль']];
+const raceName=id=>(RACES.find(r=>r[0]===(id||''))||RACES[0])[1];
 
 /* Кольоровий акцент кожного спеку (зброя, аура, підсвітка) */
 const SPEC_ACCENT={
@@ -332,6 +403,7 @@ const CLASS_ICONS={
 const ABILITY_ICONS={
   // Воїн
   'Charge':'Abilities/Charge.png',
+  'Intimidating Shout':'Abilities/BattleShout.png',
   'Overpower':'Abilities/MeleeDamage.png',
   'Mortal Strike':'Abilities/SavageBlow.png',
   'Bladestorm':'Abilities/Bladestorm.png',
@@ -342,7 +414,8 @@ const ABILITY_ICONS={
   'Thunder Clap':'Abilities/ThunderClap.png',
   'Shield Block':'Abilities/CriticalBlock.png',
   // Паладін
-  'Divine Steed':'Abilities/RidingHorse.png',
+  'Divine Steed':'Abilities/Charger.png',
+  'Hammer of Justice':'Spells/FistOfJustice.png',
   'Holy Shock':'Spells/HolyBolt.png',
   'Flash of Light':'Spells/Heal.png',
   'Holy Light':'Spells/Heal.png',
@@ -355,6 +428,7 @@ const ABILITY_ICONS={
   'Avenging Wrath':'Spells/Crusade.png',
   // Мисливець
   'Disengage':'Abilities/Displacement.png',
+  'Intimidation':'Abilities/Wolf.png',
   'Cobra Shot':'Abilities/CobraStrikes.png',
   'Kill Command':'Abilities/KillCommand.png',
   'Bestial Wrath':'Abilities/BeastMastery.png',
@@ -367,6 +441,7 @@ const ABILITY_ICONS={
   'Coordinated Assault':'Abilities/EagleEye.png',
   // Розбійник
   'Shadowstep':'Abilities/Shadowstep.png',
+  'Kidney Shot':'Abilities/KidneyShot.png',
   'Mutilate':'Abilities/Rupture.png',
   'Envenom':'Abilities/PotentVenom.png',
   'Vendetta':'Spells/Vendetta.png',
@@ -392,6 +467,8 @@ const ABILITY_ICONS={
   'Shadow Word: Pain':'Spells/Shadesofdarkness.png',
   // Лицар смерті
   'Death Grip':'Spells/Strangulate.png',
+  'Chains of Ice':'Spells/ChainsOfIce.png',
+  "Death's Advance":'Spells/UnholyPresence.png',
   'Heart Strike':'Abilities/BloodBath.png',
   'Death Strike':'Spells/DeathStrike.png',
   'Vampiric Blood':'Spells/BloodLust.png',
@@ -422,6 +499,8 @@ const ABILITY_ICONS={
   'Frostbolt':'Spells/Frostbolt.png',
   'Glacial Spike':'Spells/IceShard.png',
   'Frost Nova':'Spells/FrostNova.png',
+  "Dragon's Breath":'Abilities/FireStarter.png',
+  'Ice Barrier':'Spells/FrostWard.png',
   // Чорнокнижник
   'Demonic Circle':'Spells/DemonicCircleTeleport.png',
   'Fear':'Spells/PsychicHorrors.png',
@@ -434,6 +513,7 @@ const ABILITY_ICONS={
   'Chaos Bolt':'Abilities/ChaosBolt.png',
   'Incinerate':'Spells/FlameBolt.png',
   'Conflagrate':'Spells/Fire.png',
+  'Shadowfury':'Spells/Shadowfury.png',
   // Друїд
   'Wild Charge':'Spells/feralchargecat.png',
   'Wrath':'Spells/WispSplodeGreen.png',
@@ -443,6 +523,8 @@ const ABILITY_ICONS={
   'Ferocious Bite':'Abilities/FerociousBite.png',
   "Tiger's Fury":'Abilities/TigersRoar.png',
   'Regrowth':'Spells/HealingTouch.png',
+  'Wild Growth':'Spells/Rejuvenation.png',
+  'Swiftmend':'Spells/NatureBlessing.png',
   'Thunderstorm':'Spells/ThunderStorm.png',
   'Heroic Leap':'Abilities/HeroicLeap.png',
   'Harpoon':'Abilities/Trip.png',
@@ -456,7 +538,7 @@ const ABILITY_ICONS={
 // іконки форм друїда: кнопка показує форму, у яку перетворишся
 // власні іконки вкладок спеку (інакше береться друга здібність — у друїдів це однаковий Regrowth)
 const SPEC_ICONS={'druid/Balance':'Abilities/Starfall.png','druid/Feral':'Abilities/Cat.png','druid/Restoration':'Abilities/TreeofLife.png'};
-const FORM_ICONS={cat:'Abilities/Cat.png',moonkin:'Abilities/EyeOfTheOwl.png',base:'Characters and Creatures/druid.png'};
+const FORM_ICONS={cat:'Abilities/Cat.png',moonkin:'Abilities/EyeOfTheOwl.png',tree:'Abilities/TreeofLife.png',base:'Characters and Creatures/druid.png'};
 // привʼязуємо шляхи до даних класів і здібностей (ic — явна іконка, якщо назва повторюється)
 for(const c of CLASSES){
   c.img=ICON_ROOT+CLASS_ICONS[c.id];
@@ -468,6 +550,7 @@ for(const c of CLASSES){
   for(const s of c.specs){ const k=SPEC_ICONS[c.id+'/'+s.name]; if(k) s.img=ICON_ROOT+k; }
   for(const s of c.specs) if(s.form){ s.form.img=ICON_ROOT+FORM_ICONS[s.form.id]; s.form.baseImg=ICON_ROOT+FORM_ICONS.base; }
 }
+for(const k in ULTS) ULTS[k].img=ICON_ROOT+ULTS[k].ic;
 /* Набір іконок (папка ICON_ROOT) не входить у репозиторій. Якщо його нема — прибираємо всі шляхи,
    і інтерфейс малює емодзі (em / icon), як полотно бою й так робить без картинок. */
 const ICONS={ok:null};
@@ -482,6 +565,7 @@ function dropIcons(){
     }
     c.classAb.img='';
   }
+  for(const k in ULTS) ULTS[k].img='';
   if(typeof UI!=='undefined'&&UI.cur==='select'&&typeof renderSelect==='function'){ buildSelectDom(); renderSelect(); }
 }
 if(typeof Image!=='undefined'){

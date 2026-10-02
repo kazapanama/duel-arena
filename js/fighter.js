@@ -9,6 +9,8 @@ const GUARD_MAX=100;
 const PROJ_SPEED=0.62;   // снаряди повільніші — через них можна перестрибнути
 const SPELL_RANGE=650;   // дальність проклять і притягування
 const CHAN_GRACE=0.15;   // стільки секунд каналу рух ще не обриває
+const ULT_MAX=100;      // супершкала: росте від завданої й отриманої шкоди, повна — ультимейт
+const CANCEL_WIN=0.32;  // після влучного легкого удару стільки секунд важкий іде без глобального КД
 // тривалість замаху: легкі удари 0.12 с, важкі 0.26 с, миттєві бафи/ривки — без замаху
 function startupOf(a,i){
   if(a.cast) return 0;
@@ -22,8 +24,8 @@ function startupOf(a,i){
   }
 }
 class Fighter{
-  constructor(cls,spec,idx,skin){
-    this.cls=cls; this.spec=spec; this.idx=idx;
+  constructor(cls,spec,idx,skin,race){
+    this.cls=cls; this.spec=spec; this.idx=idx; this.race=race||'';   // race — вибір гравця ('' — як у сету)
     this.skin=skin||spec.skins[0]; // скін спеку (див. SPEC_SKINS у data.js)
     this.preview=false;            // true — малюємо лише модель без табличок (вибір скіну)
     // слоти: [X спам, Y сильна, B утиліта, A класова мобільність]
@@ -37,7 +39,7 @@ class Fighter{
     this.accent=this.skin.accent||SPEC_ACCENT[cls.id+'/'+spec.name]||'#ffffff';
     // форми друїда: base — гуманоїд, alt — кіт чи сова (свої здібності, КД, модель, аніматор)
     this.formDef=spec.form||null;
-    const baseModel=resolveModel(cls,spec,this.skin);
+    const baseModel=resolveModel(cls,spec,this.skin,this.race);
     this.forms={base:{abilities:this.abilities,cds:this.cds,model:baseModel,h:110,
       mkAnim:()=>new AnimCtl(baseModel.style,baseModel.stance)}};
     if(this.formDef){
@@ -52,6 +54,7 @@ class Fighter{
     this.fxT=0;
     this.isAI=false;
     this.aiT=0; this.aiMove=0; this.aiBlockT=0;
+    this.meter=0;           // супершкала переходить з раунду в раунд
   }
   // дальник, якщо у наборі ≥2 снарядні/проклятні здібності
   static rangeFor(abs){
@@ -75,7 +78,7 @@ class Fighter{
     this.slowT=0; this.rootT=0; this.blocking=false; // перетворення скидає сповільнення й кайдани
     this.anim.stop();
     if(game){
-      const col=to==='base'?'#9dff9a':(this.formDef.id==='cat'?'#ffb03a':'#b8c8ff');
+      const col=to==='base'?'#9dff9a':({cat:'#ffb03a',tree:'#7dff8a'}[this.formDef.id]||'#b8c8ff');
       game.burst(this.x,this.y-this.h/2,col,22);
       game.burst(this.x,this.y-this.h/2,'#e8f5d0',10);
       game.float(this.x,this.y-this.h-24,to==='base'?'🧝 Гуманоїд':`${this.formDef.em} ${this.formDef.name}`,'#c9f5c0',14);
@@ -99,6 +102,8 @@ class Fighter{
     this.aiPending=null;
     this.tossed=false; this.tossT=0; this.knockT=0; this.wallHit=false; this.leap=null; this.inputDir=0;
     this.wingsT=0; this.wingsDur=0; this.dispersT=0; this.featherT=0;
+    this.combo=0; this.comboT=0; this.cancelT=0; this.lastBlocked=false;
+    this.growT=0; this.ascT=0;   // Avatar (боєць більшає) і Ascendance (сяйво блискавок)
     if(this.forms){ // новий раунд — знову гуманоїд, свіжі аніматори й КД
       for(const F of Object.values(this.forms)){ F.anim=F.mkAnim(); F.cds.fill(0); }
       this.formCd=0; this.shiftT=0;
@@ -113,12 +118,25 @@ class Fighter{
 
   addBuff(k,mult,dur){ this.buffs[k]={mult,t:dur}; }
 
+  addMeter(n,game){
+    if(n<=0||this.ko) return;
+    const was=this.meter;
+    this.meter=Math.min(ULT_MAX,this.meter+n);
+    if(was<ULT_MAX&&this.meter>=ULT_MAX&&game&&!this.preview){
+      game.float(this.x,this.y-this.h-40,'УЛЬТА ГОТОВА','#ffe27a',16); sfx('ok');
+    }
+  }
   takeDamage(raw,src,game,opts={}){
     if(this.ko) return 0;
     const tick=!!opts.dotTick;                       // тік DoT / зони — без реакції
     const heavy=!tick&&(opts.heavy||raw>=100);
     let dmg=raw*this.drMult();
     let blocked=false;
+    this.lastBlocked=false;
+    // комбо: удар, що влучив, поки ціль ще не оговталась від попереднього (стагер, оглушення, політ)
+    const foeF=src instanceof Fighter&&src!==this&&!tick?src:null;
+    const chain=!!foeF&&foeF.comboT>0&&(this.staggerT>0||this.stunT>0||this.tossed||this.knockT>0);
+    if(chain&&foeF.combo>=2) dmg*=Math.max(0.6,1-0.1*(foeF.combo-1));   // довгі комбо слабшають
     const front=src&&!opts.unblockable&&!tick&&Math.sign(src.x-this.x)===this.facing;
     const unparry=src instanceof Fighter&&src.wingsT>0;   // Avenging Wrath: удари не парируються
     if(front&&this.parryT>0){
@@ -126,7 +144,7 @@ class Fighter{
       else { this.parry(src,game); return 0; }
     }
     if(front&&this.blocking){
-      dmg*=heavy?0.55:0.25; blocked=true;              // важкий удар пробиває блок частково
+      dmg*=heavy?0.55:0.25; blocked=true; this.lastBlocked=true;   // важкий удар пробиває блок частково
       this.guard-=Math.min(70,raw*(heavy?0.6:0.3)); this.guardDelay=1.2;   // не більше 70 за удар: злам — щонайменше з двох
       this.kbV=-this.facing*(heavy?280:110);
       if(this.guard<=0) this.guardBreak(game);
@@ -142,6 +160,12 @@ class Fighter{
     if(dmg>0){
       this.hp=Math.max(0,this.hp-dmg);
       this.hitT=0.18;
+      this.addMeter(dmg*(blocked?0.04:0.06),game);
+      if(foeF){
+        foeF.addMeter(dmg*0.08,game);
+        if(blocked) foeF.combo=0;
+        else { foeF.combo=chain?foeF.combo+1:1; foeF.comboT=1.1; }
+      }
       if(tick){ game.float(this.x+rnd(-20,20),this.y-this.h*0.6,`${dmg}`,'#c9a0ff',13); }
       else{
         game.dmgFloat(this,dmg,blocked?'#8fa4c0':(heavy?'#ff5a3a':'#ffdca0'),heavy&&!blocked);
@@ -193,6 +217,8 @@ class Fighter{
   // вчасне натискання блоку перед ударом: шкода 0, нападник приголомшений
   parry(src,game){
     this.parryT=0; this.parryCd=0.25;
+    this.addMeter(12,game); this.lastBlocked=true;
+    if(src instanceof Fighter) src.combo=0;
     this.guard=Math.min(GUARD_MAX,this.guard+30);
     game.hitstop=Math.max(game.hitstop,0.15);
     game.float(this.x,this.y-this.h-34,'ПАРИРУВАННЯ!','#ffe27a',18);
@@ -228,13 +254,15 @@ class Fighter{
   }
 
   useAbility(i,game){
-    if(this.ko||this.stunT>0||this.staggerT>0||this.gcd>0||this.cds[i]>0||this.casting||this.windup||game.phase!=='fight') return false;
+    // скасування: важкий удар одразу після влучного легкого — без глобального КД і з коротким замахом
+    const cancel=i===1&&this.cancelT>0&&this.gcd>0;
+    if(this.ko||this.stunT>0||this.staggerT>0||(this.gcd>0&&!cancel)||this.cds[i]>0||this.casting||this.windup||game.phase!=='fight') return false;
     if(this.dispersT>0||this.fearT>0) return false; // у Dispersion жрець лише рухається; у страху — ніхто не б'є
     const a=this.abilities[i];
     if(this.rootT>0&&(a.type==='dash'||a.type==='leap')){
       game.float(this.x,this.y-this.h-30,this.rootKind==='ice'?'Заморожено':'Скуто','#9aa4b5',13); this.gcd=0.2; return false;
     }
-    if((a.type==='curse'||a.type==='pull'||a.type==='drain')&&Math.abs(game.other(this).x-this.x)>SPELL_RANGE){
+    if((a.type==='curse'||a.type==='pull'||a.type==='drain')&&Math.abs(game.other(this).x-this.x)>(a.range||SPELL_RANGE)){
       game.float(this.x,this.y-this.h-30,'Задалеко','#9aa4b5',13); this.gcd=0.2; return false;
     }
     this.gcd=a.gcd??GCD;
@@ -251,7 +279,8 @@ class Fighter{
       this.anim.stop(); this.model.castCol=a.pcolor||this.accent; sfx('cast');
       return true;
     }
-    const su=startupOf(a,i);
+    let su=startupOf(a,i);
+    if(cancel){ su=Math.min(su,0.12); this.cancelT=0; game.float(this.x,this.y-this.h-30,'СКАСУВАННЯ','#ffd23a',13); }
     this.playAbilityAnim(a,i);
     if(su>0){ this.windup={i,t:su,total:su}; this.attackT=su+0.08;
       if(this.wingsT>0&&game.tell) game.tell(this.x+this.facing*30,this.y-this.h*0.78,su); }
@@ -304,6 +333,7 @@ class Fighter{
         const dx=foe.x-this.x, dy=(foe.y-foe.h/2)-(this.y-this.h/2);
         if(Math.abs(dx)<(a.range||95)+foe.w/2 && Math.abs(dy)<90 && Math.sign(dx||dir)===dir){
           const dealt=foe.takeDamage(a.dmg*mult,this,game,{stun:a.stun,slow:a.slow,dot:a.dot,dotName:a.name,knockback:a.knockback,heavy:i===1});
+          if(i===0&&dealt>0&&!foe.lastBlocked) this.cancelT=CANCEL_WIN;
           if(a.selfHeal) this.healSelf(a.selfHeal,game,true);
           if(a.healFrac) this.healSelf(dealt*a.healFrac,game,true);
         }
@@ -339,7 +369,7 @@ class Fighter{
         game.ring(this.x,this.y-this.h/2,a.radius,this.color);
         const d=Math.hypot(foe.x-this.x,(foe.y-foe.h/2)-(this.y-this.h/2));
         if(d<a.radius+foe.w/2){
-          foe.takeDamage(a.dmg*dmgM,this,game,{stun:a.stun,slow:a.slow,root:a.root,dot:a.dot,dotName:a.name,heavy:true});
+          foe.takeDamage(a.dmg*dmgM,this,game,{stun:a.stun,slow:a.slow,root:a.root,dot:a.dot,dotName:a.name,heavy:true,fear:a.fear});
         }
         if(a.selfHeal) this.healSelf(a.selfHeal,game,true);
         break;
@@ -372,9 +402,10 @@ class Fighter{
         else if(a.mode==='away') nx=this.x-dir*(a.dist||260);
         else if(a.mode==='move') nx=this.x+(this.inputDir||-dir)*(a.dist||260); // Blink: куди біжиш, стоячи — назад
         else nx=this.x+dir*(a.dist||260);
-        game.burst(this.x,this.y-this.h/2,'#c9a8ff',10);
+        const tcol=a.mode==='behind'?'#6a5a8a':(a.name==='Demonic Circle'?'#7cff6b':'#c9a8ff');
+        if(a.mode==='behind') game.smoke(this.x,this.y-this.h/2); else game.portal(this.x,this.y,tcol);
         this.x=clamp(nx,80,WORLD_W-80);
-        game.burst(this.x,this.y-this.h/2,'#c9a8ff',10);
+        if(a.mode==='behind') game.smoke(this.x,this.y-this.h/2); else game.portal(this.x,this.y,tcol);
         if(a.mode==='behind') this.stealthBonus=true; // засідка: наступний удар ×2
         this.rootT=0; // телепорт звільняє з криги й лоз
         break;
@@ -388,13 +419,14 @@ class Fighter{
       case 'knock':{
         if(a.front){ // Typhoon: вихор уперед, відкидає ворога від себе
           const ox=this.x+dir*40, oy=this.y-this.h*0.55;
-          for(let k=0;k<26;k++){ const sp=rnd(420,820), yy=rnd(-55,45);
-            game.particles.push({x:ox+rnd(-10,20)*dir,y:oy+yy,vx:dir*sp,vy:-yy*0.8+rnd(-40,40),t:rnd(0.3,0.5),color:k%3===0?'#ffffff':(k%3===1?'#cfe9ff':'#c9a8ff'),size:rnd(3,6),g:0}); }
-          game.slash(this.x+dir*70,oy,dir,'#cfe9ff','heavy'); game.slash(this.x+dir*130,oy+10,dir,'#c9a8ff','atkA');
+          const fire=a.pcolor==='#ff9440', c1=fire?'#ffd23a':'#cfe9ff', c2=fire?'#ff5a1a':'#c9a8ff';
+          for(let k=0;k<26;k++){ const sp=rnd(420,820)*(fire?0.45:1), yy=rnd(-55,45);
+            game.particles.push({x:ox+rnd(-10,20)*dir,y:oy+yy*(fire?0.6:1),vx:dir*sp,vy:-yy*0.8+rnd(-40,40),t:rnd(0.3,0.5),color:k%3===0?'#ffffff':(k%3===1?c1:c2),size:rnd(3,6),g:fire?-60:0}); }
+          game.slash(this.x+dir*70,oy,dir,c1,'heavy'); game.slash(this.x+dir*130,oy+10,dir,c2,'atkA');
           game.shake=Math.max(game.shake,5);
           const dx=(foe.x-this.x)*dir;
           if(dx>-20&&dx<a.range+foe.w/2&&Math.abs(foe.y-this.y)<150)
-            foe.takeDamage(a.dmg*dmgM,this,game,{unblockable:true,slow:a.slow,knockback:a.push}); // поштовх без падіння
+            foe.takeDamage(a.dmg*dmgM,this,game,{unblockable:true,slow:a.slow,knockback:a.push,stun:a.stun}); // поштовх без падіння
           break;
         }
         // громовий вибух: блискавки довкола і хвиля
@@ -422,18 +454,158 @@ class Fighter{
         game.burst(this.x,this.y-this.h/2,'#8a90b0',12);
         break;
       case 'curse':{
-        if(Math.abs(foe.x-this.x)>SPELL_RANGE){ game.float(this.x,this.y-this.h-30,'Задалеко','#9aa4b5',13); break; } // утік, поки кастували
-        game.beam(this.x,this.y-this.h*0.6,foe.x,foe.y-foe.h*0.6,'#a878ff');
-        foe.takeDamage((a.dmg||0)*dmgM,this,game,{dot:a.dot,dotName:a.name,slow:a.slow,root:a.root,fear:a.fear,unblockable:!!a.fear,silent:!a.dmg});
+        if(Math.abs(foe.x-this.x)>(a.range||SPELL_RANGE)){ game.float(this.x,this.y-this.h-30,'Задалеко','#9aa4b5',13); break; } // утік, поки кастували
+        game.beam(this.x,this.y-this.h*0.6,foe.x,foe.y-foe.h*0.6,a.stun?'#ffe27a':(a.slow&&!a.dot?'#aee8ff':'#a878ff'));
+        foe.takeDamage((a.dmg||0)*dmgM,this,game,{dot:a.dot,dotName:a.name,slow:a.slow,root:a.root,fear:a.fear,stun:a.stun,unblockable:!!a.fear,silent:!a.dmg});
         if(!a.dmg && a.dot) game.float(foe.x,foe.y-foe.h-10,a.icon,'#c9a8ff',20);
         break;
       }
       case 'pet':
-        this.pet={t:a.dur,emoji:a.pemoji||'🐺',dmg:a.pdmg||24,cd:a.pcd||1.1,atkT:0.5,color:a.pcolor||this.color,x:this.x,y:this.y-140};
-        game.burst(this.x-40,this.y-120,a.pcolor||this.color,12);
+        this.summonPet(a.pkind||'wolf',this.x-dir*50,a.dur,a.pdmg||24,a.pcd||1.1,game);
         break;
     }
     return true;
+  }
+
+  // пет — окрема піксельна модель на землі (pets.js): біжить до ворога й кусає/б'є; удар зі спини не заблокуєш
+  summonPet(kind,x,dur,dmg,cd,game){
+    this.pet={kind,x:clamp(x,60,WORLD_W-60),y:GROUND,vx:0,facing:this.facing,t:dur,T:dur,dmg,cd,atkT:0.6,anim:petAnim(kind),hitT:0};
+    game.portal(this.pet.x,GROUND,PET_DEFS[kind].col);
+  }
+  updatePet(dt,game){
+    const p=this.pet, foe=game.other(this), D=PET_DEFS[p.kind];
+    p.t-=dt; p.atkT-=dt; p.hitT=Math.max(0,p.hitT-dt);
+    if(p.t<=0){ game.burst(p.x,GROUND-40,D.col,14); this.pet=null; return; }
+    // тримається свого боку від ворога, на відстані удару
+    const side=Math.sign(p.x-foe.x)||-this.facing;
+    const tx=foe.alive&&game.phase==='fight'?foe.x+side*D.reach*0.95:this.x-this.facing*55;
+    const d=tx-p.x, mv=Math.abs(d)>6?Math.sign(d)*Math.min(D.spd,Math.abs(d)*8):0;
+    p.vx=mv; p.x=clamp(p.x+mv*dt,60,WORLD_W-60);
+    p.facing=Math.sign((foe.alive?foe.x:this.x)-p.x)||p.facing;
+    if(p.atkT<=0&&foe.alive&&game.phase==='fight'&&Math.abs(foe.x-p.x)<D.reach+20){
+      p.atkT=p.cd; p.anim.play(Math.random()<0.5?'atkA':'atkB');
+      game.after(D.hitAt,()=>{
+        if(this.pet!==p||!foe.alive||Math.abs(foe.x-p.x)>D.reach+30) return;
+        const dir=Math.sign(foe.x-p.x)||1;
+        game.slash(p.x+dir*34,GROUND-D.h*0.5,dir,D.col,D.claw?'claw':'atkA');
+        foe.takeDamage(p.dmg*this.dmgMult(),{x:p.x},game,{});
+      });
+    }
+    p.anim.update(dt,{mode:Math.abs(p.vx)>20?'run':'idle',speed:Math.abs(p.vx),vy:0});
+  }
+
+  /* ---------- ультимейт (супершкала): кінопауза, банер і клас-специфічна дія ---------- */
+  useUlt(game){
+    if(this.meter<ULT_MAX||this.ko||this.stunT>0||this.staggerT>0||this.casting||this.windup||this.fearT>0||this.tossed||this.leap||this.dispersT>0) return false;
+    if(game.phase!=='fight') return false;
+    const U=ULTS[this.cls.id];
+    this.meter=0; this.gcd=Math.max(this.gcd,0.4); this.blocking=false; this.stealthT=0;
+    game.ultFx={t:1.15,T:1.15,side:this.idx,name:U.ua,color:this.cls.color,em:U.icon};
+    game.hitstop=Math.max(game.hitstop,0.55); game.cam.punch=Math.max(game.cam.punch,0.1);
+    sfx('ult');
+    if(this.form!=='base'&&this.cls.id==='druid'&&this.formDef.id==='cat') this.setForm('base'); // Convoke — у гуманоїді
+    this.runUlt(U,game);
+    return true;
+  }
+  runUlt(U,game){
+    const foe=game.other(this), dir=this.facing, dm=()=>this.dmgMult();
+    const hit=(x,r,dmg,o={})=>{ if(foe.alive&&Math.abs(foe.x-x)<r+foe.w/2&&foe.y>GROUND-200) foe.takeDamage(dmg*dm(),this,game,{heavy:true,...o}); };
+    const leapTo=(tx,L,vy=-760)=>{
+      const air=2*-vy/1500;
+      this.vy=vy; this.y=Math.min(this.y,GROUND-2);
+      this.leap={vx:(clamp(tx,80,WORLD_W-80)-this.x)/air,a:L};
+    };
+    switch(this.cls.id){
+      case 'warrior': // Avatar: росте, бафи, стрибок з ударом
+        this.addBuff('dmg',1.3,8); this.addBuff('spd',1.2,8); this.growT=8;
+        this.anim.play('roar');
+        leapTo(foe.x-Math.sign(foe.x-this.x||dir)*70,{radius:150,dmg:150,stun:0.7,ring:'#ff5a3a',big:1});
+        break;
+      case 'paladin':{ // Final Reckoning: позначка, молот світла з неба
+        const x=foe.x; game.mark(x,120,0.95,'#ffe27a');
+        this.anim.play('point');
+        game.fall('hammer',x,-260,x,0.95,'#ffe27a',()=>{
+          game.ring(x,GROUND-30,150,'#ffe27a'); game.ring(x,GROUND-30,90,'#ffffff'); game.burst(x,GROUND-30,'#ffe27a',30);
+          game.shake=Math.max(game.shake,14); game.cam.punch=Math.max(game.cam.punch,0.06); sfx('big');
+          hit(x,120,230,{stun:1.0,unblockable:true});
+        });
+        break;
+      }
+      case 'hunter':{ // Volley: дощ стріл
+        const x=foe.x; this.anim.play('shoot');
+        game.zones.push({x,r:150,dps:55*dm(),t:4,owner:this,color:'#d8e8ff',slow:{mult:0.6,dur:1},acc:0,kind:'arrows'});
+        break;
+      }
+      case 'rogue': // Death from Above: угору за кадр — і вниз на ворога
+        this.anim.play('flip'); this.vy=-1250; this.y=Math.min(this.y,GROUND-2); this.leap={vx:0,a:null};
+        game.smoke(this.x,this.y-this.h/2);
+        game.after(0.55,()=>{
+          if(this.ko) return;
+          const x=clamp(foe.x,80,WORLD_W-80); game.mark(x,110,0.45,'#ffe27a');
+          this.x=x; this.y=GROUND-560; this.vy=1100; this.facing=Math.sign(foe.x-x)||this.facing;
+          this.leap={vx:0,a:{radius:110,dmg:210,stun:0.8,unblock:true,ring:'#ffe27a',big:1}};
+          this.anim.play('slam');
+        });
+        break;
+      case 'priest':{ // Halo: кільце на 420 — шкода ворогу й лікування собі
+        const col=this.spec.name==='Shadow'?'#a878ff':'#ffe27a';
+        this.anim.play('nova');
+        for(const k of [0,0.12,0.24]) game.after(k,()=>{ game.ring(this.x,this.y-this.h/2,420*(0.5+k*2),col); });
+        game.after(0.25,()=>{ if(this.ko) return; hit(this.x,420,170); this.healSelf(170,game); game.burst(this.x,this.y-this.h/2,col,30); });
+        break;
+      }
+      case 'dk': // Army of the Dead: гулі виривають із землі під ворогом
+        this.anim.play('summon');
+        for(let n=0;n<4;n++) game.after(0.25+n*0.42,()=>{
+          if(this.ko||!foe.alive) return;
+          const x=foe.x; game.mark(x,70,0.32,'#7cff6b');
+          game.after(0.32,()=>{ game.erupt(x); game.burst(x,GROUND-10,'#7cff6b',14); game.shake=Math.max(game.shake,5);
+            hit(x,70,55,{slow:{mult:0.6,dur:1.2}}); });
+        });
+        break;
+      case 'shaman': // Ascendance: блискавка з неба й 8 с сили
+        this.addBuff('dmg',1.4,8); this.addBuff('dr',0.7,8); this.ascT=8;
+        this.anim.play('roar');
+        game.after(0.1,()=>{ if(!foe.alive) return;
+          game.beam(foe.x+rnd(-30,30),-300,foe.x,foe.y-foe.h*0.5,'#ffffff'); game.beam(foe.x,-300,foe.x,foe.y-foe.h*0.5,'#8fd0ff');
+          game.ring(foe.x,foe.y-foe.h*0.5,90,'#bfe6ff'); game.shake=Math.max(game.shake,10); sfx('big');
+          foe.takeDamage(110*dm(),this,game,{heavy:true,unblockable:true,stun:0.3}); });
+        break;
+      case 'mage':{ // Meteor: позначка, метеор, вогняна зона
+        const x=foe.x; game.mark(x,140,1.0,'#ff7733');
+        this.anim.play('release');
+        game.fall('meteor',x-dir*420,-320,x,1.0,'#ff7733',()=>{
+          game.ring(x,GROUND-20,170,'#ff9440'); game.ring(x,GROUND-20,100,'#ffe27a'); game.burst(x,GROUND-20,'#ff7733',34); game.dust(x,GROUND);
+          game.shake=Math.max(game.shake,15); game.cam.punch=Math.max(game.cam.punch,0.06); sfx('big');
+          hit(x,140,240,{unblockable:true});
+          game.zones.push({x,r:120,dps:30*dm(),t:3,owner:this,color:'#ff7733',acc:0});
+        });
+        break;
+      }
+      case 'warlock':{ // Infernal: падає з неба, оглушує, лишається битися
+        const x=foe.x; game.mark(x,130,0.9,'#7cff6b');
+        this.anim.play('summon');
+        game.fall('infernal',x+dir*160,-300,x,0.9,'#7cff6b',()=>{
+          game.ring(x,GROUND-20,160,'#7cff6b'); game.burst(x,GROUND-20,'#9dff70',30); game.dust(x,GROUND);
+          game.shake=Math.max(game.shake,14); sfx('big');
+          hit(x,130,170,{stun:1.2,unblockable:true});
+          if(!this.ko){ this.summonPet('infernal',x,8,30,1.2,game); this.pet.atkT=1.3; }
+        });
+        break;
+      }
+      case 'druid': // Convoke the Spirits: шквал випадкових чарів
+        this.anim.play('release');
+        for(let n=0;n<12;n++) game.after(n*0.2,()=>{
+          if(this.ko) return;
+          const r=Math.random(), px=this.x+this.facing*34, py=this.y-this.h*0.62;
+          if(r<0.45) game.spawnProj(this,CONVOKE.wrath,px,py+rnd(-10,10),this.facing,dm());
+          else if(r<0.6) game.spawnProj(this,CONVOKE.starsurge,px,py,this.facing,dm());
+          else if(r<0.85){ this.healSelf(45,game,true); game.burst(this.x,this.y-this.h/2,'#7dff8a',8); }
+          else if(foe.alive){ game.beam(this.x,py,foe.x,foe.y-foe.h*0.6,'#b8c8ff'); foe.takeDamage(15*dm(),this,game,{dot:{dps:9,dur:6},dotName:'Moonfire',silent:true}); }
+          this.playAbilityAnim(CONVOKE.wrath,0);
+        });
+        break;
+    }
   }
 
   update(dt,game){
@@ -454,6 +626,8 @@ class Fighter{
     this.wingsT=Math.max(0,this.wingsT-dt);
     this.dispersT=Math.max(0,this.dispersT-dt); this.featherT=Math.max(0,this.featherT-dt);
     this.parryT=Math.max(0,this.parryT-dt); this.parryCd=Math.max(0,this.parryCd-dt);
+    this.cancelT=Math.max(0,this.cancelT-dt); this.growT=Math.max(0,this.growT-dt); this.ascT=Math.max(0,this.ascT-dt);
+    if(this.comboT>0){ this.comboT-=dt; if(this.comboT<=0) this.combo=0; }
     if(!this.blocking){ this.guardDelay-=dt; if(this.guardDelay<=0) this.guard=Math.min(GUARD_MAX,this.guard+35*dt); }
     for(const k in this.buffs) this.buffs[k].t=Math.max(0,this.buffs[k].t-dt);
     if(this.shieldT>0){ this.shieldT-=dt; if(this.shieldT<=0) this.shield=0; }
@@ -510,20 +684,7 @@ class Fighter{
     this.hots=this.hots.filter(h=>h.t>0);
 
     // пет
-    if(this.pet){
-      const p=this.pet, foe=game.other(this);
-      p.t-=dt;
-      p.x+= (this.x-this.facing*46-p.x)*Math.min(1,dt*5);
-      p.y+= (this.y-146+Math.sin(game.time*3+this.idx)*8-p.y)*Math.min(1,dt*5);
-      p.atkT-=dt;
-      if(p.atkT<=0 && foe.alive){
-        p.atkT=p.cd;
-        const dir=Math.sign(foe.x-p.x)||1;
-        game.projectiles.push({x:p.x,y:foe.y-foe.h*0.55,vx:dir*820*PROJ_SPEED,dmg:p.dmg*this.dmgMult(),color:p.color,size:7,owner:this,riders:{},kind:'orb'});
-        game.beam(p.x,p.y,p.x+dir*30,foe.y-foe.h*0.55,p.color);
-      }
-      if(p.t<=0) this.pet=null;
-    }
+    if(this.pet) this.updatePet(dt,game);
 
     if(this.ko){ this.vy+=1500*dt; this.y=Math.min(GROUND,this.y+this.vy*dt); this.updateAnim(dt,game); return; }
 
@@ -553,6 +714,7 @@ class Fighter{
           if(kk.some(c=>pressed.has(c))) this.useAbility(i,game);
         }
         if(K.form&&K.form.some(c=>pressed.has(c))) this.shapeshift(game);
+        if(K.ult.some(c=>pressed.has(c))) this.useUlt(game);
         const pad=padInputs[this.idx];
         if(pad){
           if(pad.mv) mv=pad.mv;
@@ -560,6 +722,7 @@ class Fighter{
           wantBlock=wantBlock||pad.block;
           for(let i=0;i<4;i++) if(pad.ab[i]) this.useAbility(i,game);
           if(pad.form) this.shapeshift(game);
+          if(pad.ult) this.useUlt(game);
         }
         if(this.idx===(NET.on?NET.side:0)){ // сенсорне керування — за першим гравцем (у мережі — за своїм)
           const st={mv,jump:wantJump,block:wantBlock};
@@ -612,9 +775,12 @@ class Fighter{
     if(this.tossed&&this.onGround&&this.tossT>0.12){ this.tossed=false; this.knockT=0.75; this.anim.play('land'); game.dust(this.x,GROUND); }
     if(this.leap&&this.onGround&&this.vy>=0){
       const L=this.leap.a; this.leap=null;
-      game.dust(this.x,GROUND); game.ring(this.x,GROUND-20,L.radius,'#ffb03a'); game.shake=Math.max(game.shake,9);
-      if(Math.abs(foe.x-this.x)<L.radius+foe.w/2&&Math.abs(foe.y-this.y)<120)
-        foe.takeDamage(L.dmg*this.dmgMult(),this,game,{slow:L.slow,heavy:true});
+      if(L){ // a=null — службовий «стрибок» (злет Death from Above), без удару
+        game.dust(this.x,GROUND); game.ring(this.x,GROUND-20,L.radius,L.ring||'#ffb03a'); game.shake=Math.max(game.shake,L.big?14:9);
+        if(L.big){ game.ring(this.x,GROUND-20,L.radius*0.6,'#ffffff'); game.cam.punch=Math.max(game.cam.punch,0.06); sfx('big'); }
+        if(Math.abs(foe.x-this.x)<L.radius+foe.w/2&&Math.abs(foe.y-this.y)<120)
+          foe.takeDamage(L.dmg*this.dmgMult(),this,game,{slow:L.slow,stun:L.stun,unblockable:L.unblock,heavy:true});
+      }
     }
     if(mv!==0 && this.onGround) this.runPhase+=dt*10; else this.runPhase=0;
     this.animT+=dt;
@@ -649,6 +815,9 @@ class Fighter{
     this.wasAir=air;
     if(this.casting){ const ca=this.abilities[this.casting.i]; this.model.castCol=ca.pcolor||this.accent; }
     this.anim.update(dt,this.animInput());
+    // Ascendance: блискавки довкола
+    if(this.ascT>0&&game.particles&&!this.preview&&Math.random()<dt*20)
+      game.particles.push({x:this.x+rnd(-26,26),y:this.y-rnd(10,130),vx:rnd(-30,30),vy:rnd(-60,-20),t:rnd(0.2,0.45),color:Math.random()<0.5?'#bfe6ff':'#ffffff',size:rnd(2,4),g:0});
     // золоті іскри з крил
     if(this.wingsT>0&&game.particles&&!this.preview&&Math.random()<dt*14)
       game.particles.push({x:this.x-this.facing*rnd(20,70),y:this.y-rnd(80,150),vx:rnd(-20,20),vy:rnd(-40,-10),t:rnd(0.5,1),color:Math.random()<0.5?'#ffe9a3':'#ffffff',size:rnd(2,4),g:-20});
@@ -735,6 +904,9 @@ class Fighter{
       if(mv===-dir&&(this.x<150||this.x>WORLD_W-150)) mv=Math.random()<0.5?0:dir; // не тиснутися в стіну
     }
     if(this.aiBlockT>0&&melee) mv=dir;
+    // позначка ультимейта під ногами — тікати з кола
+    const mk=game.marks&&game.marks.find(m=>Math.abs(m.x-this.x)<m.r+this.w/2+10);
+    if(mk&&Math.random()<[0.35,0.7,0.95][sk]){ mv=Math.sign(this.x-mk.x)||-dir; if(this.x<200) mv=1; else if(this.x>WORLD_W-200) mv=-1; this.aiBlockT=0; }
     if(this.dispersT>0) mv=dist<220&&(this.x<300||this.x>WORLD_W-300)?dir:-dir; // біля стіни — крізь ворога на простір
     this.aiMove=mv;
 
@@ -746,6 +918,13 @@ class Fighter{
       } else if(!(hpF<0.5 && healReady) && Math.random()<[0.3,0.6,0.9][sk]){ this.shapeshift(game); return; }
     }
 
+    // ультимейт: майже всі б'ють куди завгодно; жрецю й друїду треба бути ближче
+    if(this.meter>=ULT_MAX&&Math.random()<[0.2,0.4,0.7][sk]){
+      const near=this.cls.id==='priest'?dist<380:(this.cls.id==='druid'?dist<600:true);
+      if(near&&this.useUlt(game)) return;
+    }
+    // скасування: після влучного легкого — одразу важкий
+    if(this.cancelT>0&&this.cds[1]<=0&&Math.random()<[0.15,0.45,0.8][sk]&&this.useAbility(1,game)) return;
     // темп: бот не тисне все підряд; у вікно покарання — атакує завжди
     if(!foeOpen && Math.random()>[0.4,0.6,0.8][sk]) return;
     if(this.aiBlockT>0.2) return;
@@ -766,17 +945,20 @@ class Fighter{
           break;
         case 'stealth': s=dist>220?45:0; break;
         case 'melee':
+          if(a.stun&&i===3){ s=dist<reach&&foe.stunT<=0?(foeBlocking?40:75):0; break; } // Kidney Shot
           if(dist<reach){
             s=i===1?(foeOpen||foe.guard<45?95:(foeBlocking?60:55)):(foeBlocking?30:70);
           }
           break;
-        case 'aoe': s=dist<(a.radius||150)*0.85?(foeOpen?90:70):0; break;
+        case 'aoe': s=dist<(a.radius||150)*0.85?(foeOpen?90:70):0; if(a.fear&&foe.fearT>0) s=0; break;
         case 'proj': case 'multi':
           if(a.cast) s=foeOpen?90:(dist>260?55:15);
           else if(a.chan) s=dist<170&&!foeOpen?8:(foeOpen||foe.rootT>0?85:60); // канал упритул — зіб'ють
           else s=dist>130?(foeBlocking?30:65):20;
           break;
-        case 'curse': s=dist>SPELL_RANGE?0:(foe.dots.some(d=>d.name===a.name&&d.t>1.5)?0:(a.dmg?55:50));
+        case 'curse': s=dist>(a.range||SPELL_RANGE)?0:(foe.dots.some(d=>d.name===a.name&&d.t>1.5)?0:(a.dmg?55:50));
+          if(a.stun) s=foe.stunT>0?0:(dist<(a.range||SPELL_RANGE)?72:0);
+          if(a.slow&&!a.dot) s=foe.slowT>0?0:(melee&&dist>180?70:(!melee&&dist<260?70:20));
           if(a.cast&&dist<150&&!foeOpen) s=10; // каст упритул зіб'ють
           if(a.root&&foe.rootT>0) s=0;
           if(a.fear) s=foe.fearT>0||dist>SPELL_RANGE?0:(dist<320?(dist<150&&!foeOpen?40:80):30);
@@ -818,7 +1000,7 @@ class Fighter{
     this.model.wings=this.wingsT>0?Math.min(1,(this.wingsDur-this.wingsT)/0.35)*Math.min(1,this.wingsT/0.4):(this.model.permWings||0);
     sp.fade=this.stealthT>0?Math.min(this.anim.pose.fade,0.4):(this.dispersT>0?Math.min(this.anim.pose.fade,0.5):this.anim.pose.fade);
     // контур-підсвітка бафів
-    sp.outline=this.dispersT>0?[168,120,255]:this.wingsT>0?[255,226,120]:this.buffs.dmg.t>0?[255,110,40]:(this.buffs.dr.t>0||this.shield>0?[90,170,255]:(this.buffs.spd.t>0?[120,230,255]:null));
+    sp.outline=this.dispersT>0?[168,120,255]:this.ascT>0?[150,215,255]:this.wingsT>0?[255,226,120]:this.buffs.dmg.t>0?[255,110,40]:(this.buffs.dr.t>0||this.shield>0?[90,170,255]:(this.buffs.spd.t>0?[120,230,255]:null));
     sp.alpha=1;
     return sp;
   }
@@ -835,7 +1017,11 @@ class Fighter{
     ctx.beginPath(); ctx.ellipse(x,GROUND+6,40,10,0,0,7); ctx.fill();
     ctx.restore();
 
+    // Avatar: боєць більшає (розростається за 0.3 с і зменшується в кінці)
+    const gk=this.growT>0?1+0.16*Math.min(1,(8-this.growT)/0.3,this.growT/0.4):1;
+    if(gk!==1){ ctx.save(); ctx.translate(x,y); ctx.scale(gk,gk); ctx.translate(-x,-y); }
     drawSprite(this.spriteState(g.time));
+    if(gk!==1) ctx.restore();
 
     ctx.save();
     ctx.translate(x,y);
@@ -874,16 +1060,7 @@ class Fighter{
     }
     ctx.restore();
 
-    // пет
-    if(this.pet){
-      ctx.save();
-      ctx.font='30px serif'; ctx.textAlign='center';
-      ctx.globalAlpha=this.pet.t<1?this.pet.t:1;
-      ctx.translate(this.pet.x,this.pet.y);
-      if(this.facing<0) ctx.scale(-1,1);
-      ctx.fillText(this.pet.emoji,0,0);
-      ctx.restore();
-    }
+    if(this.pet) drawPet(this.pet,g.time);
   }
 
   drawRoot(g){

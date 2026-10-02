@@ -95,6 +95,7 @@ function paintModel(c,m,p,time,lights){
   if(p.rot){ c.translate(0,RIG.PELVIS); c.rotate(p.rot); c.translate(0,-RIG.PELVIS); }
   if(p.flip!==1){ const f=p.flip; c.scale((f<0?-1:1)*Math.max(0.4,Math.abs(f)),1); }
   if(m.kind==='moonkin'){ c.scale(1.12,1.12); paintMoonkin(P); c.restore(); return; }
+  if(m.kind==='tree'){ c.scale(1.14,1.14); paintTree(P); c.restore(); return; }
   if(m.aura) drawAuraBack(P);
   if(m.wings>0) drawWing(P,true);
   if(m.cape) drawCape(P);
@@ -634,11 +635,14 @@ function drawHead(P){
   if(m.headScale) c.scale(m.headScale,m.headScale);
   const helm=m.helm||{t:'none'};
   const race=m.race;
-  const hidesHair=['helm','skull','hood','beast','hat','bandana'].includes(helm.t)||helm.t==='cowl'||race==='draenei';
+  const bald=race==='ghoul'||race==='infernal';
+  const hidesHair=['helm','skull','hood','beast','hat','bandana'].includes(helm.t)||helm.t==='cowl'||race==='draenei'||bald;
   // волосся ззаду (довге — під капюшоном не видно)
   if(!hidesHair && m.longHair) pPoly(c,[-10,-6, -3,-10, -2,6, -8,16, -13,12],pal.hairD);
   // вуха (під шоломом ховаються, крім ельфів)
   if(race==='nelf'||race==='belf') pPoly(c,[-3,-1, -15,-15, -12,-2, -2,3],pal.skinD);
+  if(race==='troll') pPoly(c,[-3,-2, -21,-9, -16,-1, -2,3],pal.skinD);                 // довгі вуха вбік
+  if(race==='ghoul'||race==='demon') pPoly(c,[-3,-1, -14,-11, -10,-1, -2,3],pal.skinD); // гострі обдерті вуха
   if(race==='draenei'){ // гострі вуха назад і кістяний гребінь на потилиці
     pPath(c,[-2,-3, -15,-9, -12,-5, -3,3]); pOut(c,1.6); pPoly(c,[-2,-3, -15,-9, -12,-5, -3,3],pal.skinD); pLine(c,-4,-2,-12,-7,PU,pal.skinDD);
     pPoly(c,[-10,-6, -13,-11, -7,-10],pal.tendrilD); pPoly(c,[-5,-10, -7,-14, -1,-12],pal.tendrilD);
@@ -648,11 +652,22 @@ function drawHead(P){
   pEll(c,0,0,9,10.5,pal.skinD);
   pEll(c,1,-0.6,8.2,9.6,pal.skin);
   if(race==='tauren'){ pEll(c,8,3,7,5.5,pal.skinD); pEll(c,9,2.4,5.5,4.4,pal.skin); pDot(c,13,2,pal.shadow); }
+  else if(race==='infernal'){ // кам'яна брила замість обличчя: надбрівний виступ і тріщини фелу
+    pPoly(c,[1,-6, 10,-6.5, 9,-2.5, 1,-3],pal.skinD);
+    for(const [x1,y1,x2,y2] of [[-6,-7,-1,1],[-1,1,4,7],[-7,3,-2,6]]) pLine(c,x1,y1,x2,y2,PU*1.2,pal.acc);
+    addLight(P,-1,1,7,pal.acc,0.5);
+  }
   else {
     pPoly(c,[2,4, 9,2.5, 8.5,7.5, 2,10],pal.skin);
     pPoly(c,[8.5,-2, 11.5,2.2, 8.5,3.2],pal.skinD); // ніс
   }
   if(race==='orc'){ pPoly(c,[6,5.5, 8,1.2, 9.2,5.8],pal.white); pPoly(c,[-1,-3, -9,-8, -6,-1],pal.skinD); }
+  if(race==='demon') pPoly(c,[6,5.5, 8.5,0.2, 9.6,5.8],pal.bone);                     // ікла
+  if(race==='troll'){ pPoly(c,[5,6, 9,-3, 10,6],pal.bone); pPoly(c,[8,6.5, 13,-1, 12.5,7],pal.white); } // великі бивні вгору
+  if(race==='ghoul'||race==='undead'){ // оголена щелепа: темна щока й зуби
+    pPoly(c,[3,4, 10,3.5, 9.5,8.5, 3,9],pal.skinDD); for(let i=0;i<4;i++) pDot(c,4.5+i*1.6,5.4,pal.bone,1);
+    if(race==='ghoul') pLine(c,-5,-4,1,-7,PU,pal.skinDD);                                      // шов на черепі
+  }
   if(race==='draenei'){
     pLine(c,2,-5.4,9.5,-4.8,PU*1.6,pal.skinD);                        // масивна надбрівна дуга
     pLine(c,-5,-9,3,-11,PU,pal.skinL);                                  // відблиск на черепі
@@ -665,7 +680,7 @@ function drawHead(P){
     c.fillStyle=pal.shadow; c.fillRect(3.6+ew-Math.max(1.6,PU*1.3),-2-eh/2,Math.max(1.6,PU*1.3),eh);
     pLine(c,3.2,-2-eh/2-1.4,4+ew,-2-eh/2-1.2,Math.max(PU*1.1,1.2),pal.hairD); }
   else { pDot(c,5.5,-2,pal.shadow,1.25); pLine(c,3.5,-4.6,8,-4.2,PU*0.9,pal.hairD); }
-  if(HD()&&race!=='tauren'){
+  if(HD()&&race!=='tauren'&&race!=='infernal'&&race!=='ghoul'){
     pLine(c,6.2,6.2,9.2,5.8,PU,pal.skinDD);                                     // рот
     pLine(c,1,8.5,7,9,PU,pal.skinD);                                            // тінь підборіддя
     if(race!=='nelf'&&race!=='belf'){ pEll(c,-2.5,0.5,2,3,pal.skinD); pLine(c,-2.6,-1,-2.2,2,PU*0.8,pal.skinDD); } // вухо
@@ -675,6 +690,7 @@ function drawHead(P){
   // зачіска
   if(!hidesHair){
     if(race==='tauren'){ drawHornPair(c,pal.bone,pal.boneD); }
+    else if(race==='demon'){ if(m.mohawk) pPoly(c,[-8,-6, -6,-12, 2,-14, 6,-11, 0,-9, -5,-4],pal.hair); drawHornPair(c,'#5a4a3a','#2e241c'); }
     else if(m.mohawk){ pPoly(c,[-8,-6, -6,-12, 2,-14, 6,-11, 0,-9, -5,-4],pal.hair); pPoly(c,[-4,-10, 0,-19, 3,-12],pal.hair); }
     else{
       pPoly(c,[-9.5,3, -10.5,-5, -6,-11, 2,-12.5, 9,-8.5, 8,-5.5, 1,-7.5, -3,-3, -6,4],pal.hair);
@@ -799,12 +815,19 @@ function drawHelm(P,h){
       pPath(c,[8,-6, 6,-13, -4,-16, -12,-10, -16,0, -15,14, -8,16, -6,4, 0,-4]); c.fillStyle=pal[h.fur||'sec']; c.fill();
       pPoly(c,[-14,2, -16,14, -9,16, -7,6],pal[(h.fur||'sec')+'D']||pal.secD);
       const sk=pal[h.skull||'bone'], skD=pal[(h.skull||'bone')+'D']||pal.boneD;
-      pPoly(c,[-6,-15, 4,-17, 12,-13, 19,-9, 19,-5, 10,-6, 2,-6, -6,-8],skD);
-      pPoly(c,[-5,-14, 4,-16, 11,-12.5, 18,-9, 18,-6.5, 10,-7.5, 2,-7.5, -5,-9],sk);
-      pDot(c,7,-11.5,m.glowEye?pal.eye:pal.shadow,1.3); if(m.glowEye) addLight(P,7,-11.5,5,pal.eye,0.8);
-      for(let x=11;x<=17;x+=3) pPoly(c,[x,-6.5, x+1,-3.8, x+2,-6.5],pal.white);
-      if(h.horns) { pHorn(c,-3,-14,-10,-26,-2,-32,4.5,pal.bone); }
-      else pPoly(c,[-3,-14, -1,-22, 3,-15],sk);
+      // масивна голова звіра: широкий череп, важка морда з носом, ікла — щоб на малому масштабі читався вовк/ведмідь, а не пташка
+      const head=[-9,-7, -10,-15, -4,-20, 6,-21, 13,-17, 24,-14, 26,-9, 24,-5, 13,-4, 4,-5, -4,-5];
+      if(!h.horns){ for(const e of [[-9,-15, -10,-25, -3,-19],[-3,-19, 1,-27, 5,-20]]){ pPath(c,e); pOut(c,1.8); pPoly(c,e,skD); } }
+      pPath(c,head); pOut(c,2); pPoly(c,head,skD);
+      pPoly(c,[-8,-8, -9,-15, -4,-19, 6,-20, 12,-16.5, 23,-13, 24.5,-9.5, 13,-8.5, 4,-8.5, -4,-8],sk);
+      pLine(c,-4,-18,10,-18.5,PU,pal.white);                          // відблиск на черепі
+      pLine(c,13,-15.5,23,-12.5,PU,pal.white);                        // відблиск на морді
+      pPoly(c,[2,-15, 10,-16, 9,-12.5, 2,-12.5],skD);                  // надбрівна дуга
+      pEll(c,7,-12,2.6,2,pal.shadow); pDot(c,7.6,-12,m.glowEye?pal.eye:pal.shadow,1.4); if(m.glowEye) addLight(P,7.6,-12,6,pal.eye,0.9);
+      pEll(c,24.5,-11.5,2.2,1.8,pal.shadow);                           // ніс
+      for(const x of [14,20]) pPoly(c,[x,-5, x+1.4,-0.5, x+2.8,-5],pal.white); // ікла
+      pLine(c,13,-6.5,23.5,-6,PU,skD);
+      if(h.horns) { pHorn(c,-3,-17,-11,-29,-2,-35,5,pal.bone); }
       break;
     }
     case 'antlers':{
@@ -1511,6 +1534,74 @@ function drawShield(P,w,hd,ang){
 /* ============================================================
    МУНКІН (форма сови): гуманоїдний скелет, пернате тіло
    ============================================================ */
+/* ---------- Дерево життя (Restoration): стовбур, гілки-руки, коріння-ноги, крона ---------- */
+function paintTree(P){
+  treeArm(P,'b');
+  treeLeg(P,'b'); treeLeg(P,'f');
+  treeTrunk(P);
+  treeCrown(P);
+  treeArm(P,'f');
+}
+function treeLeg(P,side){
+  const {c,S,pal}=P, d=side==='b';
+  const hip=d?S.hipB:S.hipF, kn=d?S.kneeB:S.kneeF, ft=d?S.footB:S.footF;
+  pLimb(c,hip,kn,17,d?pal.furD:pal.fur,pal.furDD);
+  pLimb(c,kn,ft,14,d?pal.furD:pal.fur,pal.furDD);
+  // коріння розходиться від стопи
+  for(const [dx,dy,w] of [[13,2,4.5],[6,3,4],[-8,2,4]]){ pHorn(c,ft.x,ft.y-3,ft.x+dx*0.6,ft.y-1,ft.x+dx,ft.y+dy,w+PU*1.4,OL); pHorn(c,ft.x,ft.y-3,ft.x+dx*0.6,ft.y-1,ft.x+dx,ft.y+dy,w,d?pal.furDD:pal.furD); }
+}
+function treeTrunk(P){
+  const {c,S,pal}=P;
+  c.save(); c.translate(S.pel.x,S.pel.y); c.rotate(S.lean);
+  const shape=()=>{ c.beginPath(); c.moveTo(-15,4); c.quadraticCurveTo(-20,-26,-13,-52); c.quadraticCurveTo(2,-60,16,-52);
+    c.quadraticCurveTo(22,-26,17,4); c.quadraticCurveTo(1,9,-15,4); c.closePath(); };
+  shape(); pOut(c,2); c.fillStyle=pal.furD; c.fill();
+  c.save(); shape(); c.clip();
+  pPoly(c,[-8,-58, 22,-58, 22,8, -6,8],pal.fur);
+  pEll(c,8,-22,8,16,pal.belly);                                   // світліша молода кора спереду
+  for(const [x,y0,y1] of [[-9,0,-48],[-2,2,-54],[5,-6,-50],[13,0,-44]]) pLine(c,x,y0,x+Math.sin(y0)*1.5,y1,PU*1.2,pal.furDD); // борозни кори
+  pEll(c,-3,-26,3,4.5,pal.furDD); pEll(c,-3,-26,1.6,2.8,pal.shadow);   // дупло
+  pLine(c,-12,-40,-6,-50,PU,pal.furL);
+  c.restore();
+  // обличчя в корі: очі під наростом і рот
+  pPoly(c,[2,-46, 15,-47, 14,-43, 2,-43],pal.furDD);
+  pDot(c,6,-41,pal.eye,1.6); pDot(c,12,-41,pal.eye,1.4); addLight(P,9,-41,8,pal.eye,0.9);
+  pLine(c,6,-33,13,-34,PU*1.2,pal.furDD);
+  // мох і квіти на плечах
+  for(const [x,y] of [[-12,-50],[14,-50]]){ pEll(c,x,y,6,3,pal.leafD); pEll(c,x,y-1,4.5,2.2,pal.leaf); }
+  c.restore();
+}
+function treeCrown(P){
+  const {c,S,pal,time}=P;
+  const cs=Math.cos(S.lean), sn=Math.sin(S.lean);
+  const bx=S.pel.x-(-66)*sn+2*cs, by=S.pel.y+(-66)*cs+2*sn;
+  c.save(); c.translate(bx,by); c.rotate(S.lean+P.p.head*0.5);
+  const sway=Math.sin(time*1.6)*1.2;
+  const blobs=[[-16,4,12],[16,4,12],[-8,-10,14],[10,-10,14],[0,-20,13],[0,2,15],[-20,-8,9],[21,-7,9]];
+  for(const [x,y,r] of blobs){ c.beginPath(); c.arc(x+sway*(y<-5?1:0.4),y,r,0,7); pOut(c,2.2); }
+  for(const [x,y,r] of blobs) pCirc(c,x+sway*(y<-5?1:0.4),y,r,pal.leafD);
+  for(const [x,y,r] of blobs) pCirc(c,x+sway*(y<-5?1:0.4)+1,y-1.5,r*0.78,pal.leaf);
+  for(const [x,y] of [[-9,-14],[8,-15],[1,-24],[-17,0],[16,0],[3,-4]]) pEll(c,x+sway,y,3.6,1.8,pal.leafL,-0.5);
+  for(const [x,y] of [[-12,-6],[11,-3],[-2,-17],[18,-12],[-19,-11],[5,6]]){
+    const tw=0.8+Math.sin(time*3+x)*0.2;
+    pDot(c,x+sway,y,pal.flower,1.8*tw); pDot(c,x+sway+0.3,y-0.3,pal.flowerL,0.9);
+  }
+  c.restore();
+}
+function treeArm(P,side){
+  const {c,S,pal,p,m,time}=P, d=side==='b';
+  const sh=d?S.shB:S.shF, el=d?S.elB:S.elF, hd=d?S.handB:S.handF;
+  pLimb(c,sh,el,12,d?pal.furD:pal.fur,pal.furDD);
+  pLimb(c,el,hd,9,d?pal.furD:pal.fur,pal.furDD);
+  // пальці-гілочки з листям
+  for(const [ax,ay] of [[7,-5],[9,0],[6,5]]){ pLine(c,hd.x,hd.y,hd.x+ax,hd.y+ay,2.2,d?pal.furDD:pal.furD); pEll(c,hd.x+ax+1.5,hd.y+ay,2.6,1.4,d?pal.leafD:pal.leaf,ay*0.1); }
+  const mid=lp(sh,el,0.5,-3); pEll(c,mid.x,mid.y-2,4,2,d?pal.leafD:pal.leaf,-0.6);   // листок на гілці
+  if(p.glow>0.05 && side===(m.castSide||'f')){
+    const r=3+p.glow*4+Math.sin(time*20)*0.8;
+    pCirc(c,hd.x+5,hd.y-3,r,pal.accL); pCirc(c,hd.x+5,hd.y-3,r*0.55,pal.white);
+    addLight(P,hd.x+5,hd.y-3,10+p.glow*14,m.castCol||pal.acc,0.9);
+  }
+}
 function paintMoonkin(P){
   owlArm(P,'b');
   owlLeg(P,'b'); owlLeg(P,'f');

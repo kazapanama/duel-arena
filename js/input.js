@@ -16,16 +16,16 @@ addEventListener('keydown',e=>{
 addEventListener('keyup',e=>keys.delete(e.code));
 addEventListener('pointerdown',()=>ac());
 
-const P1KEYS={left:'KeyA',right:'KeyD',jump:'KeyW',block:'KeyS',ab:['KeyJ','KeyK','KeyL','KeyU'],form:['KeyI']};
+const P1KEYS={left:'KeyA',right:'KeyD',jump:'KeyW',block:'KeyS',ab:['KeyJ','KeyK','KeyL','KeyU'],form:['KeyI'],ult:['KeyO']};
 const P2KEYS={left:'ArrowLeft',right:'ArrowRight',jump:'ArrowUp',block:'ArrowDown',
-  ab:[['Numpad1','Comma'],['Numpad2','Period'],['Numpad3','Slash'],['Numpad4','Quote']],form:['Numpad5','Semicolon']};
+  ab:[['Numpad1','Comma'],['Numpad2','Period'],['Numpad3','Slash'],['Numpad4','Quote']],form:['Numpad5','Semicolon'],ult:['Numpad6','BracketLeft']};
 
 /* ---------- Віртуальний ввід: сенсорне керування (TIN) і суперник по мережі (NET.rin) ----------
    mv/jump/block — утримання; ab[i]/form — час натискання (0 — нема): натискання чекає
    до BUF_MS, поки боєць зможе його виконати (буфер вводу, щоб тап не губився в замаху).
    jumpUntil/blockUntil — короткий тап не пропаде, навіть якщо почався й скінчився між кадрами. */
 const BUF_MS=150;
-const newVin=()=>({mv:0,jump:false,block:false,ab:[0,0,0,0],form:0,jumpUntil:0,blockUntil:0});
+const newVin=()=>({mv:0,jump:false,block:false,ab:[0,0,0,0],form:0,ult:0,jumpUntil:0,blockUntil:0});
 const TIN=newVin();
 NET.rin=newVin();
 function vinApply(f,v,game,st){
@@ -35,11 +35,12 @@ function vinApply(f,v,game,st){
   st.block=st.block||v.block||now<v.blockUntil;
   for(let i=0;i<4;i++) if(v.ab[i]&&(now-v.ab[i]>BUF_MS||f.useAbility(i,game))) v.ab[i]=0;
   if(v.form&&(now-v.form>BUF_MS||f.shapeshift(game))) v.form=0;
+  if(v.ult&&(now-v.ult>BUF_MS||f.useUlt(game))) v.ult=0;
 }
 
 /* ---------- Геймпади ----------
    1-й підключений пад → Гравець 1, 2-й → Гравець 2.
-   Стік/хрестовина — рух, вгору — стрибок, L1/L2 — блок, Start — пауза.
+   Стік/хрестовина — рух, вгору — стрибок, L1/L2 — блок, R1 — форма, R2 — ультимейт, Start — пауза.
    Здібності на хресті кнопок: X → 1, Y → 2, B → 3, A → 4. */
 const PAD_AB=[2,3,1,0]; // X, Y, B, A (стандартна розкладка Gamepad API)
 const padPrev=[{},{}];
@@ -87,7 +88,8 @@ function pollPads(){
       jump:btn(12)||(gp.axes[1]||0)<-0.5,
       block:btn(4)||btn(6)||!!(lt&&lt.value>0.5),
       ab,
-      form:(btn(5)&&!padPrev[i][5])||(btn(7)&&!padPrev[i][7]), // R1/R2 — зміна форми друїда
+      form:btn(5)&&!padPrev[i][5],                 // R1 — зміна форми друїда
+      ult:btn(7)&&!padPrev[i][7],                  // R2 — ультимейт
     };
     if(menuOpen) padInputs[i]=null;
     if(btn(9)&&!padPrev[i][9]&&!menuOpen) togglePause(); // Start (у меню Start обробляє інтерфейс)

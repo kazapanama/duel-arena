@@ -24,7 +24,7 @@ const STANCE={
   staff:{lean:0.03,bfx:-8,ffx:9,fhx:15,fhy:-60,wf:0.06,bhx:-3,bhy:-51,wb:0.3},
   '2h':{lean:0.12,py:4,bfx:-14,ffx:14,fhx:15,fhy:-58,wf:0.55},
   dual:{lean:0.16,py:3,bfx:-14,ffx:13,fhx:17,fhy:-60,wf:1.2,bhx:7,bhy:-66,wb:0.9},
-  shield:{lean:0.08,py:3,bfx:-12,ffx:12,fhx:17,fhy:-64,wf:0.15,bhx:-9,bhy:-70,wb:-0.35},
+  shield:{lean:0.08,py:3,bfx:-12,ffx:12,fhx:17,fhy:-64,wf:0.15,bhx:-15,bhy:-75,wb:-0.85}, // зброя відведена за плече — видно з-за спини
   bow:{lean:0.04,bfx:-11,ffx:11,fhx:15,fhy:-58,wf:0.2,bhx:-4,bhy:-53},
   spear:{lean:0.12,py:4,bfx:-14,ffx:14,fhx:16,fhy:-62,wf:1.15},
   claw:{lean:0.32,py:9,bfx:-16,ffx:14,fhx:20,fhy:-58,wf:1.6,bhx:10,bhy:-64,wb:1.5},

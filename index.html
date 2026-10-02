@@ -74,7 +74,7 @@
             <div class="krow"><kbd class="key" data-l="Ліворуч">A</kbd><kbd class="key" data-l="Блок">S</kbd><kbd class="key" data-l="Праворуч">D</kbd></div>
           </div>
           <div class="cluster">
-            <div class="krow"><kbd class="key k-a" data-l="Спецприйом">U</kbd><kbd class="key k-f" data-l="Форма">I</kbd></div>
+            <div class="krow"><kbd class="key k-a" data-l="Спецприйом">U</kbd><kbd class="key k-f" data-l="Форма">I</kbd><kbd class="key k-u" data-l="Ульта">O</kbd></div>
             <div class="krow"><kbd class="key k-x" data-l="Швидкий">J</kbd><kbd class="key k-y" data-l="Сильний">K</kbd><kbd class="key k-b" data-l="Особливий">L</kbd></div>
           </div>
         </div>
@@ -87,11 +87,11 @@
             <div class="krow"><kbd class="key" data-l="Ліворуч"><i class="arr l"></i></kbd><kbd class="key" data-l="Блок"><i class="arr d"></i></kbd><kbd class="key" data-l="Праворуч"><i class="arr r"></i></kbd></div>
           </div>
           <div class="cluster">
-            <div class="krow"><kbd class="key k-a" data-l="Спецприйом">4</kbd><kbd class="key k-f" data-l="Форма">5</kbd></div>
+            <div class="krow"><kbd class="key k-a" data-l="Спецприйом">4</kbd><kbd class="key k-f" data-l="Форма">5</kbd><kbd class="key k-u" data-l="Ульта">6</kbd></div>
             <div class="krow"><kbd class="key k-x" data-l="Швидкий">1</kbd><kbd class="key k-y" data-l="Сильний">2</kbd><kbd class="key k-b" data-l="Особливий">3</kbd></div>
           </div>
         </div>
-        <p class="ctl-note">Цифри — на цифровому блоці. Без нього: <kbd class="mini">,</kbd><kbd class="mini">.</kbd><kbd class="mini">/</kbd><kbd class="mini">'</kbd><kbd class="mini">;</kbd></p>
+        <p class="ctl-note">Цифри — на цифровому блоці. Без нього: <kbd class="mini">,</kbd><kbd class="mini">.</kbd><kbd class="mini">/</kbd><kbd class="mini">'</kbd><kbd class="mini">;</kbd><kbd class="mini">[</kbd></p>
       </article>
       <article class="pf ctl-card">
         <h3>Геймпад<small>перший — гравець 1, другий — гравець 2</small></h3>
@@ -107,7 +107,7 @@
         <ul class="pad-legend">
           <li><i class="dot k-x">X</i>Швидкий</li><li><i class="dot k-y">Y</i>Сильний</li>
           <li><i class="dot k-b">B</i>Особливий</li><li><i class="dot k-a">A</i>Спецприйом</li>
-          <li><i class="dot">L1</i>Блок</li><li><i class="dot k-f">R1</i>Форма</li>
+          <li><i class="dot">L1</i>Блок</li><li><i class="dot k-f">R1</i>Форма</li><li><i class="dot k-u">R2</i>Ульта</li>
           <li><i class="dot">✚</i>Рух, вгору — стрибок</li><li><i class="dot">▶</i>Пауза</li>
         </ul>
       </article>
@@ -117,7 +117,9 @@
       <div class="tip"><img src="WoW Icon Pack/Abilities/SwiftStrike.png" alt=""><div><b>Замах</b><p>Удар падає не одразу. Встигни відскочити, стрибнути чи прикритися.</p></div></div>
       <div class="tip"><img src="WoW Icon Pack/Abilities/Parry.png" alt=""><div><b>Парирування</b><p>Натисни блок у мить удару — шкоди нема, а нападник приголомшений.</p></div></div>
       <div class="tip"><img src="WoW Icon Pack/Abilities/ShieldWall.png" alt=""><div><b>Шкала захисту</b><p>Блок гасить удари, але виснажується. Важкі удари його ламають.</p></div></div>
-      <div class="tip"><img src="WoW Icon Pack/Abilities/Cat.png" alt=""><div><b>Форми друїда</b><p>Feral стає котом, Balance — совою. Окрема кнопка форми.</p></div></div>
+      <div class="tip"><img src="WoW Icon Pack/Abilities/Cat.png" alt=""><div><b>Форми друїда</b><p>Feral стає котом, Balance — совою, Restoration — деревом.</p></div></div>
+      <div class="tip"><img src="WoW Icon Pack/Abilities/Avatar.png" alt=""><div><b>Ультимейт</b><p>Шкала під здоров'ям росте від ударів. Повна — тисни «Ульту».</p></div></div>
+      <div class="tip"><img src="WoW Icon Pack/Abilities/SwiftStrike.png" alt=""><div><b>Комбо</b><p>Влучив легким — одразу тисни сильний: він вийде без паузи.</p></div></div>
     </div>
     <div class="screen-foot">
       <button class="mi small" data-nav data-act="back">Назад</button>
@@ -136,7 +138,7 @@
       <div class="showcase" id="showL">
         <div class="sc-beam"></div>
         <canvas class="sc-cv"></canvas>
-        <div class="sc-plate"><b class="sc-class"></b><span class="sc-spec"></span><span class="sc-tags"></span></div>
+        <div class="sc-plate"><b class="sc-class"></b><span class="sc-spec"></span><span class="sc-tags"></span><button class="sc-race" data-race></button></div>
         <div class="sc-stamp">Готово</div>
       </div>
       <div class="sel-center">
@@ -153,7 +155,7 @@
       <div class="showcase right" id="showR">
         <div class="sc-beam"></div>
         <canvas class="sc-cv"></canvas>
-        <div class="sc-plate"><b class="sc-class"></b><span class="sc-spec"></span><span class="sc-tags"></span></div>
+        <div class="sc-plate"><b class="sc-class"></b><span class="sc-spec"></span><span class="sc-tags"></span><button class="sc-race" data-race></button></div>
         <div class="sc-stamp">Готово</div>
       </div>
     </div>
@@ -201,6 +203,7 @@
   <button class="t-btn t-ab s3" data-ab="3"><img alt=""><b class="t-em"></b><i class="t-cd"></i><span class="t-n"></span></button>
   <button class="t-btn t-blk" data-blk><b class="t-em">🛡️</b><img alt="" src="WoW Icon Pack/Abilities/ShieldWall.png"><span class="t-lbl">Блок</span></button>
   <button class="t-btn t-form hidden" data-form><img alt=""><b class="t-em"></b><span class="t-lbl">Форма</span></button>
+  <button class="t-btn t-ult" data-ult><img alt=""><b class="t-em"></b><i class="t-cd"></i><span class="t-lbl">Ульта</span></button>
   <button class="t-pause" data-pause aria-label="Пауза">II</button>
 </div>
 <div id="rotate"><div><b>⟳</b>Поверни телефон горизонтально</div></div>
@@ -216,6 +219,9 @@
 <script src="js/cat.js"></script>
 <script src="js/models.js"></script>
 <script src="js/sprite.js"></script>
+<script src="js/pets.js"></script>
+<script src="js/projectiles.js"></script>
+<script src="js/arena.js"></script>
 <script src="js/fighter.js"></script>
 <script src="js/game.js"></script>
 <script src="js/ui.js"></script>

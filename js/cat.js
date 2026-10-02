@@ -159,18 +159,20 @@ function paintCat(c,m,p,time,lights){
 function catTail(P){
   const {c,S,p,pal,time}=P;
   const base=S.T(-30-p.stretch,-6);
-  let x=base.x, y=base.y, a=Math.PI+0.35-p.tail*0.5;
+  const wolf=P.m.look.wolf;
+  let x=base.x, y=base.y, a=Math.PI+(wolf?0.75:0.35)-p.tail*0.5;
   const pts=[{x,y}];
   for(let i=0;i<7;i++){
-    a+=-0.12*p.tail+Math.sin(time*2.6+i*0.7)*0.12+(i>3?-0.18:0);
-    x+=Math.cos(a)*7; y+=Math.sin(a)*7;
+    a+=(wolf?-0.05:-0.12)*p.tail+Math.sin(time*2.6+i*0.7)*(wolf?0.06:0.12)+(i>3&&!wolf?-0.18:0);
+    x+=Math.cos(a)*(wolf?5.5:7); y+=Math.sin(a)*(wolf?5.5:7);
     pts.push({x,y});
   }
-  for(let i=0;i<pts.length-1;i++) pLine(c,pts[i].x,pts[i].y,pts[i+1].x,pts[i+1].y,7-i*0.5+PU*1.6,OL);
-  for(let i=0;i<pts.length-1;i++) pLine(c,pts[i].x,pts[i].y,pts[i+1].x,pts[i+1].y,7-i*0.5,i>4&&m_stripe(P)?pal.stripe:pal.fur);
+  const tw=i=>wolf?6+Math.sin(i/6*Math.PI)*5:7-i*0.5;   // вовчий хвіст — товстий посередині
+  for(let i=0;i<pts.length-1;i++) pLine(c,pts[i].x,pts[i].y,pts[i+1].x,pts[i+1].y,tw(i)+PU*1.6,OL);
+  for(let i=0;i<pts.length-1;i++) pLine(c,pts[i].x,pts[i].y,pts[i+1].x,pts[i+1].y,tw(i),wolf?(i>4?pal.furDD:pal.fur):(i>4&&m_stripe(P)?pal.stripe:pal.fur));
   if(P.m.look.pattern==='thorns') for(let i=1;i<pts.length-1;i+=2) pPoly(c,[pts[i].x-2,pts[i].y-2,pts[i].x,pts[i].y-8,pts[i].x+2,pts[i].y-2],pal.leaf);
 }
-function m_stripe(P){ return P.m.look.pattern==='tiger'||P.m.look.pattern==='none'; }
+function m_stripe(P){ return !P.m.look.wolf&&(P.m.look.pattern==='tiger'||P.m.look.pattern==='none'); }
 function catLeg(P,L,front,far){
   const {c,pal}=P;
   const col=far?pal.furD:pal.fur, dk=far?pal.furDD:pal.furD;
@@ -214,6 +216,7 @@ function catBody(P){
   else if(pat==='thorns'){ pLine(c,-30-st,-12,28+st,-13,PU*1.4,pal.leafD); }
   c.restore();
   if(pat==='thorns') for(let x=-26;x<=24;x+=8) pPoly(c,[x-2.5,-16, x-1,-26, x+2.5,-16],pal.leaf);
+  if(m.look.wolf) for(let x=8;x<=34;x+=5) pPoly(c,[x+st-3,-17, x+st-1,-25+(x>20?-2:0), x+st+3,-17],x%2?pal.furD:pal.furDD); // грива
   if(m.look.collar==='leaf') for(const [x,y,r] of [[30+st,-10,0.6],[34+st,-4,1.2],[27+st,-15,-0.2]]) pEll(c,x,y,5,2.4,pal.leaf,r);
   c.restore();
 }
@@ -230,19 +233,22 @@ function catHead(P){
   c.beginPath(); c.ellipse(0,0,10.5,9,0,0,7); pOut(c,2);
   pEll(c,0,0,10.5,9,pal.furD); pEll(c,0.5,-0.8,9.6,8,pal.fur);
   pLine(c,-5,-6,4,-7,PU,pal.furL);
-  // ближнє вухо
-  pPath(c,[-3,-6, -2-ear*5,-16+ear*7, 4,-7]); pOut(c,2); c.fillStyle=pal.fur; c.fill();
-  pPoly(c,[-1.5,-7, -1.5-ear*4,-13+ear*6, 2.5,-7.5],pal.furDD);
+  // ближнє вухо (у вовка — вище й гостріше)
+  const eh=m.look.wolf?-20:-16;
+  pPath(c,[-3,-6, -2-ear*5,eh+ear*7, 4,-7]); pOut(c,2); c.fillStyle=pal.fur; c.fill();
+  pPoly(c,[-1.5,-7, -1.5-ear*4,eh+3+ear*6, 2.5,-7.5],pal.furDD);
   // нижня щелепа (відкривається)
   c.save(); c.translate(4,4); c.rotate(p.jaw*0.55);
   pPath(c,[0,0, 10,1, 9,5, 0,5]); pOut(c,2); c.fillStyle=pal.bellyD; c.fill();
   if(p.jaw>0.2){ pPoly(c,[1,0.5, 9,1, 8.5,2.5, 1,2.5],pal.shadow); pPoly(c,[7.5,1, 8.5,-1.5, 9,1.2],pal.white); }
   c.restore();
-  // морда
-  c.beginPath(); c.ellipse(8,2.5,6.5,4.6,0,0,7); pOut(c,2);
-  pEll(c,8,2.5,6.5,4.6,pal.belly);
-  if(p.jaw>0.2){ pPoly(c,[9,5.5, 10,9, 11,5.5],pal.white); pPoly(c,[5,5.5, 6,8.5, 7,5.5],pal.white); }
-  pDot(c,14,0.8,pal.nose,1.5);
+  // морда (у вовка — довга, з чорним носом на кінці)
+  const wolf=m.look.wolf, mx=wolf?11:8, mrx=wolf?9.5:6.5;
+  c.beginPath(); c.ellipse(mx,2.5,mrx,4.6,0,0,7); pOut(c,2);
+  pEll(c,mx,2.5,mrx,4.6,wolf?pal.furL:pal.belly);
+  if(wolf) pEll(c,mx+1,4.2,mrx-1.5,2.2,pal.belly);
+  if(p.jaw>0.2){ pPoly(c,[9,5.5, 10,9, 11,5.5],pal.white); pPoly(c,[5,5.5, 6,8.5, 7,5.5],pal.white); if(wolf) pPoly(c,[15,5.5, 16,8.5, 17,5.5],pal.white); }
+  pDot(c,wolf?20:14,0.8,pal.nose,wolf?1.9:1.5);
   pLine(c,11,4.5,16,5.5,PU*0.8,pal.bellyD); // вуса
   // очі
   pDot(c,4.5,-2.5,pal.eye,1.5); pDot(c,6.2,-2.8,pal.eye,1.1);

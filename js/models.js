@@ -397,7 +397,20 @@ function raceFromSkin(skin,cls){
 }
 
 /* ---------- збірка моделі ---------- */
-function resolveModel(cls,spec,skin){
+// раса, обрана гравцем (або сетом): шкіра, ноги, борода — те, що робить расу впізнаваною навіть під шоломом
+const RACE_SKIN={orc:'#6fa04a',nelf:'#a48cff',tauren:'#7a4a2a',dk:'#cfd6e4',draenei:'#94a6c8',
+  belf:'#f0c8a0',troll:'#5a8ab0',undead:'#9aa890',dwarf:'#e0a880',human:'#e8b98a'};
+function applyRace(m,race,L){
+  m.race=race;
+  if(race==='draenei'){ m.legs='hoof'; m.tail=1; }
+  else if(race==='tauren'){ m.legs='hoof'; m.tail=1; m.bulk=Math.max(m.bulk||1,1.12); }
+  else { if(m.legs==='hoof'&&!(L&&L.legs)) m.legs=null; if(!(L&&L.tail)) m.tail=0; }
+  if(race==='dwarf'){ m.beard=1; m.bulk=Math.max(m.bulk||1,1.1); }
+  if(race==='troll'&&!m.longHair) m.mohawk=1;
+  // обрану расу має бути видно: закритий шолом стає відкритим (гребінь сету лишається)
+  if(m.helm&&(m.helm.t==='helm'||m.helm.t==='skull')) m.helm={...m.helm,t:'open'};
+}
+function resolveModel(cls,spec,skin,raceOverride){
   const key=cls.id+'/'+spec.name;
   const C=CLASS_LOOK[cls.id], SP=SPEC_LOOK[key]||{};
   const L=skin.tier? (SET_LOOK[skin.name+'@'+spec.name]||SET_LOOK[skin.name]||{}) : (CLASSIC_LOOK[key]||{});
@@ -421,7 +434,8 @@ function resolveModel(cls,spec,skin){
   for(const k of ['lower','race','gem','fx','longHair','beard','mohawk','plates','bulk','headScale','aura',
     'plain','collar','bands','straps','boot','feet','belt','chest','stance','panels','legCol','glows','sash','skirt','permWings','wingKind']) if(L[k]!==undefined) m[k]=L[k];
   if(skin.race) m.race=skin.race;
-  if(m.race==='tauren'||m.race==='orc'){ if(!L.helm) m.helm={t:'none'}; }
+  if(raceOverride) applyRace(m,raceOverride,L);   // раса з вибору гравця; шолом сету чи класу лишається
+  else if(m.race==='tauren'||m.race==='orc'){ if(!L.helm) m.helm={t:'none'}; }
   if(m.race==='draenei'&&m.helm&&['open','circlet','crown'].includes(m.helm.t)&&!L.helm) m.helm={...m.helm}; // обличчя дренея видно
 
   // кольори
@@ -432,8 +446,8 @@ function resolveModel(cls,spec,skin){
     if(mx>200&&(mx-mn)>120) trim=hexShade(hexMix(trim,'#9a9080',0.22),-0.12); }
   const sec=classic?(L.sec||hexMix(cls.color,prim,0.3)):(L.sec||hexShade(prim,-0.45));
   const acc=L.acc||accent;
-  const skinCol=L.skin||({orc:'#6fa04a',nelf:'#a48cff',tauren:'#7a4a2a',dk:'#cfd6e4',draenei:'#94a6c8'}[m.race])||skin.head||'#e8b98a';
-  const glowEye=(skin.eyes&&skin.eyes!=='#ffffff')||m.race==='draenei';
+  const skinCol=(raceOverride?RACE_SKIN[raceOverride]:null)||L.skin||(m.race!=='human'?RACE_SKIN[m.race]:null)||skin.head||'#e8b98a';
+  const glowEye=(skin.eyes&&skin.eyes!=='#ffffff')||m.race==='draenei'||m.race==='undead';
   const eye=(skin.eyes&&skin.eyes!=='#ffffff')?skin.eyes:(m.race==='dk'?'#7de0ff':(m.race==='draenei'?'#eef8ff':'#e8f0ff'));
   const capeCol=(m.cape&&m.cape.col)||(classic?cls.color:hexShade(sec,0.05));
   const tabCol=(m.tabard&&m.tabard.col)||(classic?cls.color:sec);
@@ -489,6 +503,13 @@ const FORM_LOOK={
     'Thunderheart Harness':{fur:'#d08a3a',stripe:'#3a2010',belly:'#f0d0a0',eye:'#ffb03a',pattern:'tiger'},
     'Lasherweave Battlegear':{fur:'#4a6a2e',stripe:'#24361a',belly:'#8aa060',eye:'#7dff8a',pattern:'thorns'},
   },
+  // Дерево життя: кора (fur), молода кора (belly), листя, квіти, очі в корі
+  tree:{
+    _classic:{fur:'#6a4a2e',belly:'#9a7a4e',leaf:'#4a9a3a',flower:'#ffb0d0',eye:'#ffe27a'},
+    'Dreamwalker Raiment':{fur:'#4a3a3a',belly:'#7a6a5a',leaf:'#3a8a6a',flower:'#ffe27a',eye:'#ffe27a'},
+    'Malorne Raiment':{fur:'#5a4428',belly:'#8a7048',leaf:'#7a9a3a',flower:'#ff8a5a',eye:'#7dff8a'},
+    "Runetotem's Garb":{fur:'#4a3a2a',belly:'#7a6448',leaf:'#5aa04a',flower:'#ffd23a',eye:'#ffe27a'},
+  },
   moonkin:{
     _classic:{fur:'#8a6a4a',belly:'#e0d0a8',beak:'#e8c050',eye:'#cfe0ff',mark:null},
     'Stormrage Raiment':{fur:'#4a5a9a',belly:'#c8d0e8',beak:'#ffd23a',eye:'#ffe27a',mark:'gold'},
@@ -510,6 +531,7 @@ function resolveFormModel(cls,spec,skin,form){
   };
   if(L.stripe){ pal.stripe=L.stripe; }
   if(L.beak){ pal.beak=L.beak; pal.beakD=hexShade(L.beak,-0.35); }
+  if(L.leaf){ pal.leaf=L.leaf; pal.leafD=hexShade(L.leaf,-0.4); pal.leafL=lightOf(L.leaf,0.35); pal.flower=L.flower; pal.flowerL=lightOf(L.flower,0.5); }
   pal.outline=hexMix(hexShade(fur,-0.8),'#0a0608',0.6);
   return {
     kind:form, style:form==='cat'?'cat':'owl', pal, look:L,

@@ -20,9 +20,9 @@ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const rnd=(a,b)=>a+Math.random()*(b-a);
 
 const THEMES=[
-  {sky1:'#2a1a3e',sky2:'#0d0a1a',hill:'#1a1230',ground:'#3a2a50',line:'#5a4478',name:'Тінисте плато'},
-  {sky1:'#7a3b1e',sky2:'#2a1008',hill:'#4a2010',ground:'#6b3a1a',line:'#8a5530',name:'Дуротар'},
-  {sky1:'#1a3a5e',sky2:'#081525',hill:'#12283f',ground:'#2a4a68',line:'#4a7098',name:'Нордскол'},
+  {kind:'shadow',name:'Тінисте плато'},     // піксельні шари — arena.js
+  {kind:'durotar',name:'Дуротар'},
+  {kind:'northrend',name:'Нордскол'},
 ];
 
 /* Гра по мережі (див. net.js): side — мій бік (0 — хост, 1 — гість), paired — суперник на зв'язку */

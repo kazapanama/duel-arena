@@ -13,7 +13,7 @@ const TOUCH={on:matchMedia('(hover:none) and (pointer:coarse)').matches||/[?&]to
 (()=>{
   const el=TOUCH.el, stick=document.getElementById('tStick'), knob=document.getElementById('tKnob');
   const btns=[...el.querySelectorAll('[data-ab]')];
-  TOUCH.btns=btns; TOUCH.blk=el.querySelector('[data-blk]'); TOUCH.form=el.querySelector('[data-form]');
+  TOUCH.btns=btns; TOUCH.blk=el.querySelector('[data-blk]'); TOUCH.form=el.querySelector('[data-form]'); TOUCH.ult=el.querySelector('[data-ult]');
 
   // перший дотик: вмикаємо сенсорний режим, на телефоні — повний екран і альбомна орієнтація
   addEventListener('touchstart',()=>{
@@ -59,12 +59,13 @@ const TOUCH={on:matchMedia('(hover:none) and (pointer:coarse)').matches||/[?&]to
   el.addEventListener('touchstart',e=>{
     e.preventDefault();
     for(const t of e.changedTouches){
-      const b=t.target.closest&&t.target.closest('[data-ab],[data-blk],[data-form],[data-pause]');
+      const b=t.target.closest&&t.target.closest('[data-ab],[data-blk],[data-form],[data-ult],[data-pause]');
       if(b){
         const now=performance.now();
         let kind='ab';
         if(b.hasAttribute('data-blk')){ kind='blk'; TIN.blockUntil=now+70; }
         else if(b.hasAttribute('data-form')){ kind='form'; TIN.form=now; }
+        else if(b.hasAttribute('data-ult')){ kind='ult'; TIN.ult=now; }
         else if(b.hasAttribute('data-pause')){ kind='pause'; togglePause(); }
         else TIN.ab[+b.dataset.ab]=now;
         TOUCH.held.set(t.identifier,{kind,el:b}); b.classList.add('on'); buzz(kind==='blk'?6:10);
@@ -94,8 +95,9 @@ const TOUCH={on:matchMedia('(hover:none) and (pointer:coarse)').matches||/[?&]to
   el.addEventListener('touchcancel',end,{passive:false});
   // мишею (перевірка на комп'ютері): кнопки клікаються
   el.addEventListener('mousedown',e=>{
-    const b=e.target.closest('[data-ab],[data-form],[data-pause]'); if(!b) return;
+    const b=e.target.closest('[data-ab],[data-form],[data-ult],[data-pause]'); if(!b) return;
     if(b.hasAttribute('data-form')) TIN.form=performance.now();
+    else if(b.hasAttribute('data-ult')) TIN.ult=performance.now();
     else if(b.hasAttribute('data-pause')) togglePause();
     else TIN.ab[+b.dataset.ab]=performance.now();
   });
@@ -104,7 +106,7 @@ const TOUCH={on:matchMedia('(hover:none) and (pointer:coarse)').matches||/[?&]to
     if(TOUCH.stick) stickEnd();
     for(const h of TOUCH.held.values()) h.el.classList.remove('on');
     TOUCH.held.clear();
-    TIN.mv=0; TIN.jump=false; TIN.block=false; TIN.ab.fill(0); TIN.form=0;
+    TIN.mv=0; TIN.jump=false; TIN.block=false; TIN.ab.fill(0); TIN.form=0; TIN.ult=0;
   };
 })();
 
@@ -139,6 +141,11 @@ TOUCH.frame=function(){
     b.classList.toggle('gcd',cd<=0&&f.gcd>0);
   }
   TOUCH.blk.classList.toggle('lit',!!f.blocking);
+  // ульта: кнопка заповнюється разом із супершкалою
+  const U=ULTS[f.cls.id], fr=clamp(f.meter/ULT_MAX,0,1);
+  setIcon(TOUCH.ult,{img:U.img,icon:U.icon});
+  TOUCH.ult.style.setProperty('--cd',(1-fr).toFixed(3));
+  TOUCH.ult.classList.toggle('ready',fr>=1);
   const fb=TOUCH.form;
   fb.classList.toggle('hidden',!f.formDef);
   if(f.formDef){
