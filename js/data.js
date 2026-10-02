@@ -58,11 +58,11 @@ const CLASSES = [
      mk.aoe('Holy Prism','🔆',9,135,170,{selfHeal:40}),
    ]},
    { name:'Protection', em:'🛡️', role:'Танк',
-     classAb: mk.curse('Hammer of Justice','🔨',14,{dmg:30,stun:1.2,range:340}),
+     classAb: mk.curse('Hammer of Justice','🔨',12,{dmg:35,stun:1.2,range:360}),
      abilities:[
-     mk.melee('Hammer of the Righteous','🔨',1.3,56),
-     mk.proj("Avenger's Shield",'🛡️',7,140,{stun:0.8,speed:920,pcolor:'#9fd7ff',psize:13}),
-     mk.zone('Consecration','🔥',9,60,125,5,{at:'self',zcolor:'#ffd97a'}),
+     mk.melee('Hammer of the Righteous','🔨',1.2,66,{selfHeal:8}),
+     mk.proj("Avenger's Shield",'🛡️',6,162,{stun:0.8,speed:920,pcolor:'#9fd7ff',psize:13}),
+     mk.zone('Consecration','🔥',9,70,135,5,{at:'self',zcolor:'#ffd97a'}),
    ]},
    { name:'Retribution', em:'⚔️', role:'Бій', abilities:[
      mk.melee('Crusader Strike','⚔️',1.2,60),
@@ -127,9 +127,9 @@ const CLASSES = [
      mk.shield('Power Word: Shield','🔮',12,170,8),
    ]},
    { name:'Holy', em:'🌟', role:'Лікар', abilities:[
-     mk.proj('Holy Fire','🔥',1.5,48,{dot:{dps:10,dur:3},pcolor:'#ffd070'}),
-     mk.heal('Greater Heal','💛',10,240,{cast:1.6}),   // Flash Heal — у слоті A, тут велике повільне лікування
-     mk.proj('Holy Word: Chastise','⚡',9,90,{stun:1.0,pcolor:'#fff',speed:900}),
+     mk.proj('Holy Fire','🔥',1.45,51,{dot:{dps:11,dur:3},pcolor:'#ffd070'}),
+     mk.heal('Greater Heal','💛',10,260,{cast:1.5}),   // Flash Heal — у слоті A, тут велике повільне лікування
+     mk.proj('Holy Word: Chastise','⚡',9,100,{stun:1.0,pcolor:'#fff',speed:900}),
    ]},
    { name:'Shadow', em:'🌑', role:'Бій', abilities:[
      mk.proj('Mind Spike','🧠',1.4,56,{speed:900,pcolor:'#b48cff'}),
@@ -214,16 +214,16 @@ const CLASSES = [
   classAb: mk.curse('Fear','😱',15,{cast:1.2,fear:{dur:2,brk:70}}),
   specs:[
    { name:'Affliction', em:'🕷️', role:'Бій', abilities:[
-     mk.proj('Shadow Bolt','🟣',1.5,48,{pcolor:'#a878ff'}),
-     mk.drain('Drain Life','🩸',6,27,{chan:{dur:2.4,ticks:6},healFrac:0.5,pcolor:'#7cff4a'}),   // зелений промінь, як у WoW
-     mk.curse('Agony','😖',8,{dot:{dps:18,dur:6}}),
+     mk.proj('Shadow Bolt','🟣',1.45,51,{pcolor:'#a878ff'}),
+     mk.drain('Drain Life','🩸',6,32,{chan:{dur:2.4,ticks:6},healFrac:0.55,pcolor:'#7cff4a'}),   // зелений промінь, як у WoW
+     mk.curse('Agony','😖',8,{dot:{dps:20,dur:6}}),
    ]},
    { name:'Demonology', em:'👿', role:'Бій',
      classAb: mk.tele('Demonic Circle','🌀',7,'away',{dist:300}),
      abilities:[
-     mk.proj('Demonbolt','🟢',1.4,50,{pcolor:'#9dff70'}),
-     mk.proj("Hand of Gul'dan",'☄️',6,160,{cast:1.0,aoeOnHit:95,speed:640,pcolor:'#7cff6b',psize:13}),
-     mk.pet('Summon Felguard','👹',14,10,{pkind:'felguard',pdmg:17,pcd:1.25}),
+     mk.proj('Demonbolt','🟢',1.4,55,{pcolor:'#9dff70'}),
+     mk.proj("Hand of Gul'dan",'☄️',6,175,{cast:1.0,aoeOnHit:95,speed:640,pcolor:'#7cff6b',psize:13}),
+     mk.pet('Summon Felguard','👹',14,10,{pkind:'felguard',pdmg:19,pcd:1.2}),
    ]},
    { name:'Destruction', em:'🔥', role:'Бій',
      classAb: mk.aoe('Shadowfury','🌑',12,40,160,{stun:1.0}),
