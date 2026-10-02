@@ -15,3 +15,6 @@ desktop.ini
 .vscode/
 .idea/
 .claude/
+
+# Внутрішній план візуалу (локально; публічний — ROADMAP.md)
+VISUALS_TODO.md

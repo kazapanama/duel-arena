@@ -59,7 +59,7 @@ WoW Icon Pack/
 | `js/net.js`, `tools/server.js` | гра по мережі: клієнт і сервер (статика + WebSocket) |
 | `gallery.html` | спрайт-шит будь-якого скіну (`?skin=rogue/Assassination/2`) і сітка всіх (`?mode=all`) |
 | `tools/balance.py`, `tools/sim.js` | турнір ботів для перевірки балансу (Python + Playwright) |
-| `VISUALS_TODO.md` | план і статус візуалу сетів |
+| `ROADMAP.md` | що ще хочеться зробити |
 
 ### Як влаштована гра по мережі
 
