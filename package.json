@@ -1,0 +1,13 @@
+{
+  "name": "azeroth-arena",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Піксельний 2D-файтинг у браузері: 10 класів, бій із ботом, двоє на одній клавіатурі або по локальній мережі з телефонів",
+  "scripts": {
+    "start": "node tools/server.js",
+    "balance": "python tools/balance.py 3 2"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

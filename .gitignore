@@ -1,0 +1,17 @@
+# Набір іконок — стороння графіка, у репозиторій не входить (див. README)
+WoW Icon Pack/
+
+# Резервні копії й референси (скріншоти з Wowhead, ескізи)
+_backup/
+_refs/
+
+# Службове
+node_modules/
+__pycache__/
+*.log
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+.claude/

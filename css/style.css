@@ -1,0 +1,448 @@
+/* ============================================================
+   АЗЕРОТ АРЕНА — інтерфейс
+   Ідея: інтерфейс — артефакти світу гри. Різьблений темний камінь
+   у полірованій золотій оправі з піксельними фасками, пергаментний
+   текст. Фел-зелений — лише в магічні моменти (портал, курсор).
+   Усі розміри — у cqw: інтерфейс масштабується разом із кадром гри.
+   ============================================================ */
+:root{
+  --stone0:#140d0b; --stone1:#1f1512; --stone2:#3b2a22; --stone3:#5c4231;
+  --gold:#e9b949; --goldD:#8a5a1a; --goldL:#fff0b0;
+  --parch:#f1e2c2; --ink:#a8927a; --ember:#ff7a2e; --fel:#86ff3c;
+  --p1:#4aa3ff; --p2:#ff5a4a;
+  --display:'Tiny5',monospace; --text:'Handjet',sans-serif;   /* заголовки й меню / описи */
+  --sx:#6aa8e8; --sy:#e8c040; --sb:#e0503a; --sa:#58c048; --sf:#a878e8; /* кольори слотів: X Y B A і форма */
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{
+  background:#0c0708; color:var(--parch);
+  font-family:var(--text); font-weight:500; font-synthesis:none;
+  display:flex; align-items:center; justify-content:center; overflow:hidden;
+  -webkit-font-smoothing:none;
+}
+#wrap{position:relative; overflow:hidden; width:min(100vw, calc(100vh * 16 / 9)); width:min(100vw, calc(100dvh * 16 / 9)); aspect-ratio:16/9; container-type:size}
+/* телефон: без виділення тексту, лупи й підсвітки тапів; подвійний тап не масштабує */
+body{-webkit-user-select:none; user-select:none; -webkit-touch-callout:none; -webkit-tap-highlight-color:transparent; touch-action:manipulation}
+#cv{width:100%; height:100%; display:block; background:#000}
+button{font:inherit; color:inherit; background:none; border:0; padding:0; cursor:pointer}
+.screen{position:absolute; inset:0; z-index:10; display:flex; flex-direction:column; align-items:center}
+.screen.dim{background:rgba(12,7,9,.74); backdrop-filter:blur(2px); justify-content:center; gap:2.2cqw}
+.hidden{display:none !important}
+.screen:not(#title){animation:scrIn .22s ease-out both}
+@keyframes scrIn{from{opacity:0}}
+
+/* ---------- піксельна оправа: золото з фасками + камінь усередині ---------- */
+.pf{
+  --c:1cqw; --b:.34cqw; --fa:var(--goldL); --fb:var(--gold); --fc:var(--goldD);
+  position:relative; isolation:isolate;
+  background:linear-gradient(180deg,var(--fa),var(--fb) 32%,var(--fc));
+  clip-path:polygon(var(--c) 0,calc(100% - var(--c)) 0,100% var(--c),100% calc(100% - var(--c)),calc(100% - var(--c)) 100%,var(--c) 100%,0 calc(100% - var(--c)),0 var(--c));
+}
+.pf::before{
+  content:''; position:absolute; inset:var(--b); z-index:-1;
+  background:radial-gradient(ellipse 120% 90% at 50% 0%,var(--stone2),var(--stone1) 55%,var(--stone0));
+  clip-path:polygon(var(--c) 0,calc(100% - var(--c)) 0,100% var(--c),100% calc(100% - var(--c)),calc(100% - var(--c)) 100%,var(--c) 100%,0 calc(100% - var(--c)),0 var(--c));
+}
+.pf.dark{--fa:#6a5040; --fb:#4a3528; --fc:#2a1c15}
+
+/* ---------- дисплейний шрифт: заголовки, меню, кнопки, імена ---------- */
+.screen-title,.sel-title,.win-title,.logo,.mi,.cta,.sc-class,.side-tag,.press,.vs-name,.vs-mark,.ctl-card h3,.sub-title,.tip b,.stab b,.arow b,.version{font-family:var(--display); font-weight:400}
+.ctl-card h3 small,.vs-name small{font-family:var(--text); font-weight:500}
+
+/* ---------- золоті заголовки ---------- */
+.screen-title,.sel-title,.win-title{
+  margin:0;  line-height:1; letter-spacing:.15cqw;
+  background:linear-gradient(180deg,#fff6cc 0 26%,#f5cf62 26% 52%,#d99a32 52% 76%,#8a4f16 76%);
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+  filter:drop-shadow(0 .28cqw 0 #2a1206) drop-shadow(.22cqw 0 0 #2a1206) drop-shadow(-.22cqw 0 0 #2a1206);
+}
+.screen-title,.sel-title,.win-title,.sc-class,.vs-name{text-transform:uppercase}
+.screen-title{font-size:4cqw; margin-top:2.6cqw; letter-spacing:.35cqw}
+
+/* ---------- пункти меню: текст як у класичних файтингах + фел-вогник ---------- */
+.mainmenu{display:flex; flex-direction:column; align-items:flex-start; gap:.5cqw}
+.mainmenu.center{align-items:center}
+.mi{
+  position:relative; font-size:2.5cqw;  color:var(--parch); white-space:nowrap;
+  padding:.15cqw .4cqw .15cqw 3.3cqw;
+  text-shadow:0 .26cqw 0 #1a0c06, 0 0 1.2cqw rgba(0,0,0,.9);
+  transition:color .1s, transform .12s;
+}
+.mi .val{color:var(--ink); margin-left:.8cqw}
+.mi.focus{color:var(--goldL); transform:translateX(.7cqw);
+  background:linear-gradient(90deg,rgba(134,255,60,.2),rgba(134,255,60,.07) 45%,transparent 85%);
+  box-shadow:inset .25cqw 0 0 rgba(134,255,60,.55)}
+.mi.focus::before{
+  content:''; position:absolute; left:.3cqw; top:50%; width:2.1cqw; height:2.6cqw; transform:translateY(-54%);
+  background:url(../img/felflame.svg) no-repeat center/contain, radial-gradient(closest-side,rgba(134,255,60,.55),rgba(134,255,60,0));
+  image-rendering:pixelated; animation:flick .32s steps(1) infinite;
+}
+.mi.focus .val{color:var(--gold)}
+.mi.focus[data-cycle] .val::before{content:'◂ '} .mi.focus[data-cycle] .val::after{content:' ▸'}
+.mi.small{font-size:1.6cqw; padding-left:2.4cqw}
+.mi.small.focus::before{width:1.4cqw; height:1.8cqw}
+/* steps(1): кадри перемикаються без проміжного scaleX(0), інакше вогник блимав би невидимістю */
+@keyframes flick{0%,100%{transform:translateY(-54%) scaleX(1)} 50%{transform:translateY(-58%) scaleX(-1)}}
+
+/* ============================================================
+   ТИТУЛ І ГОЛОВНЕ МЕНЮ
+   ============================================================ */
+#title{justify-content:flex-start; background:radial-gradient(ellipse 60% 70% at 50% 40%,transparent 40%,rgba(8,4,6,.55) 100%)}
+/* темна підкладка зліва під меню — з'являється разом із ним */
+#title::before{content:''; position:absolute; inset:0; pointer-events:none; opacity:0; transition:opacity .5s;
+  background:linear-gradient(90deg,rgba(9,4,3,.9),rgba(9,4,3,.72) 20cqw,rgba(9,4,3,.2) 36cqw,transparent 44cqw)}
+#title.awake::before{opacity:1}
+.logo{position:relative; display:flex; flex-direction:column; align-items:center; margin-top:2.6cqw; filter:drop-shadow(0 0 2.4cqw rgba(134,255,60,.28));
+  animation:logoIn .7s .15s cubic-bezier(.2,1.4,.35,1) both}
+@keyframes logoIn{0%{opacity:0; transform:translateY(-3cqw) scale(1.5)} 55%{opacity:1}}
+.logo-top{
+  display:flex; align-items:center; gap:1.2cqw;
+  font-size:3cqw; letter-spacing:.9cqw; color:#ecd3a8;
+  text-shadow:0 .3cqw 0 #3a1a0a, .25cqw 0 0 #3a1a0a, -.25cqw 0 0 #3a1a0a, 0 -.2cqw 0 #3a1a0a;
+}
+/* піксельні орнаменти обабіч «АЗЕРОТ» */
+.logo-top::before,.logo-top::after{content:''; width:7cqw; height:.9cqw;
+  background:
+    linear-gradient(var(--gold),var(--gold)) 0 50%/100% .3cqw no-repeat,
+    linear-gradient(var(--goldL),var(--goldL)) 100% 50%/.9cqw .9cqw no-repeat;
+  filter:drop-shadow(0 .2cqw 0 #3a1a0a)}
+.logo-top::before{margin-right:.3cqw}
+.logo-top::after{transform:scaleX(-1)}
+.logo-main{
+  position:relative; font-size:12cqw; line-height:.86; letter-spacing:.5cqw; margin-right:-.5cqw;
+  background:linear-gradient(180deg,#fff6cc 0 22%,#f5cf62 22% 47%,#d99a32 47% 72%,#8a4f16 72%);
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+  filter:drop-shadow(0 .4cqw 0 #2a1206) drop-shadow(.36cqw 0 0 #2a1206) drop-shadow(-.36cqw 0 0 #2a1206) drop-shadow(0 -.3cqw 0 #2a1206) drop-shadow(0 1.1cqw 0 rgba(0,0,0,.45));
+}
+/* відблиск, що пробігає по золоту */
+.logo-main::after{
+  content:attr(data-t); position:absolute; inset:0; pointer-events:none;
+  background:linear-gradient(105deg,transparent 42%,rgba(255,255,255,.95) 47%,rgba(255,255,255,.95) 50%,transparent 55%) 160% 0/250% 100% no-repeat;
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+  animation:shine 5.5s 1.2s steps(40) infinite;
+}
+@keyframes shine{0%{background-position:160% 0} 22%,100%{background-position:-60% 0}}
+.press{
+  position:absolute; bottom:8.5cqw; left:0; right:0; margin:0; text-align:center;
+  font-size:2cqw;  color:var(--goldL); text-shadow:0 .25cqw 0 #2a1206, 0 0 1.4cqw rgba(0,0,0,.9);
+  animation:blink 1.2s steps(1) infinite;
+}
+@keyframes blink{50%{opacity:.15}}
+#title .mainmenu{position:absolute; left:4.5cqw; bottom:6cqw; visibility:hidden}
+#title.awake .press{display:none}
+#title.awake .mainmenu{visibility:visible}
+#title.awake .mainmenu .mi{animation:rise .42s cubic-bezier(.2,.9,.25,1) both}
+#title.awake .mainmenu .mi:nth-child(2){animation-delay:.05s} #title.awake .mainmenu .mi:nth-child(3){animation-delay:.1s}
+#title.awake .mainmenu .mi:nth-child(4){animation-delay:.15s} #title.awake .mainmenu .mi:nth-child(5){animation-delay:.2s}
+#title.awake .mainmenu .mi:nth-child(6){animation-delay:.25s}
+@keyframes rise{from{opacity:0; transform:translateX(-3cqw)}}
+.nav-hint{position:absolute; left:4.5cqw; bottom:2.2cqw; margin:0; display:flex; align-items:center; gap:.35cqw; font-size:1.1cqw; color:var(--ink); visibility:hidden}
+.nav-hint{gap:1.4cqw}
+.hk{display:inline-flex; align-items:center; gap:.35cqw}
+/* кнопки геймпада в підказках */
+.pb{display:inline-grid; place-items:center; min-width:1.55cqw; height:1.55cqw; padding:0 .3cqw; font:400 .85cqw var(--display); font-style:normal;
+  color:#1a0e08; background:#d6c29c; border:.12cqw solid #1a0e08; border-radius:.35cqw; box-shadow:inset 0 -.18cqw 0 rgba(0,0,0,.25)}
+.pb-x,.pb-y,.pb-b,.pb-a{border-radius:50%; padding:0; width:1.55cqw}
+.pb-x{background:var(--sx)} .pb-y{background:var(--sy)} .pb-b{background:var(--sb)} .pb-a{background:var(--sa)}
+.pb.dp{width:1.55cqw; padding:0; background:#d6c29c; clip-path:polygon(33% 0,67% 0,67% 33%,100% 33%,100% 67%,67% 67%,67% 100%,33% 100%,33% 67%,0 67%,0 33%,33% 33%); border:0}
+.sel-keys .hk{gap:.35cqw}
+.nav-hint.static{position:static; visibility:visible}
+#title.awake .nav-hint{visibility:visible; animation:scrIn .5s .4s both}
+.version{position:absolute; right:2cqw; bottom:1.4cqw; margin:0; font-size:1.05cqw; color:var(--ink); text-shadow:0 .2cqw 0 #000}
+
+/* ============================================================
+   НАЛАШТУВАННЯ
+   ============================================================ */
+.set-panel{--c:1.2cqw; display:flex; flex-direction:column; gap:.6cqw; padding:2cqw 3cqw 2cqw 1.6cqw; min-width:40cqw}
+.set-panel .mi{font-size:2.2cqw; text-align:left}
+.set-panel .mi .val{float:right; margin-left:3cqw}
+
+/* ============================================================
+   КЕРУВАННЯ
+   ============================================================ */
+#controls{background:radial-gradient(ellipse at 50% 40%,rgba(14,8,9,.62),rgba(8,5,6,.93) 80%); padding:0 4cqw 1.6cqw; gap:1.4cqw}
+.ctl-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:1.6cqw; width:100%}
+.ctl-card{padding:1.5cqw 1.4cqw 2cqw; min-height:17cqw; display:flex; flex-direction:column}
+.ctl-card h3{margin:0 0 1.5cqw; font-size:1.75cqw;  color:var(--goldL); text-align:center}
+.ctl-card h3 small{display:block; font-size:1.05cqw; font-weight:400; color:var(--ink); margin-top:.3cqw}
+.kb{flex:1; display:flex; justify-content:space-evenly; align-items:center; padding-bottom:1.6cqw}
+.cluster{display:flex; flex-direction:column; align-items:center; gap:2.4cqw}
+.krow{display:flex; gap:1.05cqw}
+.key{
+  position:relative; width:3.3cqw; height:3.3cqw; display:grid; place-items:center;
+  font:600 1.6cqw var(--display); color:#2a1a10;
+  background:linear-gradient(#f5e9cc,#d6c29c); border:.18cqw solid #2a1a10;
+  box-shadow:inset 0 -.45cqw 0 #a48c68, inset .2cqw .2cqw 0 #fffaf0, 0 .3cqw 0 #120a06;
+}
+.key::after{content:attr(data-l); position:absolute; top:calc(100% + .5cqw); left:50%; transform:translateX(-50%); white-space:nowrap; font:500 1.2cqw var(--text); color:var(--parch)}
+.key.k-x,.dot.k-x{background:linear-gradient(#cfe6ff,var(--sx)); box-shadow:inset 0 -.45cqw 0 #3a6aa8, 0 .3cqw 0 #120a06}
+.key.k-y,.dot.k-y{background:linear-gradient(#fff2b8,var(--sy)); box-shadow:inset 0 -.45cqw 0 #a07a18, 0 .3cqw 0 #120a06}
+.key.k-b,.dot.k-b{background:linear-gradient(#ffc8bc,var(--sb)); box-shadow:inset 0 -.45cqw 0 #8a2418, 0 .3cqw 0 #120a06}
+.key.k-a,.dot.k-a{background:linear-gradient(#cff5c0,var(--sa)); box-shadow:inset 0 -.45cqw 0 #2a6a20, 0 .3cqw 0 #120a06}
+.key.k-f,.dot.k-f{background:linear-gradient(#e6d4ff,var(--sf)); box-shadow:inset 0 -.45cqw 0 #5a3a98, 0 .3cqw 0 #120a06}
+.arr{display:inline-block; width:1.1em; height:1.1em; vertical-align:-.15em; background:currentColor;
+  clip-path:polygon(50% 0,100% 50%,70% 50%,70% 100%,30% 100%,30% 50%,0 50%)}
+.arr.d{transform:rotate(180deg)} .arr.l{transform:rotate(-90deg)} .arr.r{transform:rotate(90deg)}
+.key .arr{width:1.3cqw; height:1.3cqw}
+kbd.mini .arr{width:.8cqw; height:.8cqw; vertical-align:-.05cqw}
+kbd.mini{display:inline-block; min-width:1.5cqw; padding:0 .35cqw; font:600 .95cqw var(--display); color:#2a1a10; text-align:center; background:#e6d6b4; border:.12cqw solid #2a1a10; box-shadow:inset 0 -.2cqw 0 #a48c68}
+.ctl-note{margin:0; font-size:1cqw; color:var(--ink); text-align:center}
+.pad{display:block; width:72%; margin:-.4cqw auto .6cqw}
+.pad-body{fill:#3b2a22; stroke:#e9b949; stroke-width:1}
+.pad-bump{fill:#5c4231} .pad-dpad{fill:#1a110e} .pad-start{fill:#a8927a} .pad-stick{fill:#1a110e; stroke:#5c4231; stroke-width:1}
+.btn-x{fill:var(--sx)} .btn-y{fill:var(--sy)} .btn-b{fill:var(--sb)} .btn-a{fill:var(--sa)}
+.pad-legend{list-style:none; margin:0; padding:0; display:grid; grid-template-columns:1fr 1fr; gap:.55cqw 1cqw; font-size:1.02cqw}
+.pad-legend li{display:flex; align-items:center; gap:.6cqw}
+.dot{display:inline-grid; place-items:center; min-width:2cqw; height:2cqw; padding:0 .3cqw; font:600 .95cqw var(--display); font-style:normal; color:#1a0e08; background:#d6c29c; border:.14cqw solid #1a0e08}
+.sub-title{margin:.4cqw 0 0; font-size:2cqw;  color:var(--goldL); text-shadow:0 .22cqw 0 #2a1206}
+.tips{display:grid; grid-template-columns:repeat(4,1fr); gap:1.4cqw; width:100%}
+.tip{display:flex; gap:1cqw; align-items:flex-start}
+/* без набору іконок: емодзі в тій самій рамці (див. iconHtml в ui.js) */
+.ico-fb{display:grid; place-items:center; flex:none; font-weight:400; font-family:serif; line-height:1; background:rgba(0,0,0,.35)}
+.rtile .ico-fb{width:100%; height:100%; font-size:3.4cqw; filter:saturate(.35) brightness(.7); transition:filter .12s}
+.stab .ico-fb{width:2.8cqw; height:2.8cqw; font-size:1.8cqw}
+.arow .ico-fb{width:2.6cqw; height:2.6cqw; font-size:1.6cqw; border:.18cqw solid #120806}
+.abil.five .arow .ico-fb{width:2.2cqw; height:2.2cqw; font-size:1.4cqw}
+img.broken{display:none}
+.tip img{width:4cqw; height:4cqw; flex:none; border:.3cqw solid var(--gold); box-shadow:0 0 0 .18cqw #2a1206, 0 .4cqw 0 .18cqw #0c0708}
+.tip b{display:block; font-size:1.35cqw; color:var(--goldL); margin-bottom:.3cqw}
+.tip p{margin:0; font-size:1.02cqw; line-height:1.35; color:var(--parch)}
+.screen-foot{margin-top:auto; width:100%; display:flex; align-items:center; justify-content:space-between}
+.foot-hint{display:flex; gap:1.4cqw; font-size:1.05cqw; color:var(--ink)}
+
+/* ============================================================
+   ВИБІР БІЙЦЯ
+   ============================================================ */
+#select{--c0:#888; --c1:#888; padding:1.2cqw 1.6cqw .8cqw; gap:.8cqw;
+  background:
+    radial-gradient(ellipse 30% 60% at 12% 62%,color-mix(in srgb,var(--c0) 26%,transparent),transparent 70%),
+    radial-gradient(ellipse 30% 60% at 88% 62%,color-mix(in srgb,var(--c1) 26%,transparent),transparent 70%),
+    radial-gradient(ellipse 55% 75% at 50% 55%,rgba(16,9,11,.66),rgba(8,5,6,.95) 80%)}
+#select.shake{animation:shake .28s steps(6)}
+@keyframes shake{20%{transform:translate(.4cqw,-.2cqw)} 40%{transform:translate(-.35cqw,.25cqw)} 60%{transform:translate(.25cqw,.15cqw)} 80%{transform:translate(-.15cqw,-.1cqw)}}
+.sel-head{display:grid; grid-template-columns:1fr auto 1fr; align-items:center; width:100%}
+.sel-title{font-size:2.8cqw}
+.side-tag{justify-self:start; font-size:1.55cqw;  padding:.35cqw 1.3cqw; color:#cfe4ff; background:linear-gradient(90deg,rgba(74,163,255,.35),transparent); border-left:.45cqw solid var(--p1); opacity:.55; transition:opacity .2s}
+.side-tag.p2{justify-self:end; color:#ffd0c8; background:linear-gradient(270deg,rgba(255,90,74,.35),transparent); border-left:0; border-right:.45cqw solid var(--p2)}
+.side-tag.active{opacity:1; text-shadow:0 0 1cqw currentColor}
+.sel-body{display:grid; grid-template-columns:26.5cqw minmax(0,1fr) 26.5cqw; gap:1.3cqw; width:100%; flex:1; min-height:0}
+
+.showcase{--cc:#e9b949; position:relative; display:flex; flex-direction:column; align-items:center; min-height:0}
+.sc-beam{position:absolute; inset:0 0 3cqw; pointer-events:none;
+  background:
+    radial-gradient(ellipse 34% 20% at 50% 88%,color-mix(in srgb,var(--cc) 55%,transparent),transparent 70%),
+    linear-gradient(0deg,color-mix(in srgb,var(--cc) 30%,transparent),transparent 75%);
+  -webkit-mask:linear-gradient(90deg,transparent,#000 25%,#000 75%,transparent); mask:linear-gradient(90deg,transparent,#000 25%,#000 75%,transparent);
+  opacity:.8}
+.sc-cv{position:relative; width:100%; flex:1; min-height:0; display:block}
+.sc-plate{position:relative; text-align:center; padding:.3cqw 0 .1cqw; line-height:1.15}
+.sc-class{display:block; font-size:3.2cqw; letter-spacing:.25cqw; color:var(--cc); text-shadow:0 .28cqw 0 #120806, .2cqw 0 0 #120806, -.2cqw 0 0 #120806, 0 -.2cqw 0 #120806, 0 0 2cqw color-mix(in srgb,var(--cc) 60%,transparent)}
+.sc-spec{display:block; font-size:1.55cqw; color:var(--parch); text-shadow:0 .2cqw 0 #000}
+.sc-class.long{font-size:2.5cqw}
+.sc-tags{display:flex; justify-content:center; gap:.5cqw; margin-top:.45cqw}
+.sc-tags i{font-style:normal; font-size:1.05cqw; padding:.05cqw .6cqw; color:var(--parch); background:rgba(0,0,0,.45); border:.12cqw solid color-mix(in srgb,var(--cc) 70%,#000)}
+.showcase.waiting .sc-cv{filter:brightness(0) opacity(.6)}
+.showcase.waiting .sc-plate,.showcase.waiting .sc-beam{opacity:.25}
+.showcase.active::after{
+  content:''; position:absolute; inset:0 0 0 0; pointer-events:none;
+  background:
+    linear-gradient(var(--gold),var(--gold)) top left/2.4cqw .35cqw no-repeat, linear-gradient(var(--gold),var(--gold)) top left/.35cqw 2.4cqw no-repeat,
+    linear-gradient(var(--gold),var(--gold)) top right/2.4cqw .35cqw no-repeat, linear-gradient(var(--gold),var(--gold)) top right/.35cqw 2.4cqw no-repeat,
+    linear-gradient(var(--gold),var(--gold)) bottom left/2.4cqw .35cqw no-repeat, linear-gradient(var(--gold),var(--gold)) bottom left/.35cqw 2.4cqw no-repeat,
+    linear-gradient(var(--gold),var(--gold)) bottom right/2.4cqw .35cqw no-repeat, linear-gradient(var(--gold),var(--gold)) bottom right/.35cqw 2.4cqw no-repeat;
+  animation:pulse 1.4s ease-in-out infinite;
+}
+@keyframes pulse{50%{opacity:.35}}
+.sc-stamp{
+  font-family:var(--display); text-transform:uppercase; letter-spacing:.2cqw;
+  position:absolute; top:40%; left:50%; opacity:0; pointer-events:none;
+  transform:translate(-50%,-50%) rotate(-10deg) scale(2.4);
+  font-size:3.6cqw;  color:var(--goldL); padding:.1cqw 1.3cqw;
+  border:.4cqw solid var(--gold); background:rgba(42,18,6,.55);
+  text-shadow:0 .25cqw 0 #2a1206; box-shadow:0 0 2cqw rgba(233,185,73,.5);
+}
+.showcase.locked .sc-stamp{animation:stamp .34s cubic-bezier(.2,1.7,.4,1) forwards}
+@keyframes stamp{to{opacity:1; transform:translate(-50%,-50%) rotate(-10deg) scale(1)}}
+
+.sel-center{display:flex; flex-direction:column; gap:.75cqw; min-height:0; min-width:0}
+.roster{display:grid; grid-template-columns:repeat(5,1fr); gap:.6cqw}
+.rtile{--c:.7cqw; --b:.3cqw; --fa:#6a5040; --fb:#4a3528; --fc:#2a1c15; aspect-ratio:1; padding:.55cqw; transition:transform .12s cubic-bezier(.2,1.6,.4,1), filter .1s}
+.rtile img{display:block; width:100%; height:100%; object-fit:cover; image-rendering:pixelated; filter:saturate(.35) brightness(.55); transition:filter .12s}
+.rtile:hover,.rtile.hl{transform:translateY(-.3cqw)}
+.rtile:hover img,.rtile.hl img,.rtile.sel0 img,.rtile.sel1 img,.rtile:hover .ico-fb,.rtile.hl .ico-fb,.rtile.sel0 .ico-fb,.rtile.sel1 .ico-fb{filter:none}
+.rtile.sel0,.rtile.sel1{transform:scale(1.07); z-index:2}
+.rtile.sel0{--fa:#d8ecff; --fb:var(--p1); --fc:#1a4a8a}
+.rtile.sel1{--fa:#ffd8d0; --fb:var(--p2); --fc:#8a2418}
+.rtile.sel0.sel1{--fa:#fff; --fb:#c890ff; --fc:#5a2a8a}
+.rtile .mk{position:absolute; top:.2cqw; font:700 .95cqw var(--display); padding:0 .35cqw; color:#fff; z-index:2}
+.rtile .mk.m0{left:.2cqw; background:var(--p1)} .rtile .mk.m1{right:.2cqw; background:var(--p2)}
+
+.specs{display:grid; grid-template-columns:repeat(3,1fr); gap:.6cqw}
+.stab{--c:.7cqw; --b:.28cqw; display:flex; align-items:center; gap:.7cqw; padding:.55cqw .7cqw; text-align:left; --fa:#6a5040; --fb:#4a3528; --fc:#2a1c15}
+.stab img{width:2.8cqw; height:2.8cqw; flex:none}
+.stab b{display:block; font-size:1.35cqw;  color:var(--parch)}
+.stab span{display:block; font-size:.95cqw; color:var(--ink)}
+.stab.on{--fa:var(--goldL); --fb:var(--gold); --fc:var(--goldD)}
+.stab.on b{color:var(--goldL)}
+.stab:hover{filter:brightness(1.15)}
+
+.abil{--c:.9cqw; padding:.8cqw 1cqw; display:flex; flex-direction:column; gap:.45cqw; flex:1; min-height:0}
+.arow{display:grid; grid-template-columns:auto auto minmax(0,1fr); align-items:center; gap:.7cqw; cursor:default}
+.arow img{width:2.6cqw; height:2.6cqw; border:.18cqw solid #120806}
+.arow b{display:block; font-size:1.25cqw;  color:var(--goldL)}
+.arow span{display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; font-size:.92cqw; line-height:1.15; color:var(--parch); opacity:.85; overflow:hidden}
+.arow:hover b{color:#fff}
+.slot{display:grid; place-items:center; width:2cqw; height:2cqw; font:700 1cqw var(--display); color:#1a0e08; border:.14cqw solid #1a0e08}
+.slot.s0{background:var(--sx)} .slot.s1{background:var(--sy)} .slot.s2{background:var(--sb)} .slot.s3{background:var(--sa)} .slot.s4{background:var(--sf)}
+/* п'ять рядків (спек із формою друїда) — компактніше, щоб усе влізло */
+.abil.five{gap:.25cqw; padding:.6cqw 1cqw}
+.abil.five .arow img{width:2.2cqw; height:2.2cqw}
+.abil.five .arow b{font-size:1.15cqw}
+.abil.five .arow span{-webkit-line-clamp:1}
+.abil.five .arow.form{padding-top:.3cqw}
+.arow.form{border-top:.14cqw dashed var(--stone3); padding-top:.45cqw}
+
+.skins{display:grid; grid-template-columns:repeat(4,1fr); gap:.6cqw}
+.skin{--c:.7cqw; --b:.28cqw; display:flex; flex-direction:column; align-items:center; padding:.35cqw .3cqw .45cqw; --fa:#6a5040; --fb:#4a3528; --fc:#2a1c15}
+.skin canvas{width:100%; height:6cqw; display:block}
+.skin span{font-size:.95cqw; color:var(--ink); white-space:nowrap}
+.skin.on{--fa:var(--goldL); --fb:var(--gold); --fc:var(--goldD)}
+.skin.on span{color:var(--goldL)}
+.skin:hover{filter:brightness(1.15)}
+
+.sel-actions{display:flex; align-items:center; justify-content:space-between; gap:1cqw}
+.cta{
+  --c:.8cqw; position:relative; font-size:2cqw; text-transform:uppercase; letter-spacing:.15cqw;  color:#2a1206; padding:.5cqw 3.2cqw;
+  background:linear-gradient(180deg,#fff6cc,#f5cf62 45%,#c98a2a);
+  clip-path:polygon(var(--c) 0,calc(100% - var(--c)) 0,100% var(--c),100% calc(100% - var(--c)),calc(100% - var(--c)) 100%,var(--c) 100%,0 calc(100% - var(--c)),0 var(--c));
+  text-shadow:0 .14cqw 0 rgba(255,255,255,.45); transition:filter .1s, transform .1s;
+}
+.cta:hover,.cta.focus{filter:brightness(1.12) drop-shadow(0 0 1cqw rgba(255,220,120,.6)); transform:translateY(-.15cqw)}
+.sel-keys{display:flex; justify-content:center; gap:2.2cqw; font-size:1cqw; color:var(--ink); width:100%}
+.sel-keys span{display:flex; align-items:center; gap:.35cqw}
+
+/* ============================================================
+   VS — зіткнення бійців перед боєм
+   ============================================================ */
+#versus{background:#0c0708; overflow:hidden}
+.vs-half{position:absolute; top:0; bottom:0; width:57%; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; padding-bottom:4cqw}
+.vs-half.l{left:-3%; clip-path:polygon(0 0,100% 0,84% 100%,0 100%);
+  background:linear-gradient(115deg,color-mix(in srgb,var(--c1) 60%,#0c0708),#0c0708 78%); animation:inL .5s cubic-bezier(.2,.9,.2,1) both}
+.vs-half.r{right:-3%; clip-path:polygon(16% 0,100% 0,100% 100%,0 100%);
+  background:linear-gradient(245deg,color-mix(in srgb,var(--c2) 60%,#0c0708),#0c0708 78%); animation:inR .5s cubic-bezier(.2,.9,.2,1) both}
+@keyframes inL{from{transform:translateX(-60%)}} @keyframes inR{from{transform:translateX(60%)}}
+.vs-cv{width:78%; flex:1; min-height:0; display:block}
+.vs-name{font-size:4.2cqw; letter-spacing:.3cqw; color:var(--parch); text-align:center; line-height:1.05;
+  text-shadow:0 .3cqw 0 #120806, .22cqw 0 0 #120806, -.22cqw 0 0 #120806, 0 -.2cqw 0 #120806, 0 0 2.2cqw rgba(0,0,0,.8)}
+.vs-name small{display:block; text-transform:none; letter-spacing:.05cqw; font-size:1.9cqw; color:#e2caa2}
+.vs-half.l .vs-name{animation:inL .45s .25s cubic-bezier(.2,.9,.2,1) both}
+.vs-half.r .vs-name{animation:inR .45s .25s cubic-bezier(.2,.9,.2,1) both}
+.vs-bar{position:absolute; left:22%; right:22%; top:44%; height:.6cqw; transform:translateY(-50%) rotate(-4deg) scaleX(0);
+  background:linear-gradient(90deg,transparent,var(--c1) 20%,#fff8e0 50%,var(--c2) 80%,transparent);
+  box-shadow:0 0 2.5cqw #fff3c0; animation:bar .35s .6s cubic-bezier(.2,.9,.2,1) both}
+@keyframes bar{to{transform:translateY(-50%) rotate(-4deg) scaleX(1)}}
+.vs-mark{
+  position:absolute; left:50%; top:44%; z-index:2; width:23cqw; image-rendering:pixelated;
+  filter:drop-shadow(0 0 3cqw rgba(255,190,80,.55));
+  transform:translate(-50%,-50%); animation:slam .45s .38s cubic-bezier(.2,1.8,.35,1) both;
+}
+@keyframes slam{from{opacity:0; transform:translate(-50%,-50%) scale(4)}}
+/* спалах у мить удару «VS» (до нього — прозорий) */
+#versus::after{content:''; position:absolute; inset:0; background:#fff8e0; opacity:0; pointer-events:none; animation:flash .5s .72s ease-out forwards}
+@keyframes flash{0%{opacity:.8} 100%{opacity:0}}
+/* лінії швидкості в кольорі класу */
+.vs-half::before{content:''; position:absolute; inset:-20%; z-index:-1; opacity:.35; pointer-events:none;
+  background:repeating-linear-gradient(100deg,transparent 0 3.2cqw,rgba(255,255,255,.14) 3.2cqw 3.5cqw,transparent 3.5cqw 7.9cqw,rgba(255,255,255,.07) 7.9cqw 8.1cqw);
+  animation:speed .5s linear infinite}
+.vs-half.r::before{animation-direction:reverse}
+@keyframes speed{to{transform:translateX(8.1cqw)}}
+.vs-half{isolation:isolate}
+.vs-who{position:absolute; top:3cqw; font:400 1.7cqw var(--display); letter-spacing:.2cqw; padding:.3cqw 1.4cqw; color:#fff; text-transform:uppercase}
+.vs-half.l .vs-who{left:6cqw; background:linear-gradient(90deg,var(--p1),transparent); border-left:.5cqw solid #cfe4ff}
+.vs-half.r .vs-who{right:6cqw; background:linear-gradient(270deg,var(--p2),transparent); border-right:.5cqw solid #ffd0c8}
+
+/* ============================================================
+   ПАУЗА І ФІНАЛ МАТЧУ
+   ============================================================ */
+#pauseMenu .screen-title{margin:0}
+.win-title{font-size:5.6cqw; letter-spacing:.3cqw; animation:winIn .5s cubic-bezier(.2,1.5,.35,1) both}
+@keyframes winIn{from{opacity:0; transform:scale(1.8)}}
+#overlay{gap:1.6cqw}
+.win-cv{width:36cqw; height:19cqw; display:block; margin-bottom:-1cqw}
+.win-sub{margin:-.6cqw 0 .6cqw; font-size:1.8cqw; color:var(--parch); text-shadow:0 .2cqw 0 #000}
+
+/* ============================================================
+   ГРА ПО МЕРЕЖІ: лобі
+   ============================================================ */
+.net-panel{--c:1.2cqw; display:flex; flex-direction:column; align-items:center; gap:1cqw; padding:2.2cqw 3.4cqw; min-width:46cqw; max-width:62cqw; text-align:center}
+.net-status{margin:0; font:400 2.2cqw var(--display); color:var(--goldL); text-shadow:0 .25cqw 0 #2a1206}
+.net-urls{display:flex; flex-direction:column; gap:.4cqw}
+.net-urls b{font:400 2.6cqw var(--display); letter-spacing:.1cqw; color:var(--fel); text-shadow:0 .25cqw 0 #0d2a06, 0 0 1.2cqw rgba(134,255,60,.35); -webkit-user-select:text; user-select:text}
+.net-note{margin:0; font-size:1.6cqw; line-height:1.25; color:var(--parch)}
+.net-note b{color:var(--goldL); font-weight:700}
+.net-note code{font:400 1.4cqw var(--display); color:var(--gold); background:rgba(0,0,0,.45); padding:.05cqw .5cqw}
+body.net .net-off{display:none}
+body.touch .sel-keys,body.touch .nav-hint,body.touch .foot-hint{visibility:hidden !important}   /* на телефоні клавіш нема */
+
+/* ============================================================
+   СЕНСОРНЕ КЕРУВАННЯ (touch.js). Розміри — у --u (1vmin, але не
+   більше 5.5px, щоб на планшеті кнопки не розросталися на пів екрана).
+   Кнопки задаються центром: --r/--b від правого нижнього кута, --s — діаметр.
+   ============================================================ */
+#touch{position:fixed; inset:0; z-index:40; touch-action:none; --u:min(1vmin,5.5px)}
+#touch *{touch-action:none}
+.t-btn{
+  position:absolute; width:calc(var(--s)*var(--u)); height:calc(var(--s)*var(--u));
+  right:calc(var(--r)*var(--u) + env(safe-area-inset-right)); bottom:calc(var(--b)*var(--u) + env(safe-area-inset-bottom));
+  transform:translate(50%,50%); border-radius:50%; overflow:hidden; display:grid; place-items:center;
+  --ring:var(--gold);
+  background:radial-gradient(circle at 50% 35%,rgba(59,42,34,.72),rgba(20,13,11,.72));
+  box-shadow:0 0 0 calc(.55*var(--u)) var(--ring), 0 0 0 calc(.95*var(--u)) rgba(20,10,6,.85), 0 calc(.8*var(--u)) calc(2*var(--u)) rgba(0,0,0,.5);
+  opacity:.9; transition:transform .06s, filter .06s;
+}
+.t-btn img{position:absolute; inset:9%; width:82%; height:82%; border-radius:50%; image-rendering:pixelated; pointer-events:none}
+.t-btn .t-em{font:400 calc(var(--s)*var(--u)*.45) serif; pointer-events:none}
+.t-btn .t-cd{position:absolute; inset:0; border-radius:50%; pointer-events:none;
+  background:conic-gradient(rgba(5,8,14,.8) calc(var(--cd,0)*360deg),transparent 0)}
+.t-btn .t-n{position:absolute; inset:0; display:grid; place-items:center; pointer-events:none;
+  font:400 calc(var(--s)*var(--u)*.34) var(--display); color:#fff; text-shadow:0 0 calc(.6*var(--u)) #000, 0 calc(.3*var(--u)) 0 #000}
+.t-btn .t-lbl{position:absolute; bottom:6%; left:0; right:0; text-align:center; pointer-events:none;
+  font:400 calc(2*var(--u)) var(--display); color:var(--parch); text-shadow:0 calc(.25*var(--u)) 0 #000}
+.t-btn.on{transform:translate(50%,50%) scale(.9); filter:brightness(1.35); opacity:1}
+.t-btn.gcd img{filter:brightness(.55)}
+.t-btn.lit{--ring:#7dff8a; opacity:1}
+/* розкладка справа: великий «швидкий» удар під великим пальцем, решта — дугою навколо */
+.t-ab.s0{--s:21; --r:15; --b:16; --ring:var(--sx)}
+.t-ab.s1{--s:15; --r:36; --b:11; --ring:var(--sy)}
+.t-ab.s2{--s:15; --r:33; --b:30; --ring:var(--sb)}
+.t-ab.s3{--s:15; --r:15; --b:37; --ring:var(--sa)}
+.t-blk{--s:14; --r:54; --b:10}
+.t-form{--s:12; --r:50; --b:28; --ring:var(--sf)}
+.t-blk img{filter:saturate(.6)}
+.t-pause{position:absolute; left:50%; top:calc(11.5 * min(1vh, 9 / 16 * 1vw)); transform:translateX(-50%);
+  width:calc(7*var(--u)); height:calc(7*var(--u)); display:grid; place-items:center;
+  font:400 calc(3*var(--u)) var(--display); color:var(--parch);
+  background:rgba(20,13,11,.6); box-shadow:0 0 0 calc(.4*var(--u)) var(--goldD); opacity:.75}
+/* стік: у спокої — блідий натяк зліва внизу; під пальцем — там, де торкнувся */
+.t-stick{position:absolute; left:calc(17*var(--u) + env(safe-area-inset-left)); top:calc(100% - 17*var(--u)); width:calc(26*var(--u)); height:calc(26*var(--u));
+  transform:translate(-50%,-50%); border-radius:50%; pointer-events:none; opacity:.35;
+  background:radial-gradient(circle,rgba(255,240,200,.06) 55%,rgba(255,240,200,.14));
+  box-shadow:inset 0 0 0 calc(.5*var(--u)) rgba(233,185,73,.55)}
+.t-stick.on{opacity:.9}
+.t-knob{position:absolute; left:50%; top:50%; width:calc(11*var(--u)); height:calc(11*var(--u)); transform:translate(-50%,-50%); border-radius:50%;
+  background:radial-gradient(circle at 50% 35%,#fff0b0,#e9b949 45%,#8a5a1a); box-shadow:0 0 0 calc(.4*var(--u)) #2a1206, 0 calc(.6*var(--u)) calc(1.4*var(--u)) rgba(0,0,0,.5)}
+
+/* портретна орієнтація на телефоні: проханням повернути */
+#rotate{display:none}
+@media (orientation:portrait) and (hover:none) and (pointer:coarse){
+  #rotate{position:fixed; inset:0; z-index:100; display:grid; place-items:center; background:#0c0708; text-align:center;
+    font:400 6vw var(--display); color:var(--goldL); padding:8vw}
+  #rotate b{display:block; font-size:22vw; font-weight:400; color:var(--gold); animation:spin 2.2s ease-in-out infinite}
+}
+@keyframes spin{0%,30%{transform:rotate(0)} 60%,100%{transform:rotate(90deg)}}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none !important; transition:none !important}
+  .showcase.locked .sc-stamp{opacity:1; transform:translate(-50%,-50%) rotate(-10deg)}
+}

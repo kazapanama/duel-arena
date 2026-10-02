@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0c0708">
+<title>Азерот Арена</title>
+<link rel="icon" href="img/vs.svg">
+<link rel="stylesheet" href="fonts/fonts.css">
+<link rel="stylesheet" href="css/style.css">
+<link rel="preload" as="image" href="img/felflame.svg">
+<link rel="preload" as="image" href="img/vs.svg">
+</head>
+<body>
+<div id="wrap">
+  <canvas id="cv" width="1280" height="720"></canvas>
+
+  <!-- ТИТУЛ І ГОЛОВНЕ МЕНЮ: логотип над Темним Порталом, меню з'являється після натискання -->
+  <section id="title" class="screen">
+    <header class="logo">
+      <span class="logo-top">АЗЕРОТ</span>
+      <span class="logo-main" data-t="АРЕНА">АРЕНА</span>
+    </header>
+    <p class="press" id="press">Натисни будь-яку клавішу</p>
+    <nav class="mainmenu" id="mainMenu" aria-label="Головне меню">
+      <button class="mi" data-nav data-act="ai">Бій із ботом</button>
+      <button class="mi" data-nav data-act="pvp">Двоє гравців</button>
+      <button class="mi" data-nav data-act="net">Гра по мережі</button>
+      <button class="mi" data-nav data-act="controls">Керування</button>
+      <button class="mi" data-nav data-act="gallery">Галерея бійців</button>
+      <button class="mi" data-nav data-act="settings">Налаштування</button>
+    </nav>
+    <p class="nav-hint" id="hintTitle"></p>
+    <p class="version">Версія 1.0</p>
+  </section>
+
+  <!-- НАЛАШТУВАННЯ -->
+  <section id="settings" class="screen dim hidden">
+    <h2 class="screen-title">Налаштування</h2>
+    <div class="pf set-panel">
+      <button class="mi" data-nav data-act="diff" data-cycle>Складність бота <span class="val" id="diffVal"></span></button>
+      <button class="mi" data-nav data-act="sound" data-cycle>Звук <span class="val" id="soundVal"></span></button>
+      <button class="mi" data-nav data-act="back">Назад</button>
+    </div>
+    <p class="nav-hint static" id="hintSettings"></p>
+  </section>
+
+  <!-- ГРА ПО МЕРЕЖІ: очікування другого гравця (net.js) -->
+  <section id="netLobby" class="screen dim hidden">
+    <h2 class="screen-title">Гра по мережі</h2>
+    <div class="pf net-panel">
+      <p class="net-status" id="netStatus"></p>
+      <div class="net-urls" id="netUrls"></div>
+      <p class="net-note" id="netNote"></p>
+    </div>
+    <nav class="mainmenu center">
+      <button class="mi small hidden" data-nav data-act="netRetry" id="netRetry">Підключитися знову</button>
+      <button class="mi small" data-nav data-act="back">Назад</button>
+    </nav>
+  </section>
+
+  <!-- КЕРУВАННЯ: намальовані клавіатури, геймпад і поради -->
+  <section id="controls" class="screen hidden">
+    <h2 class="screen-title">Керування</h2>
+    <div class="ctl-grid">
+      <article class="pf ctl-card">
+        <h3>Гравець 1<small>клавіатура</small></h3>
+        <div class="kb">
+          <div class="cluster">
+            <div class="krow"><kbd class="key" data-l="Стрибок">W</kbd></div>
+            <div class="krow"><kbd class="key" data-l="Ліворуч">A</kbd><kbd class="key" data-l="Блок">S</kbd><kbd class="key" data-l="Праворуч">D</kbd></div>
+          </div>
+          <div class="cluster">
+            <div class="krow"><kbd class="key k-a" data-l="Спецприйом">U</kbd><kbd class="key k-f" data-l="Форма">I</kbd></div>
+            <div class="krow"><kbd class="key k-x" data-l="Швидкий">J</kbd><kbd class="key k-y" data-l="Сильний">K</kbd><kbd class="key k-b" data-l="Особливий">L</kbd></div>
+          </div>
+        </div>
+      </article>
+      <article class="pf ctl-card">
+        <h3>Гравець 2<small>клавіатура</small></h3>
+        <div class="kb">
+          <div class="cluster">
+            <div class="krow"><kbd class="key" data-l="Стрибок"><i class="arr u"></i></kbd></div>
+            <div class="krow"><kbd class="key" data-l="Ліворуч"><i class="arr l"></i></kbd><kbd class="key" data-l="Блок"><i class="arr d"></i></kbd><kbd class="key" data-l="Праворуч"><i class="arr r"></i></kbd></div>
+          </div>
+          <div class="cluster">
+            <div class="krow"><kbd class="key k-a" data-l="Спецприйом">4</kbd><kbd class="key k-f" data-l="Форма">5</kbd></div>
+            <div class="krow"><kbd class="key k-x" data-l="Швидкий">1</kbd><kbd class="key k-y" data-l="Сильний">2</kbd><kbd class="key k-b" data-l="Особливий">3</kbd></div>
+          </div>
+        </div>
+        <p class="ctl-note">Цифри — на цифровому блоці. Без нього: <kbd class="mini">,</kbd><kbd class="mini">.</kbd><kbd class="mini">/</kbd><kbd class="mini">'</kbd><kbd class="mini">;</kbd></p>
+      </article>
+      <article class="pf ctl-card">
+        <h3>Геймпад<small>перший — гравець 1, другий — гравець 2</small></h3>
+        <svg class="pad" viewBox="0 0 120 70" shape-rendering="crispEdges" aria-hidden="true">
+          <path class="pad-body" d="M20 14h80v4h8v6h4v28h-4v6h-10v4h-14v-4h-8v-6h-32v6h-8v4h-14v-4h-10v-6h-4v-28h4v-6h8z"/>
+          <rect class="pad-bump" x="16" y="8" width="22" height="5"/><rect class="pad-bump" x="82" y="8" width="22" height="5"/>
+          <path class="pad-dpad" d="M22 30h6v-6h6v6h6v6h-6v6h-6v-6h-6z"/>
+          <rect class="pad-start" x="56" y="28" width="8" height="4"/>
+          <rect class="btn-y" x="86" y="22" width="7" height="7"/><rect class="btn-x" x="79" y="29" width="7" height="7"/>
+          <rect class="btn-b" x="93" y="29" width="7" height="7"/><rect class="btn-a" x="86" y="36" width="7" height="7"/>
+          <rect class="pad-stick" x="40" y="42" width="10" height="10"/><rect class="pad-stick" x="70" y="42" width="10" height="10"/>
+        </svg>
+        <ul class="pad-legend">
+          <li><i class="dot k-x">X</i>Швидкий</li><li><i class="dot k-y">Y</i>Сильний</li>
+          <li><i class="dot k-b">B</i>Особливий</li><li><i class="dot k-a">A</i>Спецприйом</li>
+          <li><i class="dot">L1</i>Блок</li><li><i class="dot k-f">R1</i>Форма</li>
+          <li><i class="dot">✚</i>Рух, вгору — стрибок</li><li><i class="dot">▶</i>Пауза</li>
+        </ul>
+      </article>
+    </div>
+    <h2 class="sub-title">Як битися</h2>
+    <div class="tips">
+      <div class="tip"><img src="WoW Icon Pack/Abilities/SwiftStrike.png" alt=""><div><b>Замах</b><p>Удар падає не одразу. Встигни відскочити, стрибнути чи прикритися.</p></div></div>
+      <div class="tip"><img src="WoW Icon Pack/Abilities/Parry.png" alt=""><div><b>Парирування</b><p>Натисни блок у мить удару — шкоди нема, а нападник приголомшений.</p></div></div>
+      <div class="tip"><img src="WoW Icon Pack/Abilities/ShieldWall.png" alt=""><div><b>Шкала захисту</b><p>Блок гасить удари, але виснажується. Важкі удари його ламають.</p></div></div>
+      <div class="tip"><img src="WoW Icon Pack/Abilities/Cat.png" alt=""><div><b>Форми друїда</b><p>Feral стає котом, Balance — совою. Окрема кнопка форми.</p></div></div>
+    </div>
+    <div class="screen-foot">
+      <button class="mi small" data-nav data-act="back">Назад</button>
+      <span class="foot-hint" id="hintControls"></span>
+    </div>
+  </section>
+
+  <!-- ВИБІР БІЙЦЯ: гравець зліва, суперник справа, ростер у центрі -->
+  <section id="select" class="screen hidden">
+    <div class="sel-head">
+      <span class="side-tag p1" id="selTagL">Гравець 1</span>
+      <h2 class="sel-title" id="selTitle">Обери бійця</h2>
+      <span class="side-tag p2" id="selTagR">Суперник</span>
+    </div>
+    <div class="sel-body">
+      <div class="showcase" id="showL">
+        <div class="sc-beam"></div>
+        <canvas class="sc-cv"></canvas>
+        <div class="sc-plate"><b class="sc-class"></b><span class="sc-spec"></span><span class="sc-tags"></span></div>
+        <div class="sc-stamp">Готово</div>
+      </div>
+      <div class="sel-center">
+        <div class="roster" id="roster"></div>
+        <div class="specs" id="specTabs"></div>
+        <div class="pf abil" id="abilList"></div>
+        <div class="skins" id="skinStrip"></div>
+        <div class="sel-actions">
+          <button class="mi small" data-act="back" id="selBack">Назад</button>
+          <button class="mi small" data-act="random" id="selRandom">Випадково</button>
+          <button class="cta" data-act="lock" id="selLock">Готово</button>
+        </div>
+      </div>
+      <div class="showcase right" id="showR">
+        <div class="sc-beam"></div>
+        <canvas class="sc-cv"></canvas>
+        <div class="sc-plate"><b class="sc-class"></b><span class="sc-spec"></span><span class="sc-tags"></span></div>
+        <div class="sc-stamp">Готово</div>
+      </div>
+    </div>
+    <div class="sel-keys" id="selKeys"></div>
+  </section>
+
+  <!-- ЕКРАН «VS» перед боєм -->
+  <section id="versus" class="screen hidden">
+    <div class="vs-half l"><span class="vs-who" id="vsWhoL"></span><canvas class="vs-cv" id="vsL"></canvas><div class="vs-name" id="vsNameL"></div></div>
+    <div class="vs-half r"><span class="vs-who" id="vsWhoR"></span><canvas class="vs-cv" id="vsR"></canvas><div class="vs-name" id="vsNameR"></div></div>
+    <img class="vs-mark" src="img/vs.svg" alt="VS">
+    <div class="vs-bar"></div>
+  </section>
+
+  <!-- ПАУЗА -->
+  <section id="pauseMenu" class="screen dim hidden">
+    <h2 class="screen-title">Пауза</h2>
+    <nav class="mainmenu center">
+      <button class="mi" data-nav data-act="resume">Продовжити</button>
+      <button class="mi net-off" data-nav data-act="restart">Почати бій заново</button>
+      <button class="mi" data-nav data-act="chars">Змінити бійців</button>
+      <button class="mi" data-nav data-act="menu">Вийти в меню</button>
+    </nav>
+  </section>
+
+  <!-- КІНЕЦЬ МАТЧУ -->
+  <section id="overlay" class="screen dim hidden">
+    <canvas class="win-cv" id="winCv"></canvas>
+    <h2 class="win-title" id="winTitle">Перемога</h2>
+    <p class="win-sub" id="winSub"></p>
+    <nav class="mainmenu center">
+      <button class="mi" data-nav data-act="rematch">Реванш</button>
+      <button class="mi" data-nav data-act="chars">Інші бійці</button>
+      <button class="mi" data-nav data-act="menu">Головне меню</button>
+    </nav>
+  </section>
+</div>
+
+<!-- СЕНСОРНЕ КЕРУВАННЯ (touch.js): видно лише в бою на телефоні -->
+<div id="touch" class="hidden" aria-hidden="true">
+  <div class="t-stick" id="tStick"><i class="t-knob" id="tKnob"></i></div>
+  <button class="t-btn t-ab s0" data-ab="0"><img alt=""><b class="t-em"></b><i class="t-cd"></i><span class="t-n"></span></button>
+  <button class="t-btn t-ab s1" data-ab="1"><img alt=""><b class="t-em"></b><i class="t-cd"></i><span class="t-n"></span></button>
+  <button class="t-btn t-ab s2" data-ab="2"><img alt=""><b class="t-em"></b><i class="t-cd"></i><span class="t-n"></span></button>
+  <button class="t-btn t-ab s3" data-ab="3"><img alt=""><b class="t-em"></b><i class="t-cd"></i><span class="t-n"></span></button>
+  <button class="t-btn t-blk" data-blk><b class="t-em">🛡️</b><img alt="" src="WoW Icon Pack/Abilities/ShieldWall.png"><span class="t-lbl">Блок</span></button>
+  <button class="t-btn t-form hidden" data-form><img alt=""><b class="t-em"></b><span class="t-lbl">Форма</span></button>
+  <button class="t-pause" data-pause aria-label="Пауза">II</button>
+</div>
+<div id="rotate"><div><b>⟳</b>Поверни телефон горизонтально</div></div>
+
+<!-- Порядок важливий: константи → звук → дані → ввід (+сенсор) → риг/моделі/спрайти → бійці → гра → інтерфейс → мережа → цикл -->
+<script src="js/core.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/data.js"></script>
+<script src="js/input.js"></script>
+<script src="js/touch.js"></script>
+<script src="js/rig.js"></script>
+<script src="js/paint.js"></script>
+<script src="js/cat.js"></script>
+<script src="js/models.js"></script>
+<script src="js/sprite.js"></script>
+<script src="js/fighter.js"></script>
+<script src="js/game.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/net.js"></script>
+<script src="js/menubg.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
