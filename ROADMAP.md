@@ -10,7 +10,7 @@
 
 ### Геймплей
 
-- [x] Власна здібність на кнопку A для кожного спеку. Класова лишається за одним спеком класу (Charge, Flash of Light, Disengage, Shadowstep, Flash Heal, Death Grip, Ghost Wolf, Blink, Fear, Wild Charge), решта отримали свою
+- [x] Власна здібність на кнопку A для кожного спеку. Класова лишається за одним спеком класу (Charge, Flash of Light — у Holy й Retribution, Disengage, Shadowstep, Flash Heal, Death Grip, Ghost Wolf, Blink, Fear, Wild Charge), решта отримали свою
 - [x] Супершкала й ультимейт для кожного класу, з позначками на землі, від яких можна втекти
 - [x] Комбо-лічильник і скасування легкого удару важким
 

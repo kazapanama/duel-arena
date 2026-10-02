@@ -64,9 +64,7 @@ const CLASSES = [
      mk.proj("Avenger's Shield",'🛡️',7,140,{stun:0.8,speed:920,pcolor:'#9fd7ff',psize:13}),
      mk.zone('Consecration','🔥',9,60,125,5,{at:'self',zcolor:'#ffd97a'}),
    ]},
-   { name:'Retribution', em:'⚔️', role:'Бій',
-     classAb: mk.dash('Divine Steed','🐎',7,{move:true,dist:360}),
-     abilities:[
+   { name:'Retribution', em:'⚔️', role:'Бій', abilities:[
      mk.melee('Crusader Strike','⚔️',1.2,60),
      mk.melee("Templar's Verdict",'⚖️',6,195),
      mk.buff('Avenging Wrath','😇',15,6,{dmgMult:1.35,selfHeal:40,wings:true}),   // поки діє — золоті крила
