@@ -18,3 +18,10 @@ desktop.ini
 
 # Внутрішній план візуалу (локально; публічний — ROADMAP.md)
 VISUALS_TODO.md
+
+# генерація скінів: ключ OpenAI і згенеровані/похідні картинки
+tools/setsheets/.openai_key
+tools/setsheets/out/
+tools/setsheets/refs/
+# проміжні PNG нарізки (гра вантажить лише img/cutout/<id>.js)
+img/cutout/*/

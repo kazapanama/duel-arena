@@ -30,6 +30,13 @@ const STANCE={
   claw:{lean:0.32,py:9,bfx:-16,ffx:14,fhx:20,fhy:-58,wf:1.6,bhx:10,bhy:-64,wb:1.5},
   owl:{lean:0.06,py:11,bfx:-15,ffx:15,fhx:24,fhy:-52,wf:0,bhx:-18,bhy:-56,wb:0}, // мункін: крила-руки трохи розведені
 };
+// стійки бійців із растрових деталей (напівоберт 3/4): посох — навскіс уперед, щоб не закривав обличчя;
+// одноручна зброя в дальній руці — перед тілом, а не за плечем чи спиною (models.js: m.stance)
+const STANCE34={
+  staff:{fhx:22,fhy:-54,wf:0.45},
+  shield:{fhx:1,fhy:-55,wf:0.1,bhx:24,bhy:-84,wb:0.4},   // щит — ближньою рукою перед своєю половиною тіла, зброя — дальньою, піднята вперед: руки не перехрещуються
+  dual:{fhx:12,fhy:-50,wf:1.0,bhx:24,bhy:-72,wb:0.6},   // ближня рука нижче — паралельно дальній, а не навхрест
+};
 const TWO_HAND={'2h':10,spear:14}; // задня кисть лягає на руків'я на цій відстані
 
 /* ---------- Кінематика ---------- */
@@ -46,13 +53,14 @@ function ik2(ax,ay,tx,ty,l1,l2,bend){
 }
 
 // Поза → положення суглобів
-function solvePose(p,style){
+// v34 — напівоберт для бійця з растрових деталей (js/cutout.js): ближнє плече й стегно назад, дальні вперед
+function solvePose(p,style,v34){
   const pel={x:p.px, y:RIG.PELVIS+p.py};
   const cs=Math.cos(p.lean), sn=Math.sin(p.lean);
   const T=(lx,ly)=>({x:pel.x+lx*cs-ly*sn, y:pel.y+lx*sn+ly*cs});
   const neck=T(0,-RIG.TORSO);
-  const shB=T(-4,-RIG.TORSO+7), shF=T(4,-RIG.TORSO+7);
-  const hipB={x:pel.x-4,y:pel.y}, hipF={x:pel.x+4,y:pel.y};
+  const shB=v34?T(8,-RIG.TORSO+8):T(-4,-RIG.TORSO+7), shF=v34?T(-7,-RIG.TORSO+7):T(4,-RIG.TORSO+7);
+  const hipB=v34?{x:pel.x+4,y:pel.y}:{x:pel.x-4,y:pel.y}, hipF=v34?{x:pel.x-3,y:pel.y}:{x:pel.x+4,y:pel.y};
   const lb=ik2(hipB.x,hipB.y,p.bfx,p.bfy,RIG.THIGH,RIG.SHIN,1);
   const lf=ik2(hipF.x,hipF.y,p.ffx,p.ffy,RIG.THIGH,RIG.SHIN,1);
   const fhx=p.fhx+p.px, fhy=p.fhy+p.py;

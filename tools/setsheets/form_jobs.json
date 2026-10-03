@@ -1,0 +1,173 @@
+[
+ {
+  "id": "druid_balance_1_form",
+  "skin": "druid_balance_1",
+  "kind": "moonkin",
+  "key": "druid/Balance",
+  "set": "Stormrage Raiment",
+  "label": "T2",
+  "template": "tools/setsheets/layout_template.png",
+  "ref": "tools/setsheets/refs/form_moonkin.png",
+  "refs": [
+   "tools/setsheets/refs/druid_balance_1.png"
+  ],
+  "prompt": "tools/setsheets/prompts/druid_balance_1_form.txt",
+  "weapons": [
+   null,
+   null
+  ],
+  "faction": null
+ },
+ {
+  "id": "druid_balance_2_form",
+  "skin": "druid_balance_2",
+  "kind": "moonkin",
+  "key": "druid/Balance",
+  "set": "Nordrassil Regalia",
+  "label": "T5",
+  "template": "tools/setsheets/layout_template.png",
+  "ref": "tools/setsheets/refs/form_moonkin.png",
+  "refs": [
+   "tools/setsheets/refs/druid_balance_2.png"
+  ],
+  "prompt": "tools/setsheets/prompts/druid_balance_2_form.txt",
+  "weapons": [
+   null,
+   null
+  ],
+  "faction": null
+ },
+ {
+  "id": "druid_balance_3_form",
+  "skin": "druid_balance_3",
+  "kind": "moonkin",
+  "key": "druid/Balance",
+  "set": "Nightsong Garb",
+  "label": "T8",
+  "template": "tools/setsheets/layout_template.png",
+  "ref": "tools/setsheets/refs/form_moonkin.png",
+  "refs": [
+   "tools/setsheets/refs/druid_balance_3.png"
+  ],
+  "prompt": "tools/setsheets/prompts/druid_balance_3_form.txt",
+  "weapons": [
+   null,
+   null
+  ],
+  "faction": null
+ },
+ {
+  "id": "druid_feral_1_form",
+  "skin": "druid_feral_1",
+  "kind": "cat",
+  "key": "druid/Feral",
+  "set": "Cenarion Raiment",
+  "label": "T1",
+  "template": "tools/setsheets/cat_layout_template.png",
+  "ref": "tools/setsheets/refs/form_cat.png",
+  "refs": [
+   "tools/setsheets/refs/druid_feral_1.png"
+  ],
+  "prompt": "tools/setsheets/prompts/druid_feral_1_form.txt",
+  "weapons": [
+   null,
+   null
+  ],
+  "faction": null
+ },
+ {
+  "id": "druid_feral_2_form",
+  "skin": "druid_feral_2",
+  "kind": "cat",
+  "key": "druid/Feral",
+  "set": "Thunderheart Harness",
+  "label": "T6",
+  "template": "tools/setsheets/cat_layout_template.png",
+  "ref": "tools/setsheets/refs/form_cat.png",
+  "refs": [
+   "tools/setsheets/refs/druid_feral_2.png"
+  ],
+  "prompt": "tools/setsheets/prompts/druid_feral_2_form.txt",
+  "weapons": [
+   null,
+   null
+  ],
+  "faction": null
+ },
+ {
+  "id": "druid_feral_3_form",
+  "skin": "druid_feral_3",
+  "kind": "cat",
+  "key": "druid/Feral",
+  "set": "Lasherweave Garb",
+  "label": "T10",
+  "template": "tools/setsheets/cat_layout_template.png",
+  "ref": "tools/setsheets/refs/form_cat.png",
+  "refs": [
+   "tools/setsheets/refs/druid_feral_3.png"
+  ],
+  "prompt": "tools/setsheets/prompts/druid_feral_3_form.txt",
+  "weapons": [
+   null,
+   null
+  ],
+  "faction": null
+ },
+ {
+  "id": "druid_restoration_1_form",
+  "skin": "druid_restoration_1",
+  "kind": "tree",
+  "key": "druid/Restoration",
+  "set": "Dreamwalker Raiment",
+  "label": "T3",
+  "template": "tools/setsheets/layout_template.png",
+  "ref": "tools/setsheets/refs/form_tree.png",
+  "refs": [
+   "tools/setsheets/refs/druid_restoration_1.png"
+  ],
+  "prompt": "tools/setsheets/prompts/druid_restoration_1_form.txt",
+  "weapons": [
+   null,
+   null
+  ],
+  "faction": null
+ },
+ {
+  "id": "druid_restoration_2_form",
+  "skin": "druid_restoration_2",
+  "kind": "tree",
+  "key": "druid/Restoration",
+  "set": "Malorne Raiment",
+  "label": "T4",
+  "template": "tools/setsheets/layout_template.png",
+  "ref": "tools/setsheets/refs/form_tree.png",
+  "refs": [
+   "tools/setsheets/refs/druid_restoration_2.png"
+  ],
+  "prompt": "tools/setsheets/prompts/druid_restoration_2_form.txt",
+  "weapons": [
+   null,
+   null
+  ],
+  "faction": null
+ },
+ {
+  "id": "druid_restoration_3_form",
+  "skin": "druid_restoration_3",
+  "kind": "tree",
+  "key": "druid/Restoration",
+  "set": "Runetotem's Garb",
+  "label": "T9",
+  "template": "tools/setsheets/layout_template.png",
+  "ref": "tools/setsheets/refs/form_tree.png",
+  "refs": [
+   "tools/setsheets/refs/druid_restoration_3.png"
+  ],
+  "prompt": "tools/setsheets/prompts/druid_restoration_3_form.txt",
+  "weapons": [
+   null,
+   null
+  ],
+  "faction": null
+ }
+]

@@ -1,0 +1,32 @@
+Make a pixel-art CHARACTER PARTS SHEET for a 2D fighting game. The parts will be cut out automatically and attached to an animation skeleton, so the layout and the scale rules below matter more than anything else.
+
+ATTACHED IMAGES
+- Image 1 = LAYOUT AND SCALE TEMPLATE. This is the canvas to fill: keep its exact grid, magenta background, black grid lines and the same cells in the same places. The grey dashed shapes only show WHERE each part goes, HOW BIG it is and HOW it is oriented: replace every grey shape with the finished part and leave no grey lines.
+- Image 2 = THE REAL ARMOR SET "Frostfire Regalia" (T3): a 3D screenshot from World of Warcraft. This is the only source of the design. Reproduce this exact armor as faithfully as possible: the silhouette and size of every piece, helmet, shoulder pads, chest, belt, the armor below the belt, legs, boots, cape (only if it has one), ornaments, glowing details and colors. The person wearing it in the screenshot may be another race or gender: ignore their body and keep only the armor. Do not copy the background, spell effects or pets. Convert everything into pixel art in the 3/4 right-facing view and in the layout and scale of Image 1.
+
+CHARACTER
+Mage / Frost, cloth armor, wearer: human male with a normal humanoid body.
+Weapons: staff (no off-hand item). The screenshot shows no weapons or the wrong ones: design the weapons to match this armor set (same metals, colors and motifs).
+
+THE MOST IMPORTANT RULES
+1. ONE SCALE FOR EVERYTHING. Every separate part must be exactly the same size as that part on the full character in the tall left cell; match the grey shapes of Image 1. Do NOT enlarge parts to fill their cells; empty magenta space around a part is correct.
+2. BIG CHUNKY PIXELS. The full character is about 100 art-pixels tall, so every art-pixel is a square block of about 6x6 image pixels. Design for that size: bold readable shapes, a few big ornaments, thick 2-art-pixel trim lines; no tiny scratches, no noise, no fine filigree.
+3. VIEW: 3/4 view facing RIGHT, chest turned toward the viewer, like a classic 16-bit fighting-game sprite. Every part uses this same view.
+4. FIXED CELLS - every cell holds exactly one part, never move, merge or skip cells:
+   row 1: [tall left cell, rows 1-2] FULL CHARACTER | HELMET | TORSO | LOWER ARMOR
+   row 2: SHOULDER PAD | ARM | LEG
+   row 3: [left] PALETTE | MAIN WEAPON | SECOND WEAPON | CAPE
+   The SHOULDER PAD cell (row 2, second column) must contain a shoulder pad - not a helmet, not an arm.
+5. CLEAN SEPARATE PARTS. Each part is complete on its own, with its own 1-art-pixel dark outline, and nothing from other parts:
+   - HELMET only (no collar, no shoulders). If the set has no helmet, draw the bare head of the wearer with the set's hood, circlet or hair.
+   - TORSO only: chest and belt, no head, no arms and NO shoulder pads.
+   - LOWER ARMOR only: whatever the set has below the belt (tassets, kilt or robe skirt), seen from the front, hanging from the belt.
+   - ONE SHOULDER PAD only, outer side.
+   - ONE ARM, perfectly STRAIGHT and VERTICAL: shoulder at the top, elbow in the middle (at the grey tick), closed fist at the bottom; no shoulder pad.
+   - ONE LEG, perfectly STRAIGHT and VERTICAL: hip at the top, knee in the middle (at the grey tick), boot at the bottom with the toe pointing RIGHT.
+   - WEAPONS: the whole weapon inside its cell, diagonal, nothing cut off by the grid line. This spec has no off-hand item: leave the second weapon cell (bottom row, middle) empty magenta.
+   - CAPE alone, hanging straight, seen from behind. If the set in Image 2 has no cape, leave the cape cell empty magenta.
+6. Full character (tall left cell): idle combat stance, staff held upright in the near hand, far hand open as if casting, feet near the bottom of the cell. It is only a reference for the proportions.
+7. Palette cell: one row of flat square swatches of the colors used.
+8. Flat pure magenta #FF00FF background everywhere outside the parts: no gradient, no shadow, no glow spilling onto the magenta. Glowing spots are small bright pixel clusters inside the part.
+9. NO text, letters, numbers or labels anywhere. Landscape 3:2 image.

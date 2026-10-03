@@ -200,20 +200,34 @@ class Game{
 
   draw(){
     const main=ctx;
+    HDL.ctx.setTransform(1,0,0,1,0,0); HDL.ctx.clearRect(0,0,W,H);
+    SPR_HD.ctx=HDL.ctx; SPR_HD.k=PIX;   // бійці з растрових деталей — у повній роздільності
+    this._post=false;
     ctx=LOW.ctx;
     ctx.setTransform(1/PIX,0,0,1/PIX,0,0);
     ctx.imageSmoothingEnabled=false;
     this.drawWorld();
+    if(this._post) LOW.ctx.restore();    // камеру на LOW закрито не було — ефекти після бійців пішли в POST
+    SPR_HD.ctx=null;
     ctx=main;
     ctx.save();
     ctx.imageSmoothingEnabled=false;
     ctx.drawImage(LOW.cv,0,0,W,H);
+    ctx.drawImage(HDL.cv,0,0,W,H);
+    if(this._post) ctx.drawImage(POST.cv,0,0,W,H);
     ctx.restore();
     this.drawOverlay();
     this.drawHUD();
     this.drawBanners();
   }
 
+  // ефекти, що малюються після бійців, — в окремий низький шар POST, який кладеться поверх шару бійців із деталей
+  splitPost(){
+    const T=ctx.getTransform(), g=POST.ctx;
+    g.setTransform(1/PIX,0,0,1/PIX,0,0); g.clearRect(0,0,W,H); g.imageSmoothingEnabled=false;
+    g.save(); g.setTransform(T);
+    ctx=g; this._post=true;
+  }
   drawWorld(){
     const shx=this.shake>0?rnd(-this.shake,this.shake):0;
     const shy=this.shake>0?rnd(-this.shake,this.shake):0;
@@ -300,6 +314,7 @@ class Game{
 
     // бійці
     for(const f of this.f) f.draw(this);
+    this.splitPost();
 
     // промені
     for(const b of this.beams){
@@ -404,6 +419,21 @@ class Game{
       if(hpw>2){ ctx.save(); ctx.beginPath();
         left?roundRect(bx,28,hpw,22,6):roundRect(bx+bw-hpw,28,hpw,22,6);
         ctx.fill(); ctx.restore(); }
+      // прогноз DoT/HoT: скільки ще забере періодична шкода (смугаста частина заливки)
+      // і скільки відхілить лікування (світла смуга за заливкою); відлік — від краю, де HP тане
+      { const seg=(a,b)=>left?[bx+bw*a,bw*(b-a)]:[bx+bw*(1-b),bw*(b-a)];
+        const stripes=(x,w,col,bg)=>{ if(w<1) return;
+          ctx.save(); ctx.beginPath(); ctx.rect(x,28,w,22); ctx.clip();
+          ctx.fillStyle=bg; ctx.fillRect(x,28,w,22);
+          ctx.fillStyle=col; const off=(this.time*24)%10;
+          for(let sx=x-22-off;sx<x+w+22;sx+=10){ ctx.beginPath(); ctx.moveTo(sx,50); ctx.lineTo(sx+4,50); ctx.lineTo(sx+26,28); ctx.lineTo(sx+22,28); ctx.fill(); }
+          ctx.restore(); };
+        const pulse=0.75+0.25*Math.sin(this.time*6);
+        const dF=clamp((f.dotLeft||0)/f.maxHp,0,frac), hF=clamp((f.hotLeft||0)/f.maxHp,0,1-frac);
+        if(dF>0){ const [x,w]=seg(frac-dF,frac); ctx.globalAlpha=pulse; stripes(x,w,'#c07cff','#4a1468'); ctx.globalAlpha=1;
+          ctx.fillStyle='#e8d0ff'; ctx.fillRect(left?x:x+w-2,28,2,22); }   // межа: до неї HP дотягне DoT
+        if(hF>0){ const [x,w]=seg(frac,frac+hF); ctx.globalAlpha=pulse*0.8; stripes(x,w,'rgba(150,255,160,.75)','rgba(40,110,50,.6)'); ctx.globalAlpha=1; }
+      }
       // щит поверх
       if(f.shield>0){
         const sw=clamp(f.shield/f.maxHp,0,1)*bw;
@@ -423,6 +453,7 @@ class Game{
       ctx.fillText(nm,left?bx+2:bx+bw-2,68);
       ctx.font='13px "Tiny5",sans-serif'; ctx.fillStyle='#cfd8e8';
       ctx.textAlign=left?'right':'left';
+      ctx.strokeStyle='rgba(0,0,0,.7)'; ctx.lineWidth=3; ctx.strokeText(`${Math.ceil(f.hp)}`,left?bx+bw-6:bx+6,44);
       ctx.fillText(`${Math.ceil(f.hp)}`,left?bx+bw-6:bx+6,44);
       // супершкала: заповнена — пульсує, поруч кнопка ультимейта
       { const fr=clamp(f.meter/ULT_MAX,0,1), full=fr>=1, mw=bw*0.62, mx=left?bx:bx+bw-mw, my=76;
@@ -463,8 +494,8 @@ class Game{
       if(f.buffs.dmg.t>0) showB(`⚔ ${f.buffs.dmg.t.toFixed(0)}с`,'#ffb03a');
       if(f.buffs.spd.t>0) showB(`💨 ${f.buffs.spd.t.toFixed(0)}с`,'#7de0ff');
       if(f.buffs.dr.t>0) showB(`🛡 ${f.buffs.dr.t.toFixed(0)}с`,'#9fd7ff');
-      if(f.dots.length) showB(`☠ ×${f.dots.length}`,'#ff7a6a');
-      if(f.hots.length) showB(`💚 ×${f.hots.length}`,'#7dff8a');
+      if(f.dotLeft>=1) showB(`☠ -${Math.round(f.dotLeft)}`,'#d8b0ff');
+      if(f.hotLeft>=1) showB(`💚 +${Math.round(Math.min(f.hotLeft,f.maxHp-f.hp))}`,'#7dff8a');
       if(f.stealthT>0) showB(`👤 ${f.stealthT.toFixed(0)}с`,'#c9d4e8');
 
       // на телефоні здібності й КД показують сенсорні кнопки (touch.js) — панелі на полотні лише заважали б

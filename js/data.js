@@ -317,10 +317,6 @@ const CONVOKE={
   starsurge:mk.proj('Starsurge','⭐',0,45,{speed:820,psize:13,pcolor:'#b8c8ff'}),
 };
 
-/* Раси на вибір (екран вибору бійця, клавіша X). '' — як задумано сетом */
-const RACES=[['','Як у сету'],['human','Людина'],['dwarf','Дворф'],['nelf','Нічний ельф'],['draenei','Дреней'],
-  ['belf','Ельф крові'],['orc','Орк'],['undead','Нежить'],['tauren','Таурен'],['troll','Троль']];
-const raceName=id=>(RACES.find(r=>r[0]===(id||''))||RACES[0])[1];
 
 /* Кольоровий акцент кожного спеку (зброя, аура, підсвітка) */
 const SPEC_ACCENT={
@@ -582,7 +578,7 @@ function iconImg(path){
 }
 
 /* ============================================================
-   СКІНИ: «Класичний» + 3 скіни на кожен спек за мотивами
+   СКІНИ: по 3 скіни (тір-сети) на кожен спек за мотивами
    тір-сетів T1–T10 (Might, Judgement, Bloodfang, Transcendence…)
    body — колір броні, trim — оздоблення (пояс, наплічники, візерунок),
    head — тон обличчя, eyes — очі, glow — аура, pattern — фактура броні
@@ -592,173 +588,164 @@ const CLASS_PATTERN={warrior:'plates',paladin:'plates',dk:'plates',
   priest:'runes',mage:'runes',warlock:'runes'};
 const SK=(name,tier,body,trim,o={})=>({name,tier,body,trim,head:'#e8b98a',eyes:'#ffffff',...o});
 const DK_FACE={head:'#cfd6e4'};
+// згенеровано tools/setsheets/assemble.py з вибору tools/picker/picks.json: 3 скіни на спек,
+// кожен — растрові деталі img/cutout/<id>.js (js/cutout.js); tier — мітка сету (T5, A7, ZG, PvP)
 const SPEC_SKINS={
-  /* Воїн */
   'warrior/Arms':[
-    SK('Battlegear of Might',1,'#6f7887','#c9a06a'),
-    SK('Destroyer Battlegear',5,'#b8c4d8','#ff9440',{eyes:'#ff9440'}),
-    SK("Wrynn's Battlegear",9,'#a8b8d0','#3a6ad0',{eyes:'#8fd0ff'}),
+    SK("Destroyer Battlegear",'T5','#331c30','#f2bd6c',{cutout:'warrior_arms_1'}),
+    SK("Relentless Gladiator's Battlegear",'A7','#544a41','#97b6a5',{cutout:'warrior_arms_2'}),
+    SK("Battlegear of Wrath",'T2','#191518','#e9c646',{cutout:'warrior_arms_3'}),
   ],
   'warrior/Fury':[
-    SK('Battlegear of Wrath',2,'#2a2020','#c41e3a',{eyes:'#ff4a4a',glow:'#c41e3a'}),
-    SK('Onslaught Battlegear',6,'#3a1a10','#ff7733',{eyes:'#ffb03a',glow:'#ff5a1a'}),
-    SK("Ymirjar Lord's Battlegear",10,'#3a404c','#7de0ff',{eyes:'#7de0ff'}),
+    SK("Gladiator's Battlegear",'A1','#3c3343','#797683',{cutout:'warrior_fury_1'}),
+    SK("Vindicator's Battlegear",'ZG','#931714','#931714',{cutout:'warrior_fury_2'}),
+    SK("Warlord's Battlegear",'PvP','#130c23','#9e8e9e',{cutout:'warrior_fury_3',faction:'H'}),
   ],
   'warrior/Protection':[
-    SK("Dreadnaught's Battlegear",3,'#3a3f4a','#ff4a4a',{eyes:'#ff4a4a',glow:'#ff3a3a'}),
-    SK('Siegebreaker Battlegear',8,'#7f8a9a','#ffd23a'),
-    SK('Valorous Dreadnaught',7,'#5a6a80','#8fd0ff',{eyes:'#8fd0ff'}),
+    SK("Onslaught Battlegear",'T6','#5c4b3c','#e2c461',{cutout:'warrior_protection_1'}),
+    SK("Dreadnaught's Battlegear",'T3','#46445a','#a3afbb',{cutout:'warrior_protection_2'}),
+    SK("Hellscream's Battlegear",'T9','#3e271d','#a6a782',{cutout:'warrior_protection_3',faction:'H'}),
   ],
-  /* Паладін */
   'paladin/Holy':[
-    SK('Lawbringer Armor',1,'#c8ccd8','#ffd23a'),
-    SK('Lightbringer Raiment',6,'#f0ecd8','#ffd23a',{glow:'#ffe9a3'}),
-    SK('Aegis Regalia',8,'#d0a040','#6b4a2a'),
+    SK("Judgement Armor",'T2','#5d1b0d','#f7d458',{cutout:'paladin_holy_1'}),
+    SK("Vengeful Gladiator's Vindication",'A3','#1f1014','#fbf793',{cutout:'paladin_holy_2'}),
+    SK("Lawbringer Armor",'T1','#c17d44','#f7de9b',{cutout:'paladin_holy_3'}),
   ],
   'paladin/Protection':[
-    SK('Redemption Armor',3,'#c9a040','#d8dde8'),
-    SK('Justicar Armor',4,'#2a4a9a','#ffd23a'),
-    SK('Lightsworn Plate',10,'#8a1e2a','#ffd23a',{glow:'#ffb03a'}),
+    SK("Lightbringer Battlegear",'T6','#14101f','#f3dc6a',{cutout:'paladin_protection_1'}),
+    SK("Turalyon's Battlegear",'T9','#141118','#efe7ad',{cutout:'paladin_protection_2',faction:'A'}),
+    SK("Redemption Armor",'T3','#222230','#93b9dd',{cutout:'paladin_protection_3'}),
   ],
   'paladin/Retribution':[
-    SK('Judgement Armor',2,'#2a1e3e','#ffd23a',{eyes:'#ff9440',glow:'#ff9440'}),
-    SK('Crystalforge Battlegear',5,'#a02a2a','#ffd23a'),
-    SK("Turalyon's Battlegear",9,'#b8c4d8','#3a6ad0',{eyes:'#8fd0ff'}),
+    SK("Crystalforge Battlegear",'T5','#12142f','#d0e9e8',{cutout:'paladin_retribution_1'}),
+    SK("Wrathful Gladiator's Vindication",'A8','#180f1c','#d3cdc7',{cutout:'paladin_retribution_2'}),
+    SK("Conqueror's Aegis Battlegear",'T8','#351b29','#e59c59',{cutout:'paladin_retribution_3'}),
   ],
-  /* Мисливець */
   'hunter/Beast Mastery':[
-    SK('Giantstalker Armor',1,'#6b4a2a','#4a7a2a'),
-    SK('Gronnstalker Armor',6,'#3a2a1e','#ffd23a',{eyes:'#ffd23a'}),
-    SK('Scourgestalker Battlegear',8,'#5a5a30','#9dff70',{eyes:'#9dff70'}),
+    SK("Giantstalker Armor",'T1','#63484b','#d5b79d',{cutout:'hunter_beast_mastery_1'}),
+    SK("Gronnstalker's Armor",'T6','#3d1711','#eeaa65',{cutout:'hunter_beast_mastery_2'}),
+    SK("Scourgestalker Battlegear",'T8','#3c1619','#d2ae99',{cutout:'hunter_beast_mastery_3'}),
   ],
   'hunter/Marksmanship':[
-    SK('Dragonstalker Armor',2,'#2a5a7a','#7cff6b',{eyes:'#7cff6b'}),
-    SK('Rift Stalker Armor',5,'#1e3a3a','#8fd0ff',{eyes:'#8fd0ff'}),
-    SK("Windrunner's Battlegear",9,'#2a4a8a','#9dff70'),
+    SK("Dragonstalker Armor",'T2','#341a23','#dfb05e',{cutout:'hunter_marksmanship_1'}),
+    SK("Rift Stalker Armor",'T5','#332a3a','#c4dac5',{cutout:'hunter_marksmanship_2'}),
+    SK("Windrunner's Battlegear",'T9','#3a1c14','#d07d3e',{cutout:'hunter_marksmanship_3',faction:'A'}),
   ],
   'hunter/Survival':[
-    SK('Cryptstalker Armor',3,'#1e2a3e','#7de0ff',{eyes:'#7de0ff'}),
-    SK('Demon Stalker Armor',4,'#4a2a6a','#9dff70',{eyes:'#9dff70',glow:'#7cff6b'}),
-    SK("Ahn'Kahar Blood Hunter",10,'#5a5a6a','#c41e3a',{eyes:'#ff4a4a'}),
+    SK("Cryptstalker Armor",'T3','#685143','#bca993',{cutout:'hunter_survival_1'}),
+    SK("Demon Stalker Armor",'T4','#553d27','#b6a172',{cutout:'hunter_survival_2'}),
+    SK("Brutal Gladiator's Pursuit",'A4','#2e130f','#ce955e',{cutout:'hunter_survival_3'}),
   ],
-  /* Розбійник */
   'rogue/Assassination':[
-    SK('Nightslayer Armor',1,'#4a1a1a','#2a2020'),
-    SK('Bloodfang Armor',2,'#1e1a1a','#c41e3a',{eyes:'#ff4a4a',glow:'#5a0a0a'}),
-    SK("Shadowblade's Battlegear",10,'#2a2a30','#8a90b0',{eyes:'#b48cff'}),
+    SK("Nightslayer Armor",'T1','#211e1a','#b19b6a',{cutout:'rogue_assassination_1'}),
+    SK("Bloodfang Armor",'T2','#471c17','#884331',{cutout:'rogue_assassination_2'}),
+    SK("Wrathful Gladiator's Vestments",'A8','#261416','#de9538',{cutout:'rogue_assassination_3'}),
   ],
   'rogue/Outlaw':[
-    SK('Deathmantle',5,'#1e2a4a','#cfd6e4'),
-    SK("VanCleef's Battlegear",9,'#8a2a2a','#ffdf8a',{eyes:'#ffdf8a'}),
-    SK("Slayer's Armor",6,'#2a3a2a','#9dff70',{eyes:'#9dff70'}),
+    SK("Deathmantle",'T5','#3a3328','#9b845b',{cutout:'rogue_outlaw_1'}),
+    SK("Slayer's Armor",'T6','#3f0e0f','#be8737',{cutout:'rogue_outlaw_2'}),
+    SK("Garona's Battlegear",'T9','#6f422b','#e7bf64',{cutout:'rogue_outlaw_3',faction:'H'}),
   ],
   'rogue/Subtlety':[
-    SK('Bonescythe Armor',3,'#c8c0a8','#3a3a3a',{head:'#d8d2c0',eyes:'#ff4a4a'}),
-    SK('Netherblade',4,'#3a1e5a','#b48cff',{eyes:'#b48cff',glow:'#6a3aff'}),
-    SK('Terrorblade Battlegear',8,'#4a3a5a','#a878ff',{eyes:'#a878ff'}),
+    SK("Netherblade",'T4','#342338','#a797a6',{cutout:'rogue_subtlety_1'}),
+    SK("Furious Gladiator's Vestments",'A6','#514242','#bab4ad',{cutout:'rogue_subtlety_2'}),
+    SK("Darkmantle Armor",'T0.5','#11192f','#2f5eac',{cutout:'rogue_subtlety_3'}),
   ],
-  /* Жрець */
   'priest/Discipline':[
-    SK('Vestments of Prophecy',1,'#ece8dc','#ffd23a'),
-    SK('Incarnate Raiment',4,'#f0eee6','#c9a040'),
-    SK('Sanctification Garb',8,'#e8ecf4','#4a8ad0',{eyes:'#8fd0ff'}),
+    SK("Vestments of Prophecy",'T1','#6b1b10','#fad375',{cutout:'priest_discipline_1'}),
+    SK("Sanctification Regalia",'T8','#161326','#dcd6cb',{cutout:'priest_discipline_2'}),
+    SK("Furious Gladiator's Investiture",'A6','#321a12','#dcbb5b',{cutout:'priest_discipline_3'}),
   ],
   'priest/Holy':[
-    SK('Vestments of Transcendence',2,'#f4f2ec','#8a5cff',{glow:'#ffe9a3'}),
-    SK('Absolution Regalia',6,'#f8f4e8','#ffd23a',{glow:'#fff2b0'}),
-    SK('Vestments of Faith',7,'#ece8e0','#ffe27a'),
+    SK("Vestments of Transcendence",'T2','#756148','#e6e3be',{cutout:'priest_holy_1'}),
+    SK("Vestments of Faith",'T3','#191f33','#fae8b5',{cutout:'priest_holy_2'}),
+    SK("Incarnate Raiment",'T4','#271326','#f2d2b3',{cutout:'priest_holy_3'}),
   ],
   'priest/Shadow':[
-    SK('Avatar Regalia',5,'#2a2a5a','#b48cff',{eyes:'#b48cff'}),
-    SK('Crimson Acolyte',10,'#8a1e2a','#f0eee6',{eyes:'#ff5ad0'}),
-    SK("Zabra's Raiment",9,'#3a2a3a','#a878ff',{eyes:'#a878ff',glow:'#6a3aff'}),
+    SK("Zabra's Regalia",'T9','#46383c','#c69e75',{cutout:'priest_shadow_1',faction:'H'}),
+    SK("Vengeful Gladiator's Investiture",'A3','#3f4167','#a2b3d0',{cutout:'priest_shadow_2'}),
+    SK("Warlord's Raiment",'PvP','#4c5f68','#c5dcec',{cutout:'priest_shadow_3',faction:'H'}),
   ],
-  /* Лицар смерті */
   'dk/Blood':[
-    SK('Scourgeborne Battlegear',7,'#3a3f4a','#c41e3a',{...DK_FACE,eyes:'#ff4a4a'}),
-    SK("Scourgelord's Battlegear",10,'#2a2020','#ff4a4a',{...DK_FACE,eyes:'#ff4a4a',glow:'#c41e3a'}),
-    SK("Koltira's Battlegear",9,'#5a1e2a','#b8c4d8',{...DK_FACE,eyes:'#7de0ff'}),
+    SK("Scourgelord's Battlegear",'T10','#241728','#746375',{cutout:'dk_blood_1'}),
+    SK("Koltira's Battlegear",'T9','#333e67','#788ec4',{cutout:'dk_blood_2',faction:'H'}),
+    SK("Deadly Gladiator's Desecration",'A5','#352c2a','#cbae8a',{cutout:'dk_blood_3'}),
   ],
   'dk/Frost':[
-    SK('Scourgeborne Plate',7,'#3a3f4a','#7de0ff',{...DK_FACE,eyes:'#7de0ff'}),
-    SK('Darkruned Battlegear',8,'#2a2e3a','#7de0ff',{...DK_FACE,eyes:'#7de0ff',glow:'#4ab0ff'}),
-    SK("Thassarian's Battlegear",9,'#5a6a80','#aee8ff',{...DK_FACE,eyes:'#aee8ff'}),
+    SK("Darkruned Battlegear",'T8','#392925','#aca49a',{cutout:'dk_frost_1'}),
+    SK("Thassarian's Battlegear",'T9','#464d6b','#a9b6c4',{cutout:'dk_frost_2',faction:'A'}),
+    SK("Wrathful Gladiator's Desecration",'A8','#33313d','#70757b',{cutout:'dk_frost_3'}),
   ],
   'dk/Unholy':[
-    SK('Darkruned Plate',8,'#2a3a2a','#7cff6b',{...DK_FACE,eyes:'#7cff6b'}),
-    SK("Scourgelord's Plate",10,'#1e2a1e','#7cff6b',{...DK_FACE,eyes:'#7cff6b',glow:'#3a8a3a'}),
-    SK('Scourgeborne Battlegear',7,'#3a4a3a','#9dff70',{...DK_FACE,eyes:'#9dff70'}),
+    SK("Darkruned Battlegear",'T8','#544139','#aca69d',{cutout:'dk_unholy_1'}),
+    SK("Scourgelord's Battlegear",'T10','#39283c','#736271',{cutout:'dk_unholy_2'}),
+    SK("Sanctified Scourgelord's Battlegear",'T10','#3f1d18','#a29f6c',{cutout:'dk_unholy_3'}),
   ],
-  /* Шаман */
   'shaman/Elemental':[
-    SK('Earthshatterer Raiment',3,'#3a2a2a','#ff4a4a',{eyes:'#ff4a4a',glow:'#ff3a3a'}),
-    SK('Cataclysm Regalia',5,'#a03a1a','#ffb03a',{eyes:'#ffb03a'}),
-    SK('Ten Storms',2,'#2a4a8a','#cfd6e4',{eyes:'#8fd0ff'}),
+    SK("The Earthshatterer",'T3','#6e0d09','#eaac3d',{cutout:'shaman_elemental_1'}),
+    SK("The Ten Storms",'T2','#4e5074','#a3c4eb',{cutout:'shaman_elemental_2'}),
+    SK("The Five Thunders",'T0.5','#5b1317','#edab41',{cutout:'shaman_elemental_3'}),
   ],
   'shaman/Enhancement':[
-    SK('Earthfury',1,'#6b4a2a','#4a8ad0'),
-    SK('Skyshatter Harness',6,'#2a3a8a','#b48cff',{eyes:'#8fd0ff',glow:'#4a90ff'}),
-    SK("Thrall's Battlegear",9,'#7a3a1a','#8fd0ff',{head:'#6fa04a',eyes:'#8fd0ff'}),
+    SK("Cataclysm Regalia",'T5','#24110f','#a87245',{cutout:'shaman_enhancement_1'}),
+    SK("Warlord's Earthshaker",'PvP','#152b2d','#8391aa',{cutout:'shaman_enhancement_2',faction:'H'}),
+    SK("Vengeful Gladiator's Earthshaker",'A3','#570907','#b1b781',{cutout:'shaman_enhancement_3'}),
   ],
   'shaman/Restoration':[
-    SK('Cyclone Raiment',4,'#2a7aa0','#aee8ff',{eyes:'#aee8ff'}),
-    SK('Worldbreaker Garb',8,'#c9a040','#4a8ad0'),
-    SK("Frost Witch's Regalia",10,'#4a8ad0','#f0f4ff',{eyes:'#aee8ff',glow:'#aee8ff'}),
+    SK("Cyclone Raiment",'T4','#2b324c','#c0c3c9',{cutout:'shaman_restoration_1'}),
+    SK("The Earthfury",'T1','#210e20','#e2b358',{cutout:'shaman_restoration_2'}),
+    SK("Cyclone Regalia",'T4','#4a836d','#bff1c5',{cutout:'shaman_restoration_3'}),
   ],
-  /* Маг */
   'mage/Arcane':[
-    SK('Arcanist Regalia',1,'#5a2a8a','#4a8ad0'),
-    SK('Tirisfal Regalia',5,'#8a1a24','#e0b040'),
-    SK('Kirin Tor Garb',8,'#6a3ad0','#ffd23a',{eyes:'#c9a8ff',glow:'#a878ff'}),
+    SK("Arcanist Regalia",'T1','#191042','#fbe9be',{cutout:'mage_arcane_1'}),
+    SK("Tirisfal Regalia",'T5','#3f0a0a','#c78c7a',{cutout:'mage_arcane_2'}),
+    SK("Netherwind Regalia",'T2','#5075a6','#52cad9',{cutout:'mage_arcane_3'}),
   ],
   'mage/Fire':[
-    SK('Frostfire Regalia',3,'#2a3a8a','#ff7733',{eyes:'#ff7733',glow:'#ff5a1a'}),
-    SK('Netherwind Regalia',2,'#5a1420','#b48cff',{eyes:'#ff7733'}),
-    SK("Bloodmage's Regalia",10,'#8a1e2a','#2a2020',{eyes:'#ff7733',glow:'#ff3a3a'}),
+    SK("Magister's Regalia",'T0','#230a19','#f6b649',{cutout:'mage_fire_1'}),
+    SK("Sanctified Bloodmage's Regalia",'T10','#211016','#a89e4b',{cutout:'mage_fire_2'}),
+    SK("Gladiator's Regalia",'A1','#381c18','#825938',{cutout:'mage_fire_3'}),
   ],
   'mage/Frost':[
-    SK('Tempest Regalia',6,'#2a5aa0','#f0f4ff',{eyes:'#aee8ff',glow:'#aee8ff'}),
-    SK('Aldor Regalia',4,'#3a4a9a','#b48cff'),
-    SK("Khadgar's Regalia",9,'#4a3a8a','#aee8ff',{eyes:'#aee8ff'}),
+    SK("Furious Gladiator's Regalia",'A6','#381918','#daa669',{cutout:'mage_frost_1'}),
+    SK("Frostfire Regalia",'T3','#0e102a','#59b5e1',{cutout:'mage_frost_2'}),
+    SK("Deadly Gladiator's Regalia",'A5','#371a29','#c2979e',{cutout:'mage_frost_3'}),
   ],
-  /* Чорнокнижник */
   'warlock/Affliction':[
-    SK('Felheart Raiment',1,'#3a1e4a','#c41e3a',{eyes:'#ff4a4a'}),
-    SK('Plagueheart Raiment',3,'#2a4a1a','#9dff70',{eyes:'#9dff70',glow:'#7cff6b'}),
-    SK("Dark Coven's Regalia",10,'#1e1a2a','#a878ff',{eyes:'#a878ff'}),
+    SK("Felheart Raiment",'T1','#2d2526','#c8cf4f',{cutout:'warlock_affliction_1'}),
+    SK("Plagueheart Raiment",'T3','#bd8c16','#cfbc2e',{cutout:'warlock_affliction_2'}),
+    SK("Conqueror's Deathbringer Garb",'T8','#252e45','#687288',{cutout:'warlock_affliction_3'}),
   ],
   'warlock/Demonology':[
-    SK('Voidheart Raiment',4,'#1e2a4a','#8a5cff',{eyes:'#8a5cff'}),
-    SK('Malefic Raiment',6,'#2a3a2a','#b48cff',{eyes:'#9dff70'}),
-    SK('Deathbringer Garb',8,'#2a2a2a','#9dff70',{eyes:'#9dff70',glow:'#5aaa3a'}),
+    SK("Voidheart Raiment",'T4','#51343d','#c8a585',{cutout:'warlock_demonology_1'}),
+    SK("Malefic Raiment",'T6','#352238','#f5df6b',{cutout:'warlock_demonology_2'}),
+    SK("Deathbringer Garb",'T8','#3d3349','#c18f79',{cutout:'warlock_demonology_3'}),
   ],
   'warlock/Destruction':[
-    SK('Nemesis Raiment',2,'#3a1a3a','#ff5ad0',{eyes:'#ff5ad0'}),
-    SK('Corruptor Raiment',5,'#4a2a5a','#ff9440',{eyes:'#ff9440',glow:'#ff5a1a'}),
-    SK("Gul'dan's Regalia",9,'#5a1e2a','#ffb03a',{head:'#6fa04a',eyes:'#ffb03a'}),
+    SK("Nemesis Raiment",'T2','#18211c','#a4ce76',{cutout:'warlock_destruction_1'}),
+    SK("Gul'dan's Regalia",'T9','#261025','#a6636a',{cutout:'warlock_destruction_2',faction:'H'}),
+    SK("Merciless Gladiator's Dreadgear",'A2','#2a1d17','#975844',{cutout:'warlock_destruction_3'}),
   ],
-  /* Друїд */
   'druid/Balance':[
-    SK('Stormrage Raiment',2,'#2a4a8a','#ffd23a',{head:'#a48cff',eyes:'#ffe27a'}),
-    SK('Nordrassil Regalia',5,'#3a7a3a','#ffd23a'),
-    SK('Nightsong Garb',8,'#4a2a7a','#b8c8ff',{eyes:'#b8c8ff',glow:'#6a5aff'}),
+    SK("Stormrage Raiment",'T2','#21150b','#e6e13a',{cutout:'druid_balance_1',formCutout:'druid_balance_1_form'}),
+    SK("Nordrassil Regalia",'T5','#764d2b','#dab16f',{cutout:'druid_balance_2',formCutout:'druid_balance_2_form'}),
+    SK("Nightsong Garb",'T8','#59260a','#f3b828',{cutout:'druid_balance_3',formCutout:'druid_balance_3_form'}),
   ],
   'druid/Feral':[
-    SK('Cenarion Raiment',1,'#6b4a2a','#4a7a2a',{pattern:'fur'}),
-    SK('Thunderheart Harness',6,'#7a4a1e','#ffb03a',{eyes:'#ffb03a',pattern:'fur'}),
-    SK('Lasherweave Battlegear',10,'#4a5a2a','#7dff8a',{eyes:'#7dff8a',pattern:'fur'}),
+    SK("Cenarion Raiment",'T1','#191512','#ede6a6',{cutout:'druid_feral_1',formCutout:'druid_feral_1_form'}),
+    SK("Thunderheart Harness",'T6','#511b13','#efbb87',{cutout:'druid_feral_2',formCutout:'druid_feral_2_form'}),
+    SK("Lasherweave Garb",'T10','#2e2018','#a7813a',{cutout:'druid_feral_3',formCutout:'druid_feral_3_form'}),
   ],
   'druid/Restoration':[
-    SK('Dreamwalker Raiment',3,'#2a5a3a','#ffe27a'),
-    SK('Malorne Raiment',4,'#5a4a2a','#7dff8a',{eyes:'#7dff8a'}),
-    SK("Runetotem's Garb",9,'#3a6a2a','#ffd23a',{head:'#7a4a2a',eyes:'#ffe27a'}),
+    SK("Dreamwalker Raiment",'T3','#243d17','#f9d859',{cutout:'druid_restoration_1',formCutout:'druid_restoration_1_form'}),
+    SK("Malorne Raiment",'T4','#251c11','#fcefcd',{cutout:'druid_restoration_2',formCutout:'druid_restoration_2_form'}),
+    SK("Runetotem's Garb",'T9','#454430','#93c6a4',{cutout:'druid_restoration_3',faction:'H',formCutout:'druid_restoration_3_form'}),
   ],
 };
-// список скінів спеку: перший — класичний вигляд класу
+// список скінів спеку — лише тір-сети (класичного вигляду класу більше немає)
 function skinsFor(cls,spec){
   const key=cls.id+'/'+spec.name;
-  const classic=SK('Класичний',0,cls.color,SPEC_ACCENT[key]||'#ffffff',{accent:SPEC_ACCENT[key]});
-  const list=[classic,...(SPEC_SKINS[key]||[])];
+  const list=[...(SPEC_SKINS[key]||[])];
   for(const s of list){ s.pattern=s.pattern||CLASS_PATTERN[cls.id]||'none'; s.accent=s.accent||s.trim; }
   return list;
 }

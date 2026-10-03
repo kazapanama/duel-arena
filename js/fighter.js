@@ -24,8 +24,8 @@ function startupOf(a,i){
   }
 }
 class Fighter{
-  constructor(cls,spec,idx,skin,race){
-    this.cls=cls; this.spec=spec; this.idx=idx; this.race=race||'';   // race — вибір гравця ('' — як у сету)
+  constructor(cls,spec,idx,skin){
+    this.cls=cls; this.spec=spec; this.idx=idx;   // раса — частина скіну (race у SET_LOOK чи в SK)
     this.skin=skin||spec.skins[0]; // скін спеку (див. SPEC_SKINS у data.js)
     this.preview=false;            // true — малюємо лише модель без табличок (вибір скіну)
     // слоти: [X спам, Y сильна, B утиліта, A класова мобільність]
@@ -39,7 +39,7 @@ class Fighter{
     this.accent=this.skin.accent||SPEC_ACCENT[cls.id+'/'+spec.name]||'#ffffff';
     // форми друїда: base — гуманоїд, alt — кіт чи сова (свої здібності, КД, модель, аніматор)
     this.formDef=spec.form||null;
-    const baseModel=resolveModel(cls,spec,this.skin,this.race);
+    const baseModel=resolveModel(cls,spec,this.skin);
     this.forms={base:{abilities:this.abilities,cds:this.cds,model:baseModel,h:110,
       mkAnim:()=>new AnimCtl(baseModel.style,baseModel.stance)}};
     if(this.formDef){
@@ -90,7 +90,7 @@ class Fighter{
     this.x=x; this.y=GROUND; this.vx=0; this.vy=0; this.facing=facing;
     this.hp=this.maxHp; this.shield=0; this.shieldT=0;
     this.stunT=0; this.slowT=0; this.slowMult=1; this.fearT=0; this.fearDmg=0; this.fearBrk=0; this.fearSrc=null; this.rootT=0; this.rootDur=0; this.rootKind='ice';
-    this.dots=[]; this.hots=[];
+    this.dots=[]; this.hots=[]; this.dotLeft=0; this.hotLeft=0;
     this.buffs={dmg:{mult:1,t:0},spd:{mult:1,t:0},dr:{mult:1,t:0}};
     this.blocking=false; this.stealthT=0; this.stealthBonus=false;
     this.cds=[0,0,0,0]; this.gcd=0;
@@ -682,6 +682,9 @@ class Fighter{
       if(h.tk>=1||h.t<=0){ h.tk=0; const n=Math.round(h.acc); h.acc=0; if(n>0) this.healSelf(n,game,true); }
     }
     this.hots=this.hots.filter(h=>h.t>0);
+    // скільки ще заберуть/відхілять активні DoT/HoT — для прогнозу на смузі HP (щит DoT з'їсть першим)
+    this.dotLeft=Math.max(0,this.dots.reduce((s,d)=>s+d.dps*d.t+d.acc,0)*this.drMult()-this.shield);
+    this.hotLeft=this.hots.reduce((s,h)=>s+h.tick*h.t+h.acc,0);
 
     // пет
     if(this.pet) this.updatePet(dt,game);
@@ -1000,9 +1003,30 @@ class Fighter{
     this.model.wings=this.wingsT>0?Math.min(1,(this.wingsDur-this.wingsT)/0.35)*Math.min(1,this.wingsT/0.4):(this.model.permWings||0);
     sp.fade=this.stealthT>0?Math.min(this.anim.pose.fade,0.4):(this.dispersT>0?Math.min(this.anim.pose.fade,0.5):this.anim.pose.fade);
     // контур-підсвітка бафів
-    sp.outline=this.dispersT>0?[168,120,255]:this.ascT>0?[150,215,255]:this.wingsT>0?[255,226,120]:this.buffs.dmg.t>0?[255,110,40]:(this.buffs.dr.t>0||this.shield>0?[90,170,255]:(this.buffs.spd.t>0?[120,230,255]:null));
+    sp.outline=this.dispersT>0?[168,120,255]:this.ascT>0?[150,215,255]:this.wingsT>0?[255,226,120]:this.buffs.dmg.t>0?[255,110,40]:(this.buffs.dr.t>0||this.shield>0?[90,170,255]:(this.buffs.spd.t>0?[120,230,255]:this.ultReady()?this.ultOutline(time):null));
     sp.alpha=1;
     return sp;
+  }
+
+  ultReady(){ return this.meter>=ULT_MAX&&!this.ko&&!this.preview; }
+  ultOutline(time){ const k=0.5+0.5*Math.sin(time*7); return [255,Math.round(170+70*k),Math.round(40+110*k)]; }
+  // ульта заряджена: золота аура за спиною — стовп світла, кільце під ногами й іскри, що здіймаються
+  drawUltAura(g){
+    const x=this.x, y=this.y, t=g.time, pulse=0.5+0.5*Math.sin(t*7);
+    ctx.save();
+    ctx.globalAlpha=this.stealthT>0?0.08:1;     // у тіні аура не видає розбійника
+    ctx.globalCompositeOperation='lighter';
+    const gr=ctx.createRadialGradient(x,y-62,6,x,y-62,78);
+    gr.addColorStop(0,`rgba(255,214,90,${0.30+0.16*pulse})`); gr.addColorStop(1,'rgba(255,170,40,0)');
+    ctx.fillStyle=gr; ctx.beginPath(); ctx.ellipse(x,y-62,52,84,0,0,7); ctx.fill();
+    ctx.strokeStyle=`rgba(255,226,120,${0.45+0.3*pulse})`; ctx.lineWidth=3;
+    ctx.beginPath(); ctx.ellipse(x,GROUND+6,36+pulse*6,9+pulse*1.5,0,0,7); ctx.stroke();
+    for(let i=0;i<9;i++){
+      const ph=(t*0.9+i*0.37)%1, sx=x+Math.sin(i*2.3+t*2)*30*(1-ph*0.4), sy=y-4-ph*140, sz=ph<0.7?4:2;
+      ctx.globalAlpha=(this.stealthT>0?0.08:1)*(1-ph);
+      ctx.fillStyle=i%3?'#ffd23a':'#fff4b0'; ctx.fillRect(Math.round(sx-sz/2),Math.round(sy-sz/2),sz,sz);
+    }
+    ctx.restore();
   }
 
   draw(g){
@@ -1018,6 +1042,8 @@ class Fighter{
     ctx.restore();
 
     // Avatar: боєць більшає (розростається за 0.3 с і зменшується в кінці)
+    if(this.ultReady()) this.drawUltAura(g);
+
     const gk=this.growT>0?1+0.16*Math.min(1,(8-this.growT)/0.3,this.growT/0.4):1;
     if(gk!==1){ ctx.save(); ctx.translate(x,y); ctx.scale(gk,gk); ctx.translate(-x,-y); }
     drawSprite(this.spriteState(g.time));

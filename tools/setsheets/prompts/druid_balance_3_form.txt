@@ -1,0 +1,29 @@
+Make a pixel-art PARTS SHEET of a druid's MOONKIN FORM for a 2D fighting game. The parts will be cut out automatically and attached to a two-legged animation skeleton, so the layout and the scale rules matter more than anything else.
+
+ATTACHED IMAGES
+- Image 1 = LAYOUT AND SCALE TEMPLATE. This is the canvas to fill: keep its exact grid, magenta background, black grid lines and the same cells in the same places. The grey dashed shapes only show WHERE each part goes, HOW BIG it is and HOW it is oriented: replace every grey shape with the finished part and leave no grey lines.
+- Image 2 = the druid MOONKIN FORM from World of Warcraft: copy its anatomy and style - a huge round owl-bear: feathered owl head with a short hooked beak and big glowing eyes, large antlers, a broad round feathered body with a pale belly, thick feathered arms ending in clawed hands, short thick legs with big talons.
+- Image 3 = the druid's armor set "Nightsong Garb": take only its color scheme and motifs.
+
+THE CREATURE
+MOONKIN FORM for the "Nightsong Garb" skin: violet-purple feathers with a lavender belly, small star-like silver markings, pale glowing eyes, dark antlers. 3/4 view facing RIGHT, chest turned toward the viewer, like a classic 16-bit fighting-game sprite; every part in this same view. It holds no weapon.
+
+CELLS (never move, merge or skip them)
+   row 1: [tall left cell, rows 1-2] FULL CREATURE | HEAD | BODY | LOWER BODY
+   row 2: SHOULDER | ARM | LEG
+   row 3: [left] PALETTE | (empty) | (empty) | (empty)
+- FULL CREATURE: standing, arms slightly spread, feet near the bottom of the cell. Only a reference for proportions.
+- HEAD only with the antlers, 3/4 view facing right.
+- BODY only: chest and belly, no head, no arms, no legs.
+- LOWER BODY only: the lower round feathered belly and the feather "skirt" that hangs over the hips, seen from the front.
+- SHOULDER: a big tuft of shoulder feathers, outer side.
+- ARM: ONE thick feathered arm, perfectly STRAIGHT and VERTICAL: shoulder at the top, elbow in the middle (at the grey tick), a clawed hand at the bottom.
+- LEG: ONE short thick feathered leg, perfectly STRAIGHT and VERTICAL: hip at the top, knee in the middle (at the grey tick), a big taloned foot at the bottom pointing RIGHT.
+- Leave all three weapon/cape cells in the bottom row empty magenta. Palette cell: one row of flat square color swatches.
+
+THE MOST IMPORTANT RULES
+1. ONE SCALE FOR EVERYTHING. Every separate part must be exactly the same size as that part on the full creature in the large cell; match the grey shapes of Image 1. Do NOT enlarge parts to fill their cells; empty magenta space around a part is correct.
+2. BIG CHUNKY PIXELS. In the game the creature is about 100 art-pixels tall, so every art-pixel is a square block of about 6x6 image pixels: bold readable shapes, clean cel shading with 3-4 tones per color, a 1-art-pixel dark outline around every part; no noise, no fine filigree.
+3. CLEAN SEPARATE PARTS. Each part is complete on its own with its own outline and nothing from the other parts.
+4. Flat pure magenta #FF00FF background everywhere outside the parts: no gradient, no shadow, no glow spilling onto the magenta. Keep the black grid lines of Image 1.
+5. NO text, letters, numbers or labels anywhere. Landscape 3:2 image.

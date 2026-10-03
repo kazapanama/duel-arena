@@ -15,14 +15,16 @@ for(const im of document.images) if(im.complete&&!im.naturalWidth&&im.getAttribu
 const store=(k,d)=>{ try{ return JSON.parse(localStorage.getItem(k)||'null')??d; }catch(e){ return d; } };
 const save=(k,v)=>{ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} };
 const SKIN_PREF=store('aa_skins',{});
-const RACE_PREF=store('aa_races',{});
 const PREFS=store('aa_prefs',{aiSkill:1,muted:false});
 state.aiSkill=PREFS.aiSkill??1; muted=!!PREFS.muted;
 function skinKey(cls,spec){ return cls.id+'/'+spec.name; }
-function preferredSkin(cls,spec){ return spec.skins[SKIN_PREF[skinKey(cls,spec)]|0]||spec.skins[0]; }
-function rememberSkin(cls,spec,skin){ SKIN_PREF[skinKey(cls,spec)]=spec.skins.indexOf(skin); save('aa_skins',SKIN_PREF); }
-function preferredRace(cls,spec){ return RACE_PREF[skinKey(cls,spec)]||''; }
-function rememberRace(cls,spec,race){ RACE_PREF[skinKey(cls,spec)]=race; save('aa_races',RACE_PREF); }
+// вибір пам'ятаємо за назвою сету (сети на спеку можуть переставлятися); старі збереження — номер, де 0 був «Класичний»
+function preferredSkin(cls,spec){
+  const v=SKIN_PREF[skinKey(cls,spec)];
+  const k=typeof v==='string'?spec.skins.find(s=>s.name===v):(typeof v==='number'?spec.skins[v-1]:null);
+  return k||spec.skins[0];
+}
+function rememberSkin(cls,spec,skin){ SKIN_PREF[skinKey(cls,spec)]=skin.name; save('aa_skins',SKIN_PREF); }
 function savePrefs(){ save('aa_prefs',{aiSkill:state.aiSkill,muted}); }
 const DIFF_NAMES=['Легко','Нормально','Важко'];
 
@@ -61,8 +63,8 @@ const HINTS={
   hintTitle:{kb:[[KB(ARR('u'),ARR('d')),'вибір'],[KB('Enter'),'обрати']], pad:[[PB('dpad'),'вибір'],[PB('A'),'обрати']]},
   hintSettings:{kb:[[KB(ARR('l'),ARR('r')),'змінити'],[KB('Esc'),'назад']], pad:[[PB('dpad'),'змінити'],[PB('B'),'назад']]},
   hintControls:{kb:[[KB('Esc'),'пауза або назад'],[KB('M'),'звук']], pad:[[PB('B'),'назад'],[PB('▶'),'пауза в бою']]},
-  selKeys:{kb:[[KB(ARR('l'),ARR('r'),ARR('u'),ARR('d')),'клас'],[KB('Q','E'),'спеціалізація'],[KB('Z','C'),'скін'],[KB('X'),'раса'],[KB('R'),'випадково'],[KB('Enter'),'готово'],[KB('Esc'),'назад']],
-           pad:[[PB('dpad'),'клас'],[PB('L1')+PB('R1'),'спеціалізація'],[PB('L2')+PB('R2'),'скін'],[PB('X'),'раса'],[PB('Y'),'випадково'],[PB('A'),'готово'],[PB('B'),'назад']]},
+  selKeys:{kb:[[KB(ARR('l'),ARR('r'),ARR('u'),ARR('d')),'клас'],[KB('Q','E'),'спеціалізація'],[KB('Z','C'),'скін'],[KB('R'),'випадково'],[KB('Enter'),'готово'],[KB('Esc'),'назад']],
+           pad:[[PB('dpad'),'клас'],[PB('L1')+PB('R1'),'спеціалізація'],[PB('L2')+PB('R2'),'скін'],[PB('Y'),'випадково'],[PB('A'),'готово'],[PB('B'),'назад']]},
 };
 function renderHints(){
   for(const id in HINTS){ const el=$(id); if(!el) continue;
@@ -124,7 +126,9 @@ screens.title.addEventListener('pointerdown',()=>{ if(!UI.awake) wake(); });
    цілим множником (чіткі пікселі на будь-якому екрані)
    ============================================================ */
 class PixelView{
-  constructor(cv,w,h){ this.cv=cv; this.low=document.createElement('canvas'); this.low.width=w; this.low.height=h; this.g=this.low.getContext('2d'); }
+  constructor(cv,w,h){ this.cv=cv; this.low=document.createElement('canvas'); this.low.width=w; this.low.height=h; this.g=this.low.getContext('2d');
+    // бійці з растрових деталей — у шарі вдвічі більшої роздільності поверх низького (SPR_HD, sprite.js)
+    this.hd=document.createElement('canvas'); this.hd.width=w*2; this.hd.height=h*2; this.hg=this.hd.getContext('2d'); }
   present(align='bottom'){
     const r=this.cv.getBoundingClientRect(); if(!r.width) return;
     const dpr=window.devicePixelRatio||1, W=Math.round(r.width*dpr), H=Math.round(r.height*dpr);
@@ -132,7 +136,8 @@ class PixelView{
     const k=Math.max(1,Math.floor(Math.min(W/this.low.width,H/this.low.height)));
     const g=this.cv.getContext('2d'); g.imageSmoothingEnabled=false; g.clearRect(0,0,W,H);
     const dw=this.low.width*k, dh=this.low.height*k;
-    g.drawImage(this.low,Math.round((W-dw)/2),align==='bottom'?H-dh:Math.round((H-dh)/2),dw,dh);
+    const x=Math.round((W-dw)/2), y=align==='bottom'?H-dh:Math.round((H-dh)/2);
+    g.drawImage(this.low,x,y,dw,dh); g.drawImage(this.hd,x,y,dw,dh);
   }
 }
 // рунний п'єдестал кольору класу (у низькій роздільності — пікселізується сам)
@@ -195,8 +200,11 @@ function fxDraw(g,fx,cx,gy,col,dt,t,W,H){
 // малюємо бійця в низькороздільну вітрину (тимчасово підміняючи глобальний ctx)
 function renderFighterTo(view,f,scale,gx,gy,t){
   const main=ctx; ctx=view.g;
+  view.hg.setTransform(1,0,0,1,0,0); view.hg.clearRect(0,0,view.hd.width,view.hd.height);
+  SPR_HD.ctx=view.hg; SPR_HD.k=2;
   ctx.setTransform(scale,0,0,scale,gx,gy);
   drawSprite(f.spriteState(t));
+  SPR_HD.ctx=null;
   ctx=main;
 }
 
@@ -216,21 +224,21 @@ function keyLabels(side){
   return side===0?['J','K','L','U','I']:['1','2','3','4','5'];
 }
 
-function makeSide(side,ci,si,ki,race){
+function makeSide(side,ci,si,ki){
   const cls=CLASSES[ci], spec=cls.specs[si], skin=spec.skins[ki];
-  const f=new Fighter(cls,spec,side,skin,race);
+  const f=new Fighter(cls,spec,side,skin);
   f.preview=true; f.facing=side===0?1:-1; f.x=0; f.y=0;
-  return {ci,si,ki,race:race||'',locked:false,f,nextT:2.5+Math.random()};
+  return {ci,si,ki,locked:false,f,nextT:2.5+Math.random()};
 }
 function pickDefaults(side){
   const p=state.picks[side];
-  if(p){ const ci=CLASSES.indexOf(p.cls), si=p.cls.specs.indexOf(p.spec); return [ci,si,p.spec.skins.indexOf(p.skin),p.race||'']; }
+  if(p){ const ci=CLASSES.indexOf(p.cls), si=p.cls.specs.indexOf(p.spec); return [ci,si,p.spec.skins.indexOf(p.skin)]; }
   const ci=side===0?0:Math.floor(Math.random()*CLASSES.length), si=side===0?0:Math.floor(Math.random()*3);
-  const spec=CLASSES[ci].specs[si]; return [ci,si,spec.skins.indexOf(preferredSkin(CLASSES[ci],spec)),side===0?preferredRace(CLASSES[ci],spec):''];
+  const spec=CLASSES[ci].specs[si]; return [ci,si,spec.skins.indexOf(preferredSkin(CLASSES[ci],spec))];
 }
 function openSelect(){
   SEL.side=NET.on?NET.side:0; SEL.fx=[newFx(),newFx()];   // у мережі кожен обирає свого бійця одночасно
-  for(const s of [0,1]){ const [ci,si,ki,race]=pickDefaults(s); SEL.sides[s]=makeSide(s,ci,si,ki,race); }
+  for(const s of [0,1]){ const [ci,si,ki]=pickDefaults(s); SEL.sides[s]=makeSide(s,ci,si,ki); }
   buildSelectDom();
   show('select');
   if(NET.on&&NET.remoteSel) netApplySel(NET.remoteSel);   // суперник міг обрати раніше, ніж відкрився екран
@@ -240,8 +248,7 @@ function openSelect(){
 const selWaiting=side=>!NET.on&&side===1&&SEL.side===0;
 function buildSelectDom(){
   // вітрини
-  SEL.shows=[['showL',0],['showR',1]].map(([id],side)=>{ const el=$(id);
-    el.querySelector('.sc-race').onclick=e=>{ e.stopPropagation(); if(side===SEL.side) selRace(1); };
+  SEL.shows=[['showL',0],['showR',1]].map(([id])=>{ const el=$(id);
     return {el,view:new PixelView(el.querySelector('.sc-cv'),124,184)}; });
   // ростер класів
   const ro=$('roster'); ro.innerHTML='';
@@ -256,31 +263,25 @@ function buildSelectDom(){
 }
 function curSide(){ return SEL.sides[SEL.side]; }
 function rebuildFighter(side){
-  const s=SEL.sides[side]; const n=makeSide(side,s.ci,s.si,s.ki,s.race); n.locked=s.locked; SEL.sides[side]=n;
+  const s=SEL.sides[side]; const n=makeSide(side,s.ci,s.si,s.ki); n.locked=s.locked; SEL.sides[side]=n;
   n.f.shiftT=0.35; // спалах при зміні
   const fx=SEL.fx[side]; fx.flash=Math.max(fx.flash,.7); fxBurst(fx,62,168,CLASSES[n.ci].color,18,1);
 }
 function selSetClass(ci){
   const s=curSide(); if(s.locked||s.ci===ci) return;
-  s.ci=ci; s.si=0; const cls=CLASSES[ci]; s.ki=cls.specs[0].skins.indexOf(preferredSkin(cls,cls.specs[0])); s.race=preferredRace(cls,cls.specs[0]);
+  s.ci=ci; s.si=0; const cls=CLASSES[ci]; s.ki=cls.specs[0].skins.indexOf(preferredSkin(cls,cls.specs[0]));
   rebuildFighter(SEL.side); sfx('tick'); renderSelect();
 }
 function selSetSpec(si){
   const s=curSide(); if(s.locked) return; const cls=CLASSES[s.ci];
   si=(si+3)%3; if(si===s.si) return;
-  s.si=si; s.ki=cls.specs[si].skins.indexOf(preferredSkin(cls,cls.specs[si])); s.race=preferredRace(cls,cls.specs[si]);
+  s.si=si; s.ki=cls.specs[si].skins.indexOf(preferredSkin(cls,cls.specs[si]));
   rebuildFighter(SEL.side); sfx('tick'); renderSelect();
 }
 function selSetSkin(ki){
   const s=curSide(); if(s.locked) return; const n=CLASSES[s.ci].specs[s.si].skins.length;
   ki=(ki+n)%n; if(ki===s.ki) return;
   s.ki=ki; rebuildFighter(SEL.side); sfx('tick'); renderSelect();
-}
-function selRace(d){
-  const s=curSide(); if(s.locked) return;
-  const i=RACES.findIndex(r=>r[0]===s.race);
-  s.race=RACES[(i+d+RACES.length)%RACES.length][0];
-  rebuildFighter(SEL.side); sfx('tick'); renderSelect();
 }
 function selMoveClass(dx,dy){
   const s=curSide(); if(s.locked) return;
@@ -290,14 +291,14 @@ function selMoveClass(dx,dy){
 function selRandom(){
   const s=curSide(); if(s.locked) return;
   const ci=Math.floor(Math.random()*CLASSES.length), si=Math.floor(Math.random()*3);
-  s.ci=ci; s.si=si; s.ki=Math.floor(Math.random()*CLASSES[ci].specs[si].skins.length); s.race=Math.random()<0.4?RACES[1+Math.floor(Math.random()*(RACES.length-1))][0]:'';
+  s.ci=ci; s.si=si; s.ki=Math.floor(Math.random()*CLASSES[ci].specs[si].skins.length);
   rebuildFighter(SEL.side); sfx('ok'); renderSelect();
 }
 // фіксація вибору: спалах, кільце, трус екрана (для свого боку і для суперника по мережі)
 function lockSide(side){
   const s=SEL.sides[side];
   s.locked=true; const cls=CLASSES[s.ci], spec=cls.specs[s.si], skin=spec.skins[s.ki];
-  state.picks[side]={cls,spec,skin,race:s.race};
+  state.picks[side]={cls,spec,skin};
   s.f.anim.play('victory'); s.f.shiftT=0.35; sfx('lock');
   const fx=SEL.fx[side]; fx.flash=1.3; fx.ring=0; fxBurst(fx,62,168,cls.color,60,1.7);
   const se=screens.select; se.classList.remove('shake'); void se.offsetWidth; se.classList.add('shake');
@@ -305,7 +306,7 @@ function lockSide(side){
 function selLock(){
   const s=curSide(); if(s.locked) return;
   const spec=CLASSES[s.ci].specs[s.si];
-  rememberSkin(CLASSES[s.ci],spec,spec.skins[s.ki]); rememberRace(CLASSES[s.ci],spec,s.race);
+  rememberSkin(CLASSES[s.ci],spec,spec.skins[s.ki]);
   lockSide(SEL.side);
   if(NET.on){ renderSelect(); netCheckVersus(); return; }
   if(SEL.side===0){ SEL.side=1; }
@@ -338,9 +339,6 @@ function renderSelect(){
     sh.el.querySelector('.sc-spec').textContent=skin.tier?`${spec.name}, ${skin.name}`:spec.name;
     const ranged=spec.abilities[0].type!=='melee';
     sh.el.querySelector('.sc-tags').innerHTML=`<i>${spec.role}</i><i>${ranged?'Дальній бій':'Ближній бій'}</i>`;
-    const rb=sh.el.querySelector('.sc-race'), mine=side===SEL.side;
-    rb.innerHTML=`${mine&&!s.locked?'◂ ':''}Раса: ${raceName(s.race)}${mine&&!s.locked?' ▸':''}`;
-    rb.classList.toggle('mine',mine&&!s.locked); rb.classList.toggle('hidden',selWaiting(side));
     sh.el.classList.toggle('active',SEL.side===side&&!s.locked);
     sh.el.classList.toggle('waiting',selWaiting(side));
     sh.el.classList.toggle('locked',s.locked);
@@ -387,10 +385,10 @@ function renderSelect(){
   const ss=$('skinStrip'); ss.innerHTML=''; SEL.thumbs=[];
   spec.skins.forEach((sk,ki)=>{
     const b=document.createElement('button'); b.className='pf skin'+(ki===s.ki?' on':'');
-    b.innerHTML=`<canvas></canvas><span>${sk.tier?'Тір '+sk.tier:'Класичний'}</span>`; b.title=sk.name;
+    b.innerHTML=`<canvas></canvas><span>${sk.tier}</span>`; b.title=sk.name;
     b.addEventListener('click',()=>selSetSkin(ki));
     ss.appendChild(b);
-    const f=new Fighter(cls,spec,SEL.side,sk,s.race); f.preview=true; f.facing=1; f.x=0; f.y=0;
+    const f=new Fighter(cls,spec,SEL.side,sk); f.preview=true; f.facing=1; f.x=0; f.y=0;
     SEL.thumbs.push({view:new PixelView(b.querySelector('canvas'),44,52),f});
   });
   $('selLock').textContent=SEL.side===1&&state.mode==='ai'?'У бій':'Готово';
@@ -433,7 +431,7 @@ function openVersus(){
   $('vsNameL').innerHTML=`${a.cls.name}<small>${a.spec.name}</small>`;
   $('vsNameR').innerHTML=`${b.cls.name}<small>${b.spec.name}</small>`;
   VS.views=[new PixelView($('vsL'),120,120),new PixelView($('vsR'),120,120)];
-  VS.fs=[a,b].map((p,i)=>{ const f=new Fighter(p.cls,p.spec,i,p.skin,p.race); f.preview=true; f.x=0; f.y=0; f.facing=i?-1:1; f.anim.play('roar'); return f; });
+  VS.fs=[a,b].map((p,i)=>{ const f=new Fighter(p.cls,p.spec,i,p.skin); f.preview=true; f.x=0; f.y=0; f.facing=i?-1:1; f.anim.play('roar'); return f; });
   $('vsWhoL').textContent=NET.on?(NET.side===0?'Ти':'Суперник'):'Гравець 1';
   $('vsWhoR').textContent=state.mode==='ai'?'Бот':(NET.on?(NET.side===1?'Ти':'Суперник'):'Гравець 2');
   VS.t=0;
@@ -461,8 +459,8 @@ function startFight(){
   clearTimeout(VS.timer);
   NET.sfxQ.length=0; NET.rin=newVin(); NET.vsPending=false;
   const P=state.picks;
-  const p1=new Fighter(P[0].cls,P[0].spec,0,P[0].skin,P[0].race);
-  const p2=new Fighter(P[1].cls,P[1].spec,1,P[1].skin,P[1].race);
+  const p1=new Fighter(P[0].cls,P[0].spec,0,P[0].skin);
+  const p2=new Fighter(P[1].cls,P[1].spec,1,P[1].skin);
   if(state.mode==='ai') p2.isAI=true;
   state.game=new Game(p1,p2);
   closePause();
@@ -475,11 +473,11 @@ function showOverlay(winner){
   if(NET.host) NET.send({t:'end',w:winner.idx});
   sting(NET.on?(winner.idx===NET.side?'win':'lose'):(winner.isAI?'lose':'win'));
   $('winTitle').textContent=who;
-  $('winSub').textContent=`${winner.cls.name}, ${winner.spec.name}. ${winner.skin.tier?winner.skin.name:'Класичний вигляд'}`;
+  $('winSub').textContent=`${winner.cls.name}, ${winner.spec.name}. ${winner.skin.name}`;
   screens.overlay.classList.remove('hidden'); UI.cur='overlay';
   focusFirst('overlay');
   // переможець на п'єдесталі
-  const f=new Fighter(winner.cls,winner.spec,winner.idx,winner.skin,winner.race); f.preview=true; f.x=0; f.y=0; f.facing=1; f.anim.play('victory');
+  const f=new Fighter(winner.cls,winner.spec,winner.idx,winner.skin); f.preview=true; f.x=0; f.y=0; f.facing=1; f.anim.play('victory');
   WIN.view=new PixelView($('winCv'),124,112); WIN.f=f; WIN.t=0; WIN.fx=newFx(); WIN.fx.flash=1.2; WIN.fx.ring=0; WIN.nextT=2.2;
   fxBurst(WIN.fx,62,100,winner.cls.color,50,1.5);
 }
@@ -526,7 +524,6 @@ UI.key=function(code){
     else if(code==='KeyQ') selSetSpec(curSide().si-1); else if(code==='KeyE') selSetSpec(curSide().si+1);
     else if(code==='KeyZ') selSetSkin(curSide().ki-1); else if(code==='KeyC') selSetSkin(curSide().ki+1);
     else if(code==='KeyR') selRandom();
-    else if(code==='KeyX') selRace(1);
     else if(K_OK.includes(code)) selLock();
     else if(code==='Escape'||code==='Backspace') act('back');
     return true;

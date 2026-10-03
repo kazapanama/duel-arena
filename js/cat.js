@@ -143,6 +143,8 @@ function solveCat(p){
 
 /* ---------- малювання ---------- */
 function paintCat(c,m,p,time,lights){
+  const ck=typeof cutoutKey==='function'?cutoutKey(m):null;
+  if(ck) return paintCatCutout(c,m,p,time,lights,ck);   // растрові деталі (js/cutout.js)
   const S=solveCat(p);
   const P={c,m,p,S,time,lights,pal:m.pal};
   OL=m.pal.outline;

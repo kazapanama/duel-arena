@@ -1,0 +1,384 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Обиралка сетів</title>
+<link rel="stylesheet" href="fonts/fonts.css">
+<style>
+/* Обиралка сетів: які тір-, аренні та іконічні сети йдуть на кожен спек.
+   Дані — tools/picker/catalog.js (build_catalog.py) і tools/picker/current.js (export_current.js).
+   Вибір зберігається в браузері, а якщо сторінку відкрито через node tools/server.js — ще й у tools/picker/picks.json */
+:root{
+  --bg:#0d1220; --panel:#151c2e; --card:#1a2236; --line:#2a3550; --text:#dfe6f3; --muted:#8b95a8;
+  --gold:#f4c430; --gold-d:#a8842a; --red:#e0524a; --ok:#5fd38d;
+  --display:'Tiny5',monospace; --body:'Handjet','Segoe UI',sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:var(--body);font-size:18px;font-weight:500}
+button,select{font:inherit;color:inherit}
+header{position:sticky;top:0;z-index:20;background:#0a0f1bee;backdrop-filter:blur(6px);border-bottom:1px solid var(--line);padding:10px 16px}
+.top{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+h1{font-family:var(--display);font-weight:400;font-size:26px;margin:0;color:var(--gold);letter-spacing:1px}
+.progress{color:var(--muted)} .progress b{color:var(--text)}
+.spacer{flex:1}
+.btn{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:4px 12px;cursor:pointer}
+.btn:hover{border-color:var(--gold-d)}
+.save{font-size:15px;color:var(--muted)} .save.ok{color:var(--ok)}
+.tabs{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+.tab{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:4px 10px;cursor:pointer;display:flex;gap:8px;align-items:center}
+.tab .dot{width:10px;height:10px;border-radius:50%}
+.tab small{color:var(--muted)}
+.tab.on{border-color:var(--gold);background:#2a2410}
+.filters{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;align-items:center}
+.chip{background:transparent;border:1px solid var(--line);border-radius:999px;padding:2px 12px;cursor:pointer;color:var(--muted)}
+.chip.on{color:var(--text);border-color:var(--gold-d);background:#1f1a0c}
+.sep{width:1px;height:22px;background:var(--line);margin:0 6px}
+.hint{color:var(--muted);font-size:15px;margin-left:auto}
+main{display:grid;grid-template-columns:1fr 330px;gap:16px;padding:16px}
+.section-title{font-family:var(--display);font-weight:400;color:var(--gold);font-size:18px;margin:6px 0 10px;letter-spacing:1px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:22px}
+.card{background:var(--card);border:2px solid var(--line);border-radius:8px;overflow:hidden;display:flex;flex-direction:column;transition:opacity .15s}
+.card.assigned{border-color:var(--gold)}
+.card.rejected{opacity:.38;filter:grayscale(.9)}
+.card.rejected:hover{opacity:.8}
+.shot{position:relative;height:230px;background:#0a0e18;cursor:zoom-in;display:flex;align-items:center;justify-content:center}
+.shot img{max-width:100%;max-height:100%;object-fit:contain}
+.shot .none{color:var(--muted);font-size:15px;text-align:center;padding:10px}
+.badges{position:absolute;left:6px;top:6px;display:flex;gap:4px}
+.badge{background:#000c;border:1px solid var(--line);border-radius:4px;padding:0 6px;font-size:15px}
+.badge.tier{color:var(--gold);border-color:var(--gold-d)}
+.badge.arena{color:#ff9a70;border-color:#7a3c26}
+.badge.extra{color:#9fd7ff;border-color:#2e5a7a}
+.badge.A{color:#7fb0ff} .badge.H{color:#ff7a6a}
+.tags{position:absolute;right:6px;top:6px;display:flex;flex-direction:column;gap:3px;align-items:flex-end}
+.tag{background:var(--gold);color:#1a1404;border-radius:4px;padding:0 6px;font-size:15px}
+.info{padding:6px 8px 2px}
+.name{line-height:1.05}
+.note{color:var(--muted);font-size:14px}
+.acts{display:flex;gap:4px;padding:6px 8px 8px;flex-wrap:wrap;margin-top:auto}
+.sb{flex:1;min-width:0;background:#10172a;border:1px solid var(--line);border-radius:5px;padding:2px 4px;cursor:pointer;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sb:hover{border-color:var(--gold-d)}
+.sb.on{background:var(--gold);color:#1a1404;border-color:var(--gold)}
+.sb.x{flex:0 0 32px}
+.sb.x.on{background:var(--red);border-color:var(--red);color:#fff}
+.more{flex:0 0 32px;background:#10172a;border:1px solid var(--line);border-radius:5px;cursor:pointer;font-size:15px;padding:0}
+aside{position:sticky;top:150px;align-self:start;max-height:calc(100vh - 170px);overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px}
+.spec{margin-bottom:14px}
+.spec h3{margin:0 0 6px;font-weight:600;font-size:19px;display:flex;justify-content:space-between}
+.spec h3 small{color:var(--muted);font-weight:500}
+.spec h3 small.full{color:var(--ok)}
+.slots{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.slot{position:relative;height:96px;background:#0a0e18;border:1px dashed var(--line);border-radius:6px;overflow:hidden;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:14px}
+.slot.fill{border-style:solid;border-color:var(--gold-d);cursor:zoom-in}
+.slot img{max-width:100%;max-height:100%}
+.slot .lab{position:absolute;left:2px;bottom:2px;background:#000c;font-size:13px;padding:0 4px;border-radius:3px;color:var(--gold)}
+.slot .rm{position:absolute;right:2px;top:2px;background:#000c;border:none;border-radius:3px;cursor:pointer;font-size:13px;padding:0 5px;color:#fff}
+.extra-slots{color:var(--muted);font-size:14px;margin-top:4px}
+.aside-sub{color:var(--muted);font-size:15px;margin:0 0 10px}
+.cross{margin-top:16px;border-top:1px solid var(--line);padding-top:10px;color:var(--muted);font-size:15px}
+/* перегляд */
+.lb{position:fixed;inset:0;background:#000d;z-index:50;display:none;align-items:center;justify-content:center;gap:24px;padding:24px}
+.lb.on{display:flex}
+.lb img{max-height:88vh;max-width:60vw;object-fit:contain;border:1px solid var(--line);background:#0a0e18}
+.lb .side{width:320px}
+.lb h2{margin:0 0 4px;font-weight:600}
+.lb .acts{padding:10px 0}
+.lb .sb{font-size:17px;padding:6px}
+.lb a{color:#9fd7ff}
+.lb .keys{color:var(--muted);font-size:15px;margin-top:10px;line-height:1.3}
+.lb .nav{position:absolute;top:50%;transform:translateY(-50%);font-size:40px;background:none;border:none;cursor:pointer;color:#fff8;padding:20px}
+.lb .nav:hover{color:#fff}
+.lb .prev{left:8px} .lb .next{right:8px}
+.lb .close{position:absolute;right:16px;top:10px;font-size:30px;background:none;border:none;color:#fff;cursor:pointer}
+dialog{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:8px;max-width:420px}
+dialog select{width:100%;background:var(--card);border:1px solid var(--line);padding:4px;margin:8px 0}
+@media (max-width:900px){ main{grid-template-columns:1fr} aside{position:static;max-height:none} .lb{flex-direction:column} .lb img{max-width:92vw;max-height:60vh} }
+</style>
+</head>
+<body>
+<header>
+  <div class="top">
+    <h1>ОБИРАЛКА СЕТІВ</h1>
+    <span class="progress" id="progress"></span>
+    <span class="spacer"></span>
+    <span class="save" id="save"></span>
+    <button class="btn" id="bReset" title="Повернути сети, що стоять у грі зараз (js/data.js)">Як зараз у грі</button>
+    <button class="btn" id="bClear" title="Прибрати весь розподіл і відкинуті">Очистити</button>
+    <button class="btn" id="bExport" title="Завантажити вибір у файл picks.json">Експорт</button>
+    <label class="btn" title="Завантажити picks.json">Імпорт<input type="file" id="fImport" accept=".json" hidden></label>
+  </div>
+  <div class="tabs" id="tabs"></div>
+  <div class="filters" id="filters">
+    <button class="chip on" data-g="all">Усі</button>
+    <button class="chip" data-g="tier">Тір-сети</button>
+    <button class="chip" data-g="arena">Арена</button>
+    <button class="chip" data-g="extra">Інші іконічні</button>
+    <span class="sep"></span>
+    <button class="chip on" data-s="all">Усі</button>
+    <button class="chip" data-s="free">Нерозподілені</button>
+    <button class="chip" data-s="taken">Розподілені</button>
+    <button class="chip" data-s="rejected">Відкинуті</button>
+    <span class="hint">Клік по скріншоту — великий перегляд: 1/2/3 — спек, X — не брати, ←/→ — далі</span>
+  </div>
+</header>
+<main>
+  <div id="list"></div>
+  <aside id="aside"></aside>
+</main>
+
+<div class="lb" id="lb">
+  <button class="close" id="lbClose" title="Закрити (Esc)">×</button>
+  <button class="nav prev" id="lbPrev" title="Попередній (←)">‹</button>
+  <img id="lbImg" alt="">
+  <div class="side">
+    <h2 id="lbName"></h2>
+    <div class="note" id="lbNote"></div>
+    <div class="acts" id="lbActs"></div>
+    <a id="lbLink" target="_blank" rel="noopener">Сторінка сету на Wowhead ↗</a>
+    <div class="keys">1 / 2 / 3 — на спек класу (ще раз — зняти)<br>X — не брати · Esc — закрити · ← / → — сусідні сети</div>
+  </div>
+  <button class="nav next" id="lbNext" title="Наступний (→)">›</button>
+</div>
+
+<dialog id="dlg">
+  <form method="dialog">
+    <div>Віддати сет <b id="dlgName"></b> спеку іншого класу:</div>
+    <select id="dlgSel"></select>
+    <menu style="display:flex;gap:8px;justify-content:flex-end;padding:0;margin:0">
+      <button class="btn" value="cancel">Скасувати</button>
+      <button class="btn" value="ok" id="dlgOk">Додати</button>
+    </menu>
+  </form>
+</dialog>
+
+<script src="tools/picker/catalog.js"></script>
+<script src="tools/picker/current.js"></script>
+<script>
+"use strict";
+const $=id=>document.getElementById(id);
+const CLASS_ORDER=[...new Set(SPECS.map(s=>s.cls))];
+const CLASS_NAME=Object.fromEntries(SPECS.map(s=>[s.cls,s.clsName]));
+const CLASS_COLOR=Object.fromEntries(SPECS.map(s=>[s.cls,s.color]));
+const SPECS_OF=cls=>SPECS.filter(s=>s.cls===cls);
+const BY_ID=Object.fromEntries(CATALOG.map(e=>[e.id,e]));
+const GROUP_NAME={tier:'Тір-сети',arena:'Арена',extra:'Інші іконічні'};
+const LABEL_ORDER=['T0','T0.5','T1','T2','T2.5','T3','T4','T5','T6','T7','T8','T9','T10','ZG','PvP','A1','A2','A3','A4','A5','A6','A7','A8'];
+const TARGET=3;   // у меню гри — рівно 3 сети на спек
+
+/* ---------- стан: {assign:{спек:[id сетів]}, reject:[id]} ---------- */
+const LS='setsPicker.v1';
+let state=null;
+function blank(){ return {assign:Object.fromEntries(SPECS.map(s=>[s.key,[]])),reject:[]}; }
+// основа назви: у грі назви сетів записані приблизно («Gronnstalker Armor» замість «Gronnstalker's Armor», «Aegis Regalia» замість «Aegis Battlegear»)
+const baseName=n=>n.toLowerCase().replace(/^the /,'').replace(/'s\b/g,'').replace(/\s+(armor|battlegear|regalia|garb|raiment|plate|harness)$/,'').trim();
+function fromCurrent(){
+  const st=blank();
+  for(const [key,names] of Object.entries(CURRENT)){
+    const cls=key.split('/')[0];
+    for(const n of names){
+      const own=CATALOG.filter(x=>x.cls===cls);
+      const e=own.find(x=>x.name.toLowerCase()===n.toLowerCase())
+        ||own.find(x=>baseName(x.name)===baseName(n)&&!x.note)            // основна версія, не героїчне перефарбування
+        ||own.find(x=>baseName(x.name)===baseName(n))
+        ||CATALOG.find(x=>x.name.toLowerCase()===n.toLowerCase());
+      if(e&&!st.assign[key].includes(e.id)) st.assign[key].push(e.id);
+    }
+  }
+  return st;
+}
+function normalize(st){
+  const b=blank(); if(!st||!st.assign) return b;
+  for(const k in b.assign) b.assign[k]=(st.assign[k]||[]).filter(id=>BY_ID[id]);
+  b.reject=(st.reject||[]).filter(id=>BY_ID[id]);
+  return b;
+}
+const specsOfSet=id=>SPECS.filter(s=>state.assign[s.key].includes(id)).map(s=>s.key);
+const isRejected=id=>state.reject.includes(id);
+
+/* ---------- збереження ---------- */
+const SERVER=location.protocol.startsWith('http');
+let saveTimer=null;
+function payload(){
+  const sets={}; for(const ids of Object.values(state.assign)) for(const id of ids) sets[id]=BY_ID[id];
+  for(const id of state.reject) sets[id]=BY_ID[id];
+  const pretty=Object.fromEntries(Object.entries(state.assign).map(([k,ids])=>[k,ids.map(id=>`${BY_ID[id].label} ${BY_ID[id].name}`)]));
+  return {version:1,updated:new Date().toISOString(),assign:state.assign,reject:state.reject,
+    readable:{assign:pretty,reject:state.reject.map(id=>`${BY_ID[id].cls} ${BY_ID[id].label} ${BY_ID[id].name}`)}};
+}
+function save(){
+  try{ localStorage.setItem(LS,JSON.stringify(state)); }catch(e){}
+  setSave('збережено в браузері');
+  if(!SERVER) return;
+  clearTimeout(saveTimer);
+  saveTimer=setTimeout(()=>{
+    fetch('api/picks',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload(),null,1)})
+      .then(r=>setSave(r.ok?'збережено на диск ✓':'на диск не записалось — лишилось у браузері',r.ok))
+      .catch(()=>setSave('сервер недоступний — збережено в браузері'));
+  },400);
+}
+function setSave(t,ok){ const el=$('save'); el.textContent=t; el.classList.toggle('ok',!!ok); }
+
+/* ---------- дії ---------- */
+function toggleSpec(id,key){
+  const a=state.assign[key], i=a.indexOf(id);
+  if(i>=0) a.splice(i,1); else { a.push(id); state.reject=state.reject.filter(x=>x!==id); }
+  save(); render();
+}
+function toggleReject(id){
+  const i=state.reject.indexOf(id);
+  if(i>=0) state.reject.splice(i,1);
+  else { state.reject.push(id); for(const k in state.assign) state.assign[k]=state.assign[k].filter(x=>x!==id); }
+  save(); render();
+}
+
+/* ---------- фільтри ---------- */
+let curCls=localGet('setsPicker.cls')||CLASS_ORDER[0], fGroup='all', fStatus='all';
+function localGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
+function visible(){
+  return CATALOG.filter(e=>{
+    if(e.cls!==curCls) return false;
+    if(fGroup!=='all'&&e.group!==fGroup) return false;
+    const taken=specsOfSet(e.id).length>0, rej=isRejected(e.id);
+    if(fStatus==='free') return !taken&&!rej;
+    if(fStatus==='taken') return taken;
+    if(fStatus==='rejected') return rej;
+    return true;
+  }).sort((a,b)=>LABEL_ORDER.indexOf(a.label)-LABEL_ORDER.indexOf(b.label));
+}
+
+/* ---------- малювання ---------- */
+const SHORT={Protection:'Prot','Beast Mastery':'BM',Marksmanship:'MM',Survival:'Surv',Assassination:'Assa',Subtlety:'Sub',Discipline:'Disc',
+  Retribution:'Ret',Elemental:'Ele',Enhancement:'Enh',Restoration:'Resto',Affliction:'Affli',Demonology:'Demo',Destruction:'Destro'};
+const shortSpec=key=>{ const n=key.split('/')[1]; return SHORT[n]||n; };
+function imgTag(e){ return e.img?`<img src="${e.img}" alt="${e.name}" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'none',textContent:'скріншот ще докачується'}))">`:`<div class="none">скріншот ще докачується<br>(див. Wowhead)</div>`; }
+function badges(e){
+  return `<div class="badges"><span class="badge ${e.group}">${e.label}</span>${e.faction?`<span class="badge ${e.faction}">${e.faction==='A'?'Альянс':'Орда'}</span>`:''}</div>`;
+}
+function card(e){
+  const taken=specsOfSet(e.id), rej=isRejected(e.id);
+  const own=SPECS_OF(e.cls);
+  const foreign=taken.filter(k=>k.split('/')[0]!==e.cls);
+  return `<div class="card${taken.length?' assigned':''}${rej?' rejected':''}" data-id="${e.id}">
+    <div class="shot" data-zoom="${e.id}">${imgTag(e)}${badges(e)}
+      <div class="tags">${taken.map(k=>`<span class="tag">${k.split('/')[0]===e.cls?shortSpec(k):CLASS_NAME[k.split('/')[0]]+' · '+shortSpec(k)}</span>`).join('')}</div></div>
+    <div class="info"><div class="name">${e.name}</div>${e.note?`<div class="note">${e.note}</div>`:''}</div>
+    <div class="acts">${own.map(s=>`<button class="sb${taken.includes(s.key)?' on':''}" data-spec="${s.key}" title="${s.clsName} · ${s.spec}">${shortSpec(s.key)}</button>`).join('')}
+      <button class="more${foreign.length?' on':''}" data-more="${e.id}" title="Віддати спеку іншого класу">⋯</button>
+      <button class="sb x${rej?' on':''}" data-rej="${e.id}" title="Не брати цей сет">✕</button></div>
+  </div>`;
+}
+function render(){
+  // вкладки класів із лічильником
+  $('tabs').innerHTML=CLASS_ORDER.map(cls=>{
+    const n=SPECS_OF(cls).reduce((s,sp)=>s+Math.min(TARGET,state.assign[sp.key].length),0), max=SPECS_OF(cls).length*TARGET;
+    return `<button class="tab${cls===curCls?' on':''}" data-cls="${cls}"><span class="dot" style="background:${CLASS_COLOR[cls]}"></span>${CLASS_NAME[cls]} <small>${n}/${max}</small></button>`;
+  }).join('');
+  const done=SPECS.filter(s=>state.assign[s.key].length>=TARGET).length;
+  $('progress').innerHTML=`Заповнено спеків: <b>${done}</b> з ${SPECS.length} · відкинуто сетів: <b>${state.reject.length}</b> · усього сетів: ${CATALOG.length}`;
+  // список, згрупований за типом
+  const vis=visible();
+  $('list').innerHTML=['tier','arena','extra'].map(g=>{
+    const items=vis.filter(e=>e.group===g); if(!items.length) return '';
+    return `<div class="section-title">${GROUP_NAME[g].toUpperCase()} · ${items.length}</div><div class="grid">${items.map(card).join('')}</div>`;
+  }).join('')||`<p style="color:var(--muted)">Нічого не знайдено за цими фільтрами.</p>`;
+  renderAside();
+  if($('lb').classList.contains('on')) renderLb();
+}
+function renderAside(){
+  const sp=SPECS_OF(curCls);
+  let html=`<div class="section-title">${CLASS_NAME[curCls].toUpperCase()}</div><p class="aside-sub">По ${TARGET} сети на спек — стільки буде в меню гри.</p>`;
+  for(const s of sp){
+    const ids=state.assign[s.key], n=ids.length;
+    html+=`<div class="spec"><h3>${s.em} ${s.spec} <small class="${n>=TARGET?'full':''}">${n}/${TARGET}</small></h3><div class="slots">`;
+    for(let i=0;i<Math.max(TARGET,n);i++){
+      const e=BY_ID[ids[i]];
+      html+=e?`<div class="slot fill" data-zoom="${e.id}">${e.img?`<img src="${e.img}" alt="">`:''}<span class="lab">${e.label} ${e.cls!==curCls?'· '+CLASS_NAME[e.cls]:''}</span><button class="rm" data-unassign="${e.id}" data-key="${s.key}" title="Прибрати">✕</button></div>`
+             :`<div class="slot">порожньо</div>`;
+    }
+    html+=`</div>${n>TARGET?`<div class="extra-slots">понад ${TARGET}: можна лишити, але в меню влізе ${TARGET}</div>`:''}</div>`;
+  }
+  // сети цього класу, віддані іншим класам
+  const away=CATALOG.filter(e=>e.cls===curCls).flatMap(e=>specsOfSet(e.id).filter(k=>k.split('/')[0]!==curCls).map(k=>`${e.label} ${e.name} → ${CLASS_NAME[k.split('/')[0]]} · ${shortSpec(k)}`));
+  if(away.length) html+=`<div class="cross">Віддано іншим класам:<br>${away.join('<br>')}</div>`;
+  $('aside').innerHTML=html;
+}
+
+/* ---------- великий перегляд ---------- */
+let lbId=null;
+function openLb(id){ lbId=id; $('lb').classList.add('on'); renderLb(); }
+function closeLb(){ $('lb').classList.remove('on'); lbId=null; }
+function renderLb(){
+  const e=BY_ID[lbId]; if(!e) return closeLb();
+  $('lbImg').src=e.img||''; $('lbImg').style.visibility=e.img?'visible':'hidden';
+  $('lbName').textContent=e.name;
+  $('lbNote').textContent=[`${CLASS_NAME[e.cls]} · ${e.label}`,e.faction?(e.faction==='A'?'Альянс':'Орда'):'',e.note||''].filter(Boolean).join(' · ');
+  $('lbLink').href=e.url;
+  const taken=specsOfSet(e.id);
+  $('lbActs').innerHTML=SPECS_OF(e.cls).map((s,i)=>`<button class="sb${taken.includes(s.key)?' on':''}" data-spec="${s.key}" data-id="${e.id}">${i+1}. ${s.spec}</button>`).join('')+
+    `<button class="sb x${isRejected(e.id)?' on':''}" data-rej="${e.id}" title="X">✕</button>`;
+}
+function stepLb(d){
+  const vis=visible(); if(!vis.length) return;
+  const i=vis.findIndex(e=>e.id===lbId);
+  lbId=vis[(i+d+vis.length)%vis.length].id; renderLb();
+}
+
+/* ---------- події ---------- */
+document.addEventListener('click',ev=>{
+  const t=ev.target.closest('[data-cls],[data-g],[data-s],[data-spec],[data-rej],[data-zoom],[data-unassign],[data-more]');
+  if(!t) return;
+  if(t.dataset.unassign){ ev.stopPropagation(); return toggleSpec(+t.dataset.unassign,t.dataset.key); }
+  if(t.dataset.cls){ curCls=t.dataset.cls; try{ localStorage.setItem('setsPicker.cls',curCls); }catch(e){} window.scrollTo(0,0); return render(); }
+  if(t.dataset.g){ fGroup=t.dataset.g; document.querySelectorAll('[data-g]').forEach(b=>b.classList.toggle('on',b===t)); return render(); }
+  if(t.dataset.s){ fStatus=t.dataset.s; document.querySelectorAll('[data-s]').forEach(b=>b.classList.toggle('on',b===t)); return render(); }
+  if(t.dataset.spec){ const id=+(t.dataset.id||t.closest('[data-id]').dataset.id); return toggleSpec(id,t.dataset.spec); }
+  if(t.dataset.rej) return toggleReject(+t.dataset.rej);
+  if(t.dataset.more) return openCross(+t.dataset.more);
+  if(t.dataset.zoom) return openLb(+t.dataset.zoom);
+});
+$('lbClose').onclick=closeLb; $('lbPrev').onclick=()=>stepLb(-1); $('lbNext').onclick=()=>stepLb(1);
+$('lb').addEventListener('click',ev=>{ if(ev.target===$('lb')) closeLb(); });
+document.addEventListener('keydown',ev=>{
+  if(!$('lb').classList.contains('on')) return;
+  const e=BY_ID[lbId];
+  if(ev.key==='Escape') closeLb();
+  else if(ev.key==='ArrowRight') stepLb(1);
+  else if(ev.key==='ArrowLeft') stepLb(-1);
+  else if(/^[1-9]$/.test(ev.key)){ const s=SPECS_OF(e.cls)[+ev.key-1]; if(s) toggleSpec(e.id,s.key); }
+  else if(ev.key.toLowerCase()==='x'||ev.key.toLowerCase()==='ч') toggleReject(e.id);
+});
+// віддати сет іншому класу (плитові сети — паладину чи лицарю смерті тощо)
+let crossId=null;
+function openCross(id){
+  crossId=id; const e=BY_ID[id];
+  $('dlgName').textContent=e.name;
+  $('dlgSel').innerHTML=CLASS_ORDER.filter(c=>c!==e.cls).map(c=>`<optgroup label="${CLASS_NAME[c]}">${SPECS_OF(c).map(s=>`<option value="${s.key}"${state.assign[s.key].includes(id)?' selected':''}>${s.clsName} · ${s.spec}${state.assign[s.key].includes(id)?' (уже є)':''}</option>`).join('')}</optgroup>`).join('');
+  $('dlg').showModal();
+}
+$('dlg').addEventListener('close',()=>{ if($('dlg').returnValue==='ok'&&crossId!=null) toggleSpec(crossId,$('dlgSel').value); crossId=null; });
+$('bReset').onclick=()=>{ if(confirm('Повернути розподіл, як зараз у грі? Поточний вибір у цій обиралці буде замінено.')){ state=fromCurrent(); save(); render(); } };
+$('bClear').onclick=()=>{ if(confirm('Очистити весь розподіл і список відкинутих?')){ state=blank(); save(); render(); } };
+$('bExport').onclick=()=>{
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([JSON.stringify(payload(),null,1)],{type:'application/json'}));
+  a.download='picks.json'; a.click(); URL.revokeObjectURL(a.href);
+};
+$('fImport').onchange=ev=>{
+  const f=ev.target.files[0]; if(!f) return;
+  f.text().then(t=>{ state=normalize(JSON.parse(t)); save(); render(); }).catch(()=>alert('Не вдалося прочитати файл'));
+};
+
+/* ---------- старт: диск (через сервер) → браузер → як зараз у гри ---------- */
+(async function start(){
+  let st=null;
+  if(SERVER){ try{ st=await (await fetch('api/picks',{cache:'no-store'})).json(); }catch(e){} }
+  if(!st){ try{ st=JSON.parse(localStorage.getItem(LS)); }catch(e){} }
+  state=st?normalize(st):fromCurrent();
+  if(!CLASS_ORDER.includes(curCls)) curCls=CLASS_ORDER[0];
+  setSave(SERVER?'вибір пишеться на диск':'вибір зберігається в цьому браузері (для запису на диск відкрийте через server.cmd)');
+  render();
+})();
+</script>
+</body>
+</html>

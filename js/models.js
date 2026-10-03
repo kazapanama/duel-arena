@@ -94,9 +94,12 @@ const SET_LOOK={
   // T2: фіолетові лати з помаранчево-золотим кантом, чаші-наплічники зі світлою підкладкою, гребінь-лезо
   'Battlegear of Wrath':{prim:'#3c2c6c',sec:'#261c48',trim:'#e89040',acc:'#7cff6b',pale:'#e8dce8',
     helm:{t:'helm',crest:'blade',crestCol:'trim'},sh:{t:'bowl',s:1.35,inner:'pale',gem:1},panels:null,aura:null,fx:null},
-  // T6: чорна бронза, шипи, розжарений помаранчевий самоцвіт на грудях
-  'Onslaught Battlegear':{prim:'#2c2622',sec:'#3a302a',trim:'#b89060',acc:'#ffb030',metal:'#8a7a60',
-    helm:{t:'helm',crest:'spikes',crestCol:'metal'},sh:{t:'bigspikes',s:1.3,spc:'metal'},glows:['chest'],aura:null,fx:'embers'},
+  // T6 (за атласом користувача «Темний Лицар»): чорно-бура броня із золотими прожилками, каптур-шолом зі світною щілиною,
+  // високим лезом і загнутим рогом, кулі-наплічники з шипами, шипастий комір, світне ядро під ним, темний плащ, шипасті молоти
+  'Onslaught Battlegear':{prim:'#3a3129',sec:'#5e5244',trim:'#a8843a',acc:'#ffc828',metal:'#8c8a86',leath:'#2a221c',glove:'#2e2620',
+    pal:{primL:'#6a5d4d',secL:'#857660',metalL:'#d8d6d0'},
+    helm:{t:'onslaught'},sh:{t:'onslaught',s:1.3},cuff:'prim',veins:1,core:1,spikeCollar:1,greaves:1,bulk:1.08,chest:1.1,headScale:1.04,
+    cape:{len:46,w:8,col:'#2a231d'},main:{t:'darkhammer'},off:{t:'darkhammer'},aura:null,fx:'gold'},
   // T10: темні лати врайкулів, золоте оздоблення, великі роги
   "Ymirjar Lord's Battlegear":{prim:'#2e2c30',sec:'#4a4850',trim:'#b89448',acc:'#7de0ff',hair:'#c8c0b0',
     helm:{t:'helm',crest:'bighorns'},sh:{t:'skull',s:1.3},cape:{t:'tatter',len:36,col:'#3a3634'},fx:'frost',aura:null,
@@ -375,6 +378,7 @@ const SET_LOOK={
 /* ---------- ефекти сетів (частинки навколо бійця) ---------- */
 const FX_KIND={
   embers:{cols:['#ff9440','#ffd23a'],vy:-50,g:-40,rate:7},
+  gold:{cols:['#ffc828','#ffe9a3'],vy:-35,g:-25,rate:4},
   frost:{cols:['#cfefff','#aee8ff'],vy:-6,g:15,rate:6},
   shadow:{cols:['#6a4a9a','#2a1a3a'],vy:-30,g:-20,rate:7},
   holy:{cols:['#ffe9a3','#ffffff'],vy:-40,g:-30,rate:6},
@@ -397,7 +401,7 @@ function raceFromSkin(skin,cls){
 }
 
 /* ---------- збірка моделі ---------- */
-// раса, обрана гравцем (або сетом): шкіра, ноги, борода — те, що робить расу впізнаваною навіть під шоломом
+// раса, задана скіном (race у SET_LOOK або в SK): шкіра, ноги, борода — те, що робить расу впізнаваною навіть під шоломом
 const RACE_SKIN={orc:'#6fa04a',nelf:'#a48cff',tauren:'#7a4a2a',dk:'#cfd6e4',draenei:'#94a6c8',
   belf:'#f0c8a0',troll:'#5a8ab0',undead:'#9aa890',dwarf:'#e0a880',human:'#e8b98a'};
 function applyRace(m,race,L){
@@ -407,10 +411,8 @@ function applyRace(m,race,L){
   else { if(m.legs==='hoof'&&!(L&&L.legs)) m.legs=null; if(!(L&&L.tail)) m.tail=0; }
   if(race==='dwarf'){ m.beard=1; m.bulk=Math.max(m.bulk||1,1.1); }
   if(race==='troll'&&!m.longHair) m.mohawk=1;
-  // обрану расу має бути видно: закритий шолом стає відкритим (гребінь сету лишається)
-  if(m.helm&&(m.helm.t==='helm'||m.helm.t==='skull')) m.helm={...m.helm,t:'open'};
 }
-function resolveModel(cls,spec,skin,raceOverride){
+function resolveModel(cls,spec,skin){
   const key=cls.id+'/'+spec.name;
   const C=CLASS_LOOK[cls.id], SP=SPEC_LOOK[key]||{};
   const L=skin.tier? (SET_LOOK[skin.name+'@'+spec.name]||SET_LOOK[skin.name]||{}) : (CLASSIC_LOOK[key]||{});
@@ -432,10 +434,12 @@ function resolveModel(cls,spec,skin,raceOverride){
   for(const k of ['helm','sh','main','off']) if(L[k]!==undefined) m[k]=L[k]?{...L[k]}:null;
   for(const k of ['cape','tabard']) if(L[k]!==undefined) m[k]=L[k]?{...(m[k]||{}),...L[k]}:null;
   for(const k of ['lower','race','gem','fx','longHair','beard','mohawk','plates','bulk','headScale','aura',
-    'plain','collar','bands','straps','boot','feet','belt','chest','stance','panels','legCol','glows','sash','skirt','permWings','wingKind']) if(L[k]!==undefined) m[k]=L[k];
+    'plain','collar','bands','straps','boot','feet','belt','chest','stance','panels','legCol','glows','sash','skirt','permWings','wingKind',
+    'cuff','veins','core','spikeCollar','greaves']) if(L[k]!==undefined) m[k]=L[k];
   if(skin.race) m.race=skin.race;
-  if(raceOverride) applyRace(m,raceOverride,L);   // раса з вибору гравця; шолом сету чи класу лишається
-  else if(m.race==='tauren'||m.race==='orc'){ if(!L.helm) m.helm={t:'none'}; }
+  // раса зі скіну, якої не дає клас чи спек (дворф, ельф крові, троль, нежить, таурен…): ноги, хвіст, борода
+  if((L.race||skin.race)&&m.race!==(SP.race||C.race)) applyRace(m,m.race,L);
+  if(m.race==='tauren'||m.race==='orc'){ if(!L.helm) m.helm={t:'none'}; }
   if(m.race==='draenei'&&m.helm&&['open','circlet','crown'].includes(m.helm.t)&&!L.helm) m.helm={...m.helm}; // обличчя дренея видно
 
   // кольори
@@ -446,7 +450,7 @@ function resolveModel(cls,spec,skin,raceOverride){
     if(mx>200&&(mx-mn)>120) trim=hexShade(hexMix(trim,'#9a9080',0.22),-0.12); }
   const sec=classic?(L.sec||hexMix(cls.color,prim,0.3)):(L.sec||hexShade(prim,-0.45));
   const acc=L.acc||accent;
-  const skinCol=(raceOverride?RACE_SKIN[raceOverride]:null)||L.skin||(m.race!=='human'?RACE_SKIN[m.race]:null)||skin.head||'#e8b98a';
+  const skinCol=L.skin||(m.race!=='human'?RACE_SKIN[m.race]:null)||skin.head||'#e8b98a';
   const glowEye=(skin.eyes&&skin.eyes!=='#ffffff')||m.race==='draenei'||m.race==='undead';
   const eye=(skin.eyes&&skin.eyes!=='#ffffff')?skin.eyes:(m.race==='dk'?'#7de0ff':(m.race==='draenei'?'#eef8ff':'#e8f0ff'));
   const capeCol=(m.cape&&m.cape.col)||(classic?cls.color:hexShade(sec,0.05));
@@ -480,6 +484,7 @@ function resolveModel(cls,spec,skin,raceOverride){
     jade:'#b8d8a8', jadeD:'#7aa070',
   };
   if(L.wingCol){ m.pal.wing=L.wingCol; m.pal.wingD=hexShade(L.wingCol,-0.4); m.pal.wingL=lightOf(L.wingCol,0.35); m.wingLight=L.wingCol; }
+  if(L.pal) Object.assign(m.pal,L.pal);   // точкові кольори сету (відблиски не завжди добре виводяться з бази)
   if(L.glove){ m.pal.glove=L.glove; m.pal.gloveD=hexShade(L.glove,-0.4); m.pal.gloveL=lightOf(L.glove,0.3); }
   m.pal.outline=hexMix(hexShade(prim,-0.8),'#0a0608',0.6);
   m.castCol=acc;
@@ -489,6 +494,8 @@ function resolveModel(cls,spec,skin,raceOverride){
   // FX-частинки: аура сету без явного ефекту — легкі іскри кольору аури
   m.fxKind=m.fx?FX_KIND[m.fx]:null;
   m.name=skin.name; m.key=key;
+  m.cutout=skin.cutout||null;
+  if(m.cutout&&STANCE34[m.style]) m.stance={...(m.stance||{}),...STANCE34[m.style]};   // стійка для напівоберту (rig.js)   // набір растрових деталей скіну (js/cutout.js); кольори деталей додаються в палітру, коли набір завантажиться
   return m;
 }
 
@@ -535,6 +542,7 @@ function resolveFormModel(cls,spec,skin,form){
   pal.outline=hexMix(hexShade(fur,-0.8),'#0a0608',0.6);
   return {
     kind:form, style:form==='cat'?'cat':'owl', pal, look:L,
+    cutout:skin.formCutout||null,   // растрові деталі форми (js/cutout.js; кіт — paintCatCutout)
     castCol:acc, castSide:'f', glowEye:true,
     fxKind:skin.tier&&skin.glow?{cols:[skin.glow,acc],vy:-30,g:-20,rate:4}:null,
     name:skin.name+' ('+form+')', key:cls.id+'/'+spec.name,

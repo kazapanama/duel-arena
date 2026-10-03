@@ -1,0 +1,1802 @@
+[
+ {
+  "id": "warrior_arms_1",
+  "key": "warrior/Arms",
+  "cls": "warrior",
+  "clsName": "Воїн",
+  "spec": "Arms",
+  "slot": 1,
+  "set_id": 657,
+  "set": "Destroyer Battlegear",
+  "label": "T5",
+  "faction": null,
+  "race": "human male",
+  "weapons": [
+   "two-handed great axe",
+   null
+  ],
+  "ref": "tools/setsheets/refs/warrior_arms_1.png",
+  "prompt": "tools/setsheets/prompts/warrior_arms_1.txt",
+  "wowhead": "https://www.wowhead.com/wotlk/item-set=657"
+ },
+ {
+  "id": "warrior_arms_2",
+  "key": "warrior/Arms",
+  "cls": "warrior",
+  "clsName": "Воїн",
+  "spec": "Arms",
+  "slot": 2,
+  "set_id": -212,
+  "set": "Relentless Gladiator's Battlegear",
+  "label": "A7",
+  "faction": null,
+  "race": "human male",
+  "weapons": [
+   "two-handed great axe",
+   null
+  ],
+  "ref": "tools/setsheets/refs/warrior_arms_2.png",
+  "prompt": "tools/setsheets/prompts/warrior_arms_2.txt",
+  "wowhead": "https://www.wowhead.com/wotlk/item-set=-212"
+ },
+ {
+  "id": "warrior_arms_3",
+  "key": "warrior/Arms",
+  "cls": "warrior",
+  "clsName": "Воїн",
+  "spec": "Arms",
+  "slot": 3,
+  "set_id": 218,
+  "set": "Battlegear of Wrath",
+  "label": "T2",
+  "faction": null,
+  "race": "human male",
+  "weapons": [
+   "two-handed great axe",
+   null
+  ],
+  "ref": "tools/setsheets/refs/warrior_arms_3.png",
+  "prompt": "tools/setsheets/prompts/warrior_arms_3.txt",
+  "wowhead": "https://www.wowhead.com/wotlk/item-set=218"
+ },
+ {
+  "id": "warrior_fury_1",
+  "key": "warrior/Fury",
+  "cls": "warrior",
+  "clsName": "Воїн",
+  "spec": "Fury",
+  "slot": 1,
+  "set_id": 567,
+  "set": "Gladiator's Battlegear",
+  "label": "A1",
+  "faction": null,
+  "race": "human male",
+  "weapons": [
+   "one-handed axe",
+   "one-handed sword"
+  ],
+  "ref": "tools/setsheets/refs/warrior_fury_1.png",
+  "prompt": "tools/setsheets/prompts/warrior_fury_1.txt",
+  "wowhead": "https://www.wowhead.com/wotlk/item-set=567"
+ },
+ {
+  "id": "warrior_fury_2",
+  "key": "warrior/Fury",
+  "cls": "warrior",
+  "clsName": "Воїн",
+  "spec": "Fury",
+  "slot": 2,
+  "set_id": 474,
+  "set": "Vindicator's Battlegear",
+  "label": "ZG",
+  "faction": null,
+  "race": "human male",
+  "weapons": [
+   "one-handed axe",
+   "one-handed sword"
+  ],
+  "ref": "tools/setsheets/refs/warrior_fury_2.png",
+  "prompt": "tools/setsheets/prompts/warrior_fury_2.txt",
+  "wowhead": "https://www.wowhead.com/wotlk/item-set=474"
+ },
+ {
+  "id": "warrior_fury_3",
+  "key": "warrior/Fury",
+  "cls": "warrior",
+  "clsName": "Воїн",
+  "spec": "Fury",
+  "slot": 3,
+  "set_id": 383,
+  "set": "Warlord's Battlegear",
+  "label": "PvP",
+  "faction": "H",
+  "race": "human male",
+  "weapons": [
+   "one-handed axe",
+   "one-handed sword"
+  ],
+  "ref": "tools/setsheets/refs/warrior_fury_3.png",
+  "prompt": "tools/setsheets/prompts/warrior_fury_3.txt",
+  "wowhead": "https://www.wowhead.com/wotlk/item-set=383"
+ },
+ {
+  "id": "warrior_protection_1",
+  "key": "warrior/Protection",
+  "cls": "warrior",
+  "clsName": "Воїн",
+  "spec": "Protection",
+  "slot": 1,
+  "set_id": 672,
+  "set": "Onslaught Battlegear",
+  "label": "T6",
+  "faction": null,
+  "race": "human male",
+  "weapons": [
+   "one-handed sword",
+   "shield"
+  ],
+  "ref": "tools/setsheets/refs/warrior_protection_1.png",
+  "prompt": "tools/setsheets/prompts/warrior_protection_1.txt",
+  "wowhead": "https://www.wowhead.com/wotlk/item-set=672"
+ },
+ {
+  "id": "warrior_protection_2",
+  "key": "warrior/Protection",
+  "cls": "warrior",
+  "clsName": "Воїн",
+  "spec": "Protection",
+  "slot": 2,
+  "set_id": 523,
+  "set": "Dreadnaught's Battlegear",
+  "label": "T3",
+  "faction": null,
+  "race": "human male",
+  "weapons": [
+   "one-handed sword",
+   "shield"
+  ],
+  "ref": "tools/setsheets/refs/warrior_protection_2.png",
+  "prompt": "tools/setsheets/prompts/warrior_protection_2.txt",
+  "wowhead": "https://www.wowhead.com/wotlk/item-set=523"
+ },
+ {
+  "id": "warrior_protection_3",
+  "key": "warrior/Protection",
+  "cls": "warrior",
+  "clsName": "Воїн",
+  "spec": "Protection",
+  "slot": 3,
+  "set_id": 868,
+  "set": "Hellscream's Battlegear",
+  "label": "T9",
+  "faction": "H",
+  "race": "human male",
+  "weapons": [
+   "one-handed sword",
+   "shield"
+  ],
+  "ref": "tools/setsheets/refs/warrior_protection_3.png",
+  "prompt": "tools/setsheets/prompts/warrior_protection_3.txt",
+  "wowhead": "https://www.wowhead.com/wotlk/item-set=868"
+ },
+ {
+  "id": "paladin_holy_1",
+  "key": "paladin/Holy",
+  "cls": "paladin",
+  "clsName": "Паладін",
+  "spec": "Holy",
+  "slot": 1,
+  "set_id": 217,
+  "set": "Judgement Armor",
+  "label": "T2",
+  "faction": null,
+  "race": "human male",
+  "weapons": [
+   "one-handed mace",
+   "shield"
+  ],
+  "ref": "tools/setsheets/refs/paladin_holy_1.png",
+  "prompt": "tools/setsheets/prompts/paladin_holy_1.txt",
+  "wowhead": "https://www.wowhead.com/wotlk/item-set=217"
+ },
+ {
+  "id": "paladin_holy_2",
+  "key": "paladin/Holy",
+  "cls": "paladin",
+  "clsName": "Паладін",
+  "spec": "Holy",
+  "slot": 2,
+  "set_id": 726,
+  "set": "Vengeful Gladiator's Vindication",
+  "label": "A3",
+  "faction": null,
+  "race": "human male",
+  "weapons": [
+   "one-handed mace",
+   "shield"
+  ],
+  "ref": "tools/setsheets/refs/paladin_holy_2.png",
+  "prompt": "tools/setsheets/prompts/paladin_holy_2.txt",
+  "wowhead": "https://www.wowhead.com/wotlk/item-set=726"
+ },
+ {
+  "id": "paladin_holy_3",
+  "key": "paladin/Holy",
+  "cls": "paladin",
+  "clsName": "Паладін",
+  "spec": "Holy",
+  "slot": 3,
+  "set_id": 208,
+  "set": "Lawbringer Armor",
+  "label": "T1",
+  "faction": null,
+  "race": "human male",
+  "weapons": [
+   "one-handed mace",
+   "shield"
+  ],
+  "ref": "tools/setsheets/refs/paladin_holy_3.png",
+  "prompt": "tools/setsheets/prompts/paladin_holy_3.txt",
+  "wowhead": "https://www.wowhead.com/wotlk/item-set=208"
+ },
+ {
+  "id": "paladin_protection_1",
+  "key": "paladin/Protection",
+  "cls": "paladin",
+  "clsName": "Паладін",
+  "spec": "Protection",
+  "slot": 1,
+  "set_id": 680,
+  "set": "Lightbringer Battlegear",
+  "label": "T6",
+  "faction": null,
+  "race": "human male",
+  "weapons": [
+   "one-handed war-hammer",
+   "shield"
+  ],
+  "ref": "tools/setsheets/refs/paladin_protection_1.png",
+  "prompt": "tools/setsheets/prompts/paladin_protection_1.txt",
+  "wowhead": "https://www.wowhead.com/wotlk/item-set=680"
+ },
+ {
+  "id": "paladin_protection_2",
+  "key": "paladin/Protection",
+  "cls": "paladin",
+  "clsName": "Паладін",
+  "spec": "Protection",
+  "slot": 2,
+  "set_id": 877,
+  "set": "Turalyon's Battlegear",
+  "label": "T9",
+  "faction": "A",
+  "race": "human male",
+  "weapons": [
+   "one-handed war-hammer",
+   "shield"
+  ],
+  "ref": "tools/setsheets/refs/paladin_protection_2.png",
+  "prompt": "tools/setsheets/prompts/paladin_protection_2.txt",
+  "wowhead": "https://www.wowhead.com/wotlk/item-set=877"
+ },
+ {
+  "id": "paladin_protection_3",
+  "key": "paladin/Protection",
+  "cls": "paladin",
+  "clsName": "Паладін",
+  "spec": "Protection",
+  "slot": 3,
+  "set_id": 528,
+  "set": "Redemption Armor",
+  "label": "T3",
+  "faction": null,
+  "race": "human male",
+  "weapons": [
+   "one-handed war-hammer",
+   "shield"
+  ],
+  "ref": "tools/setsheets/refs/paladin_protection_3.png",
+  "prompt": "tools/setsheets/prompts/paladin_protection_3.txt",
+  "wowhead": "https://www.wowhead.com/wotlk/item-set=528"
+ },
+ {
+  "id": "paladin_retribution_1",
+  "key": "paladin/Retribution",
+  "cls": "paladin",
+  "clsName": "Паладін",
+  "spec": "Retribution",
+  "slot": 1,
+  "set_id": 629,
+  "set": "Crystalforge Battlegear",
+  "label": "T5",
+  "faction": null,
+  "race": "human male",
+  "weapons": [
+   "two-handed war-hammer",
+   null
+  ],
+  "ref": "tools/setsheets/refs/paladin_retribution_1.png",
+  "prompt": "tools/setsheets/prompts/paladin_retribution_1.txt",
+  "wowhead": "https://www.wowhead.com/wotlk/item-set=629"
+ },
+ {
+  "id": "paladin_retribution_2",
+  "key": "paladin/Retribution",
+  "cls": "paladin",
+  "clsName": "Паладін",
+  "spec": "Retribution",
+  "slot": 2,
+  "set_id": -267,
+  "set": "Wrathful Gladiator's Vindication",
+  "label": "A8",
+  "faction": null,
+  "race": "human male",
+  "weapons": [
+   "two-handed war-hammer",
+   null
+  ],
+  "ref": "tools/setsheets/refs/paladin_retribution_2.png",
+  "prompt": "tools/setsheets/prompts/paladin_retribution_2.txt",
+  "wowhead": "https://www.wowhead.com/wotlk/item-set=-267"
+ },
+ {
+  "id": "paladin_retribution_3",
+  "key": "paladin/Retribution",
+  "cls": "paladin",
+  "clsName": "Паладін",
+  "spec": "Retribution",
+  "slot": 3,
+  "set_id": -69,
+  "set": "Conqueror's Aegis Battlegear",
+  "label": "T8",
+  "faction": null,
+  "race": "human male",
+  "weapons": [
+   "two-handed war-hammer",
+   null
+  ],
+  "ref": "tools/setsheets/refs/paladin_retribution_3.png",
+  "prompt": "tools/setsheets/prompts/paladin_retribution_3.txt",
+  "wowhead": "https://www.wowhead.com/wotlk/item-set=-69"
+ },
+ {
+  "id": "hunter_beast_mastery_1",
+  "key": "hunter/Beast Mastery",
+  "cls": "hunter",
+  "clsName": "Мисливець",
+  "spec": "Beast Mastery",
+  "slot": 1,
+  "set_id": 206,
+  "set": "Giantstalker Armor",
+  "label": "T1",
+  "faction": null,
+  "race": "human male",
+  "weapons": [
+   "longbow",
+   null
+  ],
+  "ref": "tools/setsheets/refs/hunter_beast_mastery_1.png",
+  "prompt": "tools/setsheets/prompts/hunter_beast_mastery_1.txt",
+  "wowhead": "https://www.wowhead.com/wotlk/item-set=206"
+ },
+ {
+  "id": "hunter_beast_mastery_2",
+  "key": "hunter/Beast Mastery",
+  "cls": "hunter",
+  "clsName": "Мисливець",
+  "spec": "Beast Mastery",
+  "slot": 2,
+  "set_id": 669,
+  "set": "Gronnstalker's Armor",
+  "label": "T6",
+  "faction": null,
+  "race": "human male",
+  "weapons": [
+   "longbow",
+   null
+  ],
+  "ref": "tools/setsheets/refs/hunter_beast_mastery_2.png",
+  "prompt": "tools/setsheets/prompts/hunter_beast_mastery_2.txt",
+  "wowhead": "https://www.wowhead.com/wotlk/item-set=669"
+ },
+ {
+  "id": "hunter_beast_mastery_3",
+  "key": "hunter/Beast Mastery",
+  "cls": "hunter",
+  "clsName": "Мисливець",
+  "spec": "Beast Mastery",
+  "slot": 3,
+  "set_id": 838,
+  "set": "Scourgestalker Battlegear",
+  "label": "T8",
+  "faction": null,
+  "race": "human male",
+  "weapons": [
+   "longbow",
+   null
+  ],
+  "ref": "tools/setsheets/refs/hunter_beast_mastery_3.png",
+  "prompt": "tools/setsheets/prompts/hunter_beast_mastery_3.txt",
+  "wowhead": "https://www.wowhead.com/wotlk/item-set=838"
+ },
+ {
+  "id": "hunter_marksmanship_1",
+  "key": "hunter/Marksmanship",
+  "cls": "hunter",
+  "clsName": "Мисливець",
+  "spec": "Marksmanship",
+  "slot": 1,
+  "set_id": 215,
+  "set": "Dragonstalker Armor",
+  "label": "T2",
+  "faction": null,
+  "race": "human male",
+  "weapons": [
+   "longbow",
+   null
+  ],
+  "ref": "tools/setsheets/refs/hunter_marksmanship_1.png",
+  "prompt": "tools/setsheets/prompts/hunter_marksmanship_1.txt",
+  "wowhead": "https://www.wowhead.com/wotlk/item-set=215"
+ },
+ {
+  "id": "hunter_marksmanship_2",
+  "key": "hunter/Marksmanship",
+  "cls": "hunter",
+  "clsName": "Мисливець",
+  "spec": "Marksmanship",
+  "slot": 2,
+  "set_id": 652,
+  "set": "Rift Stalker Armor",
+  "label": "T5",
+  "faction": null,
+  "race": "human male",
+  "weapons": [
+   "longbow",
+   null
+  ],
+  "ref": "tools/setsheets/refs/hunter_marksmanship_2.png",
+  "prompt": "tools/setsheets/prompts/hunter_marksmanship_2.txt",
+  "wowhead": "https://www.wowhead.com/wotlk/item-set=652"
+ },
+ {
+  "id": "hunter_marksmanship_3",
+  "key": "hunter/Marksmanship",
+  "cls": "hunter",
+  "clsName": "Мисливець",
+  "spec": "Marksmanship",
+  "slot": 3,
+  "set_id": 859,
+  "set": "Windrunner's Battlegear",
+  "label": "T9",
+  "faction": "A",
+  "race": "human male",
+  "weapons": [
+   "longbow",
+   null
+  ],
+  "ref": "tools/setsheets/refs/hunter_marksmanship_3.png",
+  "prompt": "tools/setsheets/prompts/hunter_marksmanship_3.txt",
+  "wowhead": "https://www.wowhead.com/wotlk/item-set=859"
+ },
+ {
+  "id": "hunter_survival_1",
+  "key": "hunter/Survival",
+  "cls": "hunter",
+  "clsName": "Мисливець",
+  "spec": "Survival",
+  "slot": 1,
+  "set_id": 530,
+  "set": "Cryptstalker Armor",
+  "label": "T3",
+  "faction": null,
+  "race": "human male",
+  "weapons": [
+   "spear",
+   null
+  ],
+  "ref": "tools/setsheets/refs/hunter_survival_1.png",
+  "prompt": "tools/setsheets/prompts/hunter_survival_1.txt",
+  "wowhead": "https://www.wowhead.com/wotlk/item-set=530"
+ },
+ {
+  "id": "hunter_survival_2",
+  "key": "hunter/Survival",
+  "cls": "hunter",
+  "clsName": "Мисливець",
+  "spec": "Survival",
+  "slot": 2,
+  "set_id": 651,
+  "set": "Demon Stalker Armor",
+  "label": "T4",
+  "faction": null,
+  "race": "human male",
+  "weapons": [
+   "spear",
+   null
+  ],
+  "ref": "tools/setsheets/refs/hunter_survival_2.png",
+  "prompt": "tools/setsheets/prompts/hunter_survival_2.txt",
+  "wowhead": "https://www.wowhead.com/wotlk/item-set=651"
+ },
+ {
+  "id": "hunter_survival_3",
+  "key": "hunter/Survival",
+  "cls": "hunter",
+  "clsName": "Мисливець",
+  "spec": "Survival",
+  "slot": 3,
+  "set_id": -7,
+  "set": "Brutal Gladiator's Pursuit",
+  "label": "A4",
+  "faction": null,
+  "race": "human male",
+  "weapons": [
+   "spear",
+   null
+  ],
+  "ref": "tools/setsheets/refs/hunter_survival_3.png",
+  "prompt": "tools/setsheets/prompts/hunter_survival_3.txt",
+  "wowhead": "https://www.wowhead.com/wotlk/item-set=-7"
+ },
+ {
+  "id": "rogue_assassination_1",
+  "key": "rogue/Assassination",
+  "cls": "rogue",
+  "clsName": "Розбійник",
+  "spec": "Assassination",
+  "slot": 1,
+  "set_id": 204,
+  "set": "Nightslayer Armor",
+  "label": "T1",
+  "faction": null,
+  "race": "human male",
+  "weapons": [
+   "dagger",
+   "dagger"
+  ],
+  "ref": "tools/setsheets/refs/rogue_assassination_1.png",
+  "prompt": "tools/setsheets/prompts/rogue_assassination_1.txt",
+  "wowhead": "https://www.wowhead.com/wotlk/item-set=204"
+ },
+ {
+  "id": "rogue_assassination_2",
+  "key": "rogue/Assassination",
+  "cls": "rogue",
+  "clsName": "Розбійник",
+  "spec": "Assassination",
+  "slot": 2,
+  "set_id": 213,
+  "set": "Bloodfang Armor",
+  "label": "T2",
+  "faction": null,
+  "race": "human male",
+  "weapons": [
+   "dagger",
+   "dagger"
+  ],
+  "ref": "tools/setsheets/refs/rogue_assassination_2.png",
+  "prompt": "tools/setsheets/prompts/rogue_assassination_2.txt",
+  "wowhead": "https://www.wowhead.com/wotlk/item-set=213"
+ },
+ {
+  "id": "rogue_assassination_3",
+  "key": "rogue/Assassination",
+  "cls": "rogue",
+  "clsName": "Розбійник",
+  "spec": "Assassination",
+  "slot": 3,
+  "set_id": -277,
+  "set": "Wrathful Gladiator's Vestments",
+  "label": "A8",
+  "faction": null,
+  "race": "human male",
+  "weapons": [
+   "dagger",
+   "dagger"
+  ],
+  "ref": "tools/setsheets/refs/rogue_assassination_3.png",
+  "prompt": "tools/setsheets/prompts/rogue_assassination_3.txt",
+  "wowhead": "https://www.wowhead.com/wotlk/item-set=-277"
+ },
+ {
+  "id": "rogue_outlaw_1",
+  "key": "rogue/Outlaw",
+  "cls": "rogue",
+  "clsName": "Розбійник",
+  "spec": "Outlaw",
+  "slot": 1,
+  "set_id": 622,
+  "set": "Deathmantle",
+  "label": "T5",
+  "faction": null,
+  "race": "human male",
+  "weapons": [
+   "one-handed sword",
+   "flintlock pistol"
+  ],
+  "ref": "tools/setsheets/refs/rogue_outlaw_1.png",
+  "prompt": "tools/setsheets/prompts/rogue_outlaw_1.txt",
+  "wowhead": "https://www.wowhead.com/wotlk/item-set=622"
+ },
+ {
+  "id": "rogue_outlaw_2",
+  "key": "rogue/Outlaw",
+  "cls": "rogue",
+  "clsName": "Розбійник",
+  "spec": "Outlaw",
+  "slot": 2,
+  "set_id": 668,
+  "set": "Slayer's Armor",
+  "label": "T6",
+  "faction": null,
+  "race": "human male",
+  "weapons": [
+   "one-handed sword",
+   "flintlock pistol"
+  ],
+  "ref": "tools/setsheets/refs/rogue_outlaw_2.png",
+  "prompt": "tools/setsheets/prompts/rogue_outlaw_2.txt",
+  "wowhead": "https://www.wowhead.com/wotlk/item-set=668"
+ },
+ {
+  "id": "rogue_outlaw_3",
+  "key": "rogue/Outlaw",
+  "cls": "rogue",
+  "clsName": "Розбійник",
+  "spec": "Outlaw",
+  "slot": 3,
+  "set_id": 858,
+  "set": "Garona's Battlegear",
+  "label": "T9",
+  "faction": "H",
+  "race": "human male",
+  "weapons": [
+   "one-handed sword",
+   "flintlock pistol"
+  ],
+  "ref": "tools/setsheets/refs/rogue_outlaw_3.png",
+  "prompt": "tools/setsheets/prompts/rogue_outlaw_3.txt",
+  "wowhead": "https://www.wowhead.com/wotlk/item-set=858"
+ },
+ {
+  "id": "rogue_subtlety_1",
+  "key": "rogue/Subtlety",
+  "cls": "rogue",
+  "clsName": "Розбійник",
+  "spec": "Subtlety",
+  "slot": 1,
+  "set_id": 621,
+  "set": "Netherblade",
+  "label": "T4",
+  "faction": null,
+  "race": "human male",
+  "weapons": [
+   "dagger",
+   "dagger"
+  ],
+  "ref": "tools/setsheets/refs/rogue_subtlety_1.png",
+  "prompt": "tools/setsheets/prompts/rogue_subtlety_1.txt",
+  "wowhead": "https://www.wowhead.com/wotlk/item-set=621"
+ },
+ {
+  "id": "rogue_subtlety_2",
+  "key": "rogue/Subtlety",
+  "cls": "rogue",
+  "clsName": "Розбійник",
+  "spec": "Subtlety",
+  "slot": 2,
+  "set_id": -100,
+  "set": "Furious Gladiator's Vestments",
+  "label": "A6",
+  "faction": null,
+  "race": "human male",
+  "weapons": [
+   "dagger",
+   "dagger"
+  ],
+  "ref": "tools/setsheets/refs/rogue_subtlety_2.png",
+  "prompt": "tools/setsheets/prompts/rogue_subtlety_2.txt",
+  "wowhead": "https://www.wowhead.com/wotlk/item-set=-100"
+ },
+ {
+  "id": "rogue_subtlety_3",
+  "key": "rogue/Subtlety",
+  "cls": "rogue",
+  "clsName": "Розбійник",
+  "spec": "Subtlety",
+  "slot": 3,
+  "set_id": 512,
+  "set": "Darkmantle Armor",
+  "label": "T0.5",
+  "faction": null,
+  "race": "human male",
+  "weapons": [
+   "dagger",
+   "dagger"
+  ],
+  "ref": "tools/setsheets/refs/rogue_subtlety_3.png",
+  "prompt": "tools/setsheets/prompts/rogue_subtlety_3.txt",
+  "wowhead": "https://www.wowhead.com/wotlk/item-set=512"
+ },
+ {
+  "id": "priest_discipline_1",
+  "key": "priest/Discipline",
+  "cls": "priest",
+  "clsName": "Жрець",
+  "spec": "Discipline",
+  "slot": 1,
+  "set_id": 202,
+  "set": "Vestments of Prophecy",
+  "label": "T1",
+  "faction": null,
+  "race": "human male",
+  "weapons": [
+   "staff",
+   null
+  ],
+  "ref": "tools/setsheets/refs/priest_discipline_1.png",
+  "prompt": "tools/setsheets/prompts/priest_discipline_1.txt",
+  "wowhead": "https://www.wowhead.com/wotlk/item-set=202"
+ },
+ {
+  "id": "priest_discipline_2",
+  "key": "priest/Discipline",
+  "cls": "priest",
+  "clsName": "Жрець",
+  "spec": "Discipline",
+  "slot": 2,
+  "set_id": 833,
+  "set": "Sanctification Regalia",
+  "label": "T8",
+  "faction": null,
+  "race": "human male",
+  "weapons": [
+   "staff",
+   null
+  ],
+  "ref": "tools/setsheets/refs/priest_discipline_2.png",
+  "prompt": "tools/setsheets/prompts/priest_discipline_2.txt",
+  "wowhead": "https://www.wowhead.com/wotlk/item-set=833"
+ },
+ {
+  "id": "priest_discipline_3",
+  "key": "priest/Discipline",
+  "cls": "priest",
+  "clsName": "Жрець",
+  "spec": "Discipline",
+  "slot": 3,
+  "set_id": -92,
+  "set": "Furious Gladiator's Investiture",
+  "label": "A6",
+  "faction": null,
+  "race": "human male",
+  "weapons": [
+   "staff",
+   null
+  ],
+  "ref": "tools/setsheets/refs/priest_discipline_3.png",
+  "prompt": "tools/setsheets/prompts/priest_discipline_3.txt",
+  "wowhead": "https://www.wowhead.com/wotlk/item-set=-92"
+ },
+ {
+  "id": "priest_holy_1",
+  "key": "priest/Holy",
+  "cls": "priest",
+  "clsName": "Жрець",
+  "spec": "Holy",
+  "slot": 1,
+  "set_id": 211,
+  "set": "Vestments of Transcendence",
+  "label": "T2",
+  "faction": null,
+  "race": "human male",
+  "weapons": [
+   "staff",
+   null
+  ],
+  "ref": "tools/setsheets/refs/priest_holy_1.png",
+  "prompt": "tools/setsheets/prompts/priest_holy_1.txt",
+  "wowhead": "https://www.wowhead.com/wotlk/item-set=211"
+ },
+ {
+  "id": "priest_holy_2",
+  "key": "priest/Holy",
+  "cls": "priest",
+  "clsName": "Жрець",
+  "spec": "Holy",
+  "slot": 2,
+  "set_id": 525,
+  "set": "Vestments of Faith",
+  "label": "T3",
+  "faction": null,
+  "race": "human male",
+  "weapons": [
+   "staff",
+   null
+  ],
+  "ref": "tools/setsheets/refs/priest_holy_2.png",
+  "prompt": "tools/setsheets/prompts/priest_holy_2.txt",
+  "wowhead": "https://www.wowhead.com/wotlk/item-set=525"
+ },
+ {
+  "id": "priest_holy_3",
+  "key": "priest/Holy",
+  "cls": "priest",
+  "clsName": "Жрець",
+  "spec": "Holy",
+  "slot": 3,
+  "set_id": 663,
+  "set": "Incarnate Raiment",
+  "label": "T4",
+  "faction": null,
+  "race": "human male",
+  "weapons": [
+   "staff",
+   null
+  ],
+  "ref": "tools/setsheets/refs/priest_holy_3.png",
+  "prompt": "tools/setsheets/prompts/priest_holy_3.txt",
+  "wowhead": "https://www.wowhead.com/wotlk/item-set=663"
+ },
+ {
+  "id": "priest_shadow_1",
+  "key": "priest/Shadow",
+  "cls": "priest",
+  "clsName": "Жрець",
+  "spec": "Shadow",
+  "slot": 1,
+  "set_id": 850,
+  "set": "Zabra's Regalia",
+  "label": "T9",
+  "faction": "H",
+  "race": "human male",
+  "weapons": [
+   "staff",
+   null
+  ],
+  "ref": "tools/setsheets/refs/priest_shadow_1.png",
+  "prompt": "tools/setsheets/prompts/priest_shadow_1.txt",
+  "wowhead": "https://www.wowhead.com/wotlk/item-set=850"
+ },
+ {
+  "id": "priest_shadow_2",
+  "key": "priest/Shadow",
+  "cls": "priest",
+  "clsName": "Жрець",
+  "spec": "Shadow",
+  "slot": 2,
+  "set_id": 728,
+  "set": "Vengeful Gladiator's Investiture",
+  "label": "A3",
+  "faction": null,
+  "race": "human male",
+  "weapons": [
+   "staff",
+   null
+  ],
+  "ref": "tools/setsheets/refs/priest_shadow_2.png",
+  "prompt": "tools/setsheets/prompts/priest_shadow_2.txt",
+  "wowhead": "https://www.wowhead.com/wotlk/item-set=728"
+ },
+ {
+  "id": "priest_shadow_3",
+  "key": "priest/Shadow",
+  "cls": "priest",
+  "clsName": "Жрець",
+  "spec": "Shadow",
+  "slot": 3,
+  "set_id": 390,
+  "set": "Warlord's Raiment",
+  "label": "PvP",
+  "faction": "H",
+  "race": "human male",
+  "weapons": [
+   "staff",
+   null
+  ],
+  "ref": "tools/setsheets/refs/priest_shadow_3.png",
+  "prompt": "tools/setsheets/prompts/priest_shadow_3.txt",
+  "wowhead": "https://www.wowhead.com/wotlk/item-set=390"
+ },
+ {
+  "id": "dk_blood_1",
+  "key": "dk/Blood",
+  "cls": "dk",
+  "clsName": "Лицар смерті",
+  "spec": "Blood",
+  "slot": 1,
+  "set_id": 897,
+  "set": "Scourgelord's Battlegear",
+  "label": "T10",
+  "faction": null,
+  "race": "human male",
+  "weapons": [
+   "two-handed runeblade",
+   null
+  ],
+  "ref": "tools/setsheets/refs/dk_blood_1.png",
+  "prompt": "tools/setsheets/prompts/dk_blood_1.txt",
+  "wowhead": "https://www.wowhead.com/wotlk/item-set=897"
+ },
+ {
+  "id": "dk_blood_2",
+  "key": "dk/Blood",
+  "cls": "dk",
+  "clsName": "Лицар смерті",
+  "spec": "Blood",
+  "slot": 2,
+  "set_id": 872,
+  "set": "Koltira's Battlegear",
+  "label": "T9",
+  "faction": "H",
+  "race": "human male",
+  "weapons": [
+   "two-handed runeblade",
+   null
+  ],
+  "ref": "tools/setsheets/refs/dk_blood_2.png",
+  "prompt": "tools/setsheets/prompts/dk_blood_2.txt",
+  "wowhead": "https://www.wowhead.com/wotlk/item-set=872"
+ },
+ {
+  "id": "dk_blood_3",
+  "key": "dk/Blood",
+  "cls": "dk",
+  "clsName": "Лицар смерті",
+  "spec": "Blood",
+  "slot": 3,
+  "set_id": -54,
+  "set": "Deadly Gladiator's Desecration",
+  "label": "A5",
+  "faction": null,
+  "race": "human male",
+  "weapons": [
+   "two-handed runeblade",
+   null
+  ],
+  "ref": "tools/setsheets/refs/dk_blood_3.png",
+  "prompt": "tools/setsheets/prompts/dk_blood_3.txt",
+  "wowhead": "https://www.wowhead.com/wotlk/item-set=-54"
+ },
+ {
+  "id": "dk_frost_1",
+  "key": "dk/Frost",
+  "cls": "dk",
+  "clsName": "Лицар смерті",
+  "spec": "Frost",
+  "slot": 1,
+  "set_id": 834,
+  "set": "Darkruned Battlegear",
+  "label": "T8",
+  "faction": null,
+  "race": "human male",
+  "weapons": [
+   "one-handed runesword",
+   "one-handed runesword"
+  ],
+  "ref": "tools/setsheets/refs/dk_frost_1.png",
+  "prompt": "tools/setsheets/prompts/dk_frost_1.txt",
+  "wowhead": "https://www.wowhead.com/wotlk/item-set=834"
+ },
+ {
+  "id": "dk_frost_2",
+  "key": "dk/Frost",
+  "cls": "dk",
+  "clsName": "Лицар смерті",
+  "spec": "Frost",
+  "slot": 2,
+  "set_id": 871,
+  "set": "Thassarian's Battlegear",
+  "label": "T9",
+  "faction": "A",
+  "race": "human male",
+  "weapons": [
+   "one-handed runesword",
+   "one-handed runesword"
+  ],
+  "ref": "tools/setsheets/refs/dk_frost_2.png",
+  "prompt": "tools/setsheets/prompts/dk_frost_2.txt",
+  "wowhead": "https://www.wowhead.com/wotlk/item-set=871"
+ },
+ {
+  "id": "dk_frost_3",
+  "key": "dk/Frost",
+  "cls": "dk",
+  "clsName": "Лицар смерті",
+  "spec": "Frost",
+  "slot": 3,
+  "set_id": -269,
+  "set": "Wrathful Gladiator's Desecration",
+  "label": "A8",
+  "faction": null,
+  "race": "human male",
+  "weapons": [
+   "one-handed runesword",
+   "one-handed runesword"
+  ],
+  "ref": "tools/setsheets/refs/dk_frost_3.png",
+  "prompt": "tools/setsheets/prompts/dk_frost_3.txt",
+  "wowhead": "https://www.wowhead.com/wotlk/item-set=-269"
+ },
+ {
+  "id": "dk_unholy_1",
+  "key": "dk/Unholy",
+  "cls": "dk",
+  "clsName": "Лицар смерті",
+  "spec": "Unholy",
+  "slot": 1,
+  "set_id": 834,
+  "set": "Darkruned Battlegear",
+  "label": "T8",
+  "faction": null,
+  "race": "human male",
+  "weapons": [
+   "two-handed axe",
+   null
+  ],
+  "ref": "tools/setsheets/refs/dk_unholy_1.png",
+  "prompt": "tools/setsheets/prompts/dk_unholy_1.txt",
+  "wowhead": "https://www.wowhead.com/wotlk/item-set=834"
+ },
+ {
+  "id": "dk_unholy_2",
+  "key": "dk/Unholy",
+  "cls": "dk",
+  "clsName": "Лицар смерті",
+  "spec": "Unholy",
+  "slot": 2,
+  "set_id": 897,
+  "set": "Scourgelord's Battlegear",
+  "label": "T10",
+  "faction": null,
+  "race": "human male",
+  "weapons": [
+   "two-handed axe",
+   null
+  ],
+  "ref": "tools/setsheets/refs/dk_unholy_2.png",
+  "prompt": "tools/setsheets/prompts/dk_unholy_2.txt",
+  "wowhead": "https://www.wowhead.com/wotlk/item-set=897"
+ },
+ {
+  "id": "dk_unholy_3",
+  "key": "dk/Unholy",
+  "cls": "dk",
+  "clsName": "Лицар смерті",
+  "spec": "Unholy",
+  "slot": 3,
+  "set_id": -242,
+  "set": "Sanctified Scourgelord's Battlegear",
+  "label": "T10",
+  "faction": null,
+  "race": "human male",
+  "weapons": [
+   "two-handed axe",
+   null
+  ],
+  "ref": "tools/setsheets/refs/dk_unholy_3.png",
+  "prompt": "tools/setsheets/prompts/dk_unholy_3.txt",
+  "wowhead": "https://www.wowhead.com/wotlk/item-set=-242"
+ },
+ {
+  "id": "shaman_elemental_1",
+  "key": "shaman/Elemental",
+  "cls": "shaman",
+  "clsName": "Шаман",
+  "spec": "Elemental",
+  "slot": 1,
+  "set_id": 527,
+  "set": "The Earthshatterer",
+  "label": "T3",
+  "faction": null,
+  "race": "human male",
+  "weapons": [
+   "staff",
+   null
+  ],
+  "ref": "tools/setsheets/refs/shaman_elemental_1.png",
+  "prompt": "tools/setsheets/prompts/shaman_elemental_1.txt",
+  "wowhead": "https://www.wowhead.com/wotlk/item-set=527"
+ },
+ {
+  "id": "shaman_elemental_2",
+  "key": "shaman/Elemental",
+  "cls": "shaman",
+  "clsName": "Шаман",
+  "spec": "Elemental",
+  "slot": 2,
+  "set_id": 216,
+  "set": "The Ten Storms",
+  "label": "T2",
+  "faction": null,
+  "race": "human male",
+  "weapons": [
+   "staff",
+   null
+  ],
+  "ref": "tools/setsheets/refs/shaman_elemental_2.png",
+  "prompt": "tools/setsheets/prompts/shaman_elemental_2.txt",
+  "wowhead": "https://www.wowhead.com/wotlk/item-set=216"
+ },
+ {
+  "id": "shaman_elemental_3",
+  "key": "shaman/Elemental",
+  "cls": "shaman",
+  "clsName": "Шаман",
+  "spec": "Elemental",
+  "slot": 3,
+  "set_id": 519,
+  "set": "The Five Thunders",
+  "label": "T0.5",
+  "faction": null,
+  "race": "human male",
+  "weapons": [
+   "staff",
+   null
+  ],
+  "ref": "tools/setsheets/refs/shaman_elemental_3.png",
+  "prompt": "tools/setsheets/prompts/shaman_elemental_3.txt",
+  "wowhead": "https://www.wowhead.com/wotlk/item-set=519"
+ },
+ {
+  "id": "shaman_enhancement_1",
+  "key": "shaman/Enhancement",
+  "cls": "shaman",
+  "clsName": "Шаман",
+  "spec": "Enhancement",
+  "slot": 1,
+  "set_id": 635,
+  "set": "Cataclysm Regalia",
+  "label": "T5",
+  "faction": null,
+  "race": "human male",
+  "weapons": [
+   "one-handed axe",
+   "one-handed axe"
+  ],
+  "ref": "tools/setsheets/refs/shaman_enhancement_1.png",
+  "prompt": "tools/setsheets/prompts/shaman_enhancement_1.txt",
+  "wowhead": "https://www.wowhead.com/wotlk/item-set=635"
+ },
+ {
+  "id": "shaman_enhancement_2",
+  "key": "shaman/Enhancement",
+  "cls": "shaman",
+  "clsName": "Шаман",
+  "spec": "Enhancement",
+  "slot": 2,
+  "set_id": 386,
+  "set": "Warlord's Earthshaker",
+  "label": "PvP",
+  "faction": "H",
+  "race": "human male",
+  "weapons": [
+   "one-handed axe",
+   "one-handed axe"
+  ],
+  "ref": "tools/setsheets/refs/shaman_enhancement_2.png",
+  "prompt": "tools/setsheets/prompts/shaman_enhancement_2.txt",
+  "wowhead": "https://www.wowhead.com/wotlk/item-set=386"
+ },
+ {
+  "id": "shaman_enhancement_3",
+  "key": "shaman/Enhancement",
+  "cls": "shaman",
+  "clsName": "Шаман",
+  "spec": "Enhancement",
+  "slot": 3,
+  "set_id": 732,
+  "set": "Vengeful Gladiator's Earthshaker",
+  "label": "A3",
+  "faction": null,
+  "race": "human male",
+  "weapons": [
+   "one-handed axe",
+   "one-handed axe"
+  ],
+  "ref": "tools/setsheets/refs/shaman_enhancement_3.png",
+  "prompt": "tools/setsheets/prompts/shaman_enhancement_3.txt",
+  "wowhead": "https://www.wowhead.com/wotlk/item-set=732"
+ },
+ {
+  "id": "shaman_restoration_1",
+  "key": "shaman/Restoration",
+  "cls": "shaman",
+  "clsName": "Шаман",
+  "spec": "Restoration",
+  "slot": 1,
+  "set_id": 631,
+  "set": "Cyclone Raiment",
+  "label": "T4",
+  "faction": null,
+  "race": "human male",
+  "weapons": [
+   "staff",
+   null
+  ],
+  "ref": "tools/setsheets/refs/shaman_restoration_1.png",
+  "prompt": "tools/setsheets/prompts/shaman_restoration_1.txt",
+  "wowhead": "https://www.wowhead.com/wotlk/item-set=631"
+ },
+ {
+  "id": "shaman_restoration_2",
+  "key": "shaman/Restoration",
+  "cls": "shaman",
+  "clsName": "Шаман",
+  "spec": "Restoration",
+  "slot": 2,
+  "set_id": 207,
+  "set": "The Earthfury",
+  "label": "T1",
+  "faction": null,
+  "race": "human male",
+  "weapons": [
+   "staff",
+   null
+  ],
+  "ref": "tools/setsheets/refs/shaman_restoration_2.png",
+  "prompt": "tools/setsheets/prompts/shaman_restoration_2.txt",
+  "wowhead": "https://www.wowhead.com/wotlk/item-set=207"
+ },
+ {
+  "id": "shaman_restoration_3",
+  "key": "shaman/Restoration",
+  "cls": "shaman",
+  "clsName": "Шаман",
+  "spec": "Restoration",
+  "slot": 3,
+  "set_id": 632,
+  "set": "Cyclone Regalia",
+  "label": "T4",
+  "faction": null,
+  "race": "human male",
+  "weapons": [
+   "staff",
+   null
+  ],
+  "ref": "tools/setsheets/refs/shaman_restoration_3.png",
+  "prompt": "tools/setsheets/prompts/shaman_restoration_3.txt",
+  "wowhead": "https://www.wowhead.com/wotlk/item-set=632"
+ },
+ {
+  "id": "mage_arcane_1",
+  "key": "mage/Arcane",
+  "cls": "mage",
+  "clsName": "Маг",
+  "spec": "Arcane",
+  "slot": 1,
+  "set_id": 201,
+  "set": "Arcanist Regalia",
+  "label": "T1",
+  "faction": null,
+  "race": "human male",
+  "weapons": [
+   "staff",
+   null
+  ],
+  "ref": "tools/setsheets/refs/mage_arcane_1.png",
+  "prompt": "tools/setsheets/prompts/mage_arcane_1.txt",
+  "wowhead": "https://www.wowhead.com/wotlk/item-set=201"
+ },
+ {
+  "id": "mage_arcane_2",
+  "key": "mage/Arcane",
+  "cls": "mage",
+  "clsName": "Маг",
+  "spec": "Arcane",
+  "slot": 2,
+  "set_id": 649,
+  "set": "Tirisfal Regalia",
+  "label": "T5",
+  "faction": null,
+  "race": "human male",
+  "weapons": [
+   "staff",
+   null
+  ],
+  "ref": "tools/setsheets/refs/mage_arcane_2.png",
+  "prompt": "tools/setsheets/prompts/mage_arcane_2.txt",
+  "wowhead": "https://www.wowhead.com/wotlk/item-set=649"
+ },
+ {
+  "id": "mage_arcane_3",
+  "key": "mage/Arcane",
+  "cls": "mage",
+  "clsName": "Маг",
+  "spec": "Arcane",
+  "slot": 3,
+  "set_id": 210,
+  "set": "Netherwind Regalia",
+  "label": "T2",
+  "faction": null,
+  "race": "human male",
+  "weapons": [
+   "staff",
+   null
+  ],
+  "ref": "tools/setsheets/refs/mage_arcane_3.png",
+  "prompt": "tools/setsheets/prompts/mage_arcane_3.txt",
+  "wowhead": "https://www.wowhead.com/wotlk/item-set=210"
+ },
+ {
+  "id": "mage_fire_1",
+  "key": "mage/Fire",
+  "cls": "mage",
+  "clsName": "Маг",
+  "spec": "Fire",
+  "slot": 1,
+  "set_id": 181,
+  "set": "Magister's Regalia",
+  "label": "T0",
+  "faction": null,
+  "race": "human male",
+  "weapons": [
+   "staff",
+   null
+  ],
+  "ref": "tools/setsheets/refs/mage_fire_1.png",
+  "prompt": "tools/setsheets/prompts/mage_fire_1.txt",
+  "wowhead": "https://www.wowhead.com/wotlk/item-set=181"
+ },
+ {
+  "id": "mage_fire_2",
+  "key": "mage/Fire",
+  "cls": "mage",
+  "clsName": "Маг",
+  "spec": "Fire",
+  "slot": 2,
+  "set_id": -228,
+  "set": "Sanctified Bloodmage's Regalia",
+  "label": "T10",
+  "faction": null,
+  "race": "human male",
+  "weapons": [
+   "staff",
+   null
+  ],
+  "ref": "tools/setsheets/refs/mage_fire_2.png",
+  "prompt": "tools/setsheets/prompts/mage_fire_2.txt",
+  "wowhead": "https://www.wowhead.com/wotlk/item-set=-228"
+ },
+ {
+  "id": "mage_fire_3",
+  "key": "mage/Fire",
+  "cls": "mage",
+  "clsName": "Маг",
+  "spec": "Fire",
+  "slot": 3,
+  "set_id": 579,
+  "set": "Gladiator's Regalia",
+  "label": "A1",
+  "faction": null,
+  "race": "human male",
+  "weapons": [
+   "staff",
+   null
+  ],
+  "ref": "tools/setsheets/refs/mage_fire_3.png",
+  "prompt": "tools/setsheets/prompts/mage_fire_3.txt",
+  "wowhead": "https://www.wowhead.com/wotlk/item-set=579"
+ },
+ {
+  "id": "mage_frost_1",
+  "key": "mage/Frost",
+  "cls": "mage",
+  "clsName": "Маг",
+  "spec": "Frost",
+  "slot": 1,
+  "set_id": -97,
+  "set": "Furious Gladiator's Regalia",
+  "label": "A6",
+  "faction": null,
+  "race": "human male",
+  "weapons": [
+   "staff",
+   null
+  ],
+  "ref": "tools/setsheets/refs/mage_frost_1.png",
+  "prompt": "tools/setsheets/prompts/mage_frost_1.txt",
+  "wowhead": "https://www.wowhead.com/wotlk/item-set=-97"
+ },
+ {
+  "id": "mage_frost_2",
+  "key": "mage/Frost",
+  "cls": "mage",
+  "clsName": "Маг",
+  "spec": "Frost",
+  "slot": 2,
+  "set_id": 526,
+  "set": "Frostfire Regalia",
+  "label": "T3",
+  "faction": null,
+  "race": "human male",
+  "weapons": [
+   "staff",
+   null
+  ],
+  "ref": "tools/setsheets/refs/mage_frost_2.png",
+  "prompt": "tools/setsheets/prompts/mage_frost_2.txt",
+  "wowhead": "https://www.wowhead.com/wotlk/item-set=526"
+ },
+ {
+  "id": "mage_frost_3",
+  "key": "mage/Frost",
+  "cls": "mage",
+  "clsName": "Маг",
+  "spec": "Frost",
+  "slot": 3,
+  "set_id": -62,
+  "set": "Deadly Gladiator's Regalia",
+  "label": "A5",
+  "faction": null,
+  "race": "human male",
+  "weapons": [
+   "staff",
+   null
+  ],
+  "ref": "tools/setsheets/refs/mage_frost_3.png",
+  "prompt": "tools/setsheets/prompts/mage_frost_3.txt",
+  "wowhead": "https://www.wowhead.com/wotlk/item-set=-62"
+ },
+ {
+  "id": "warlock_affliction_1",
+  "key": "warlock/Affliction",
+  "cls": "warlock",
+  "clsName": "Чорнокнижник",
+  "spec": "Affliction",
+  "slot": 1,
+  "set_id": 203,
+  "set": "Felheart Raiment",
+  "label": "T1",
+  "faction": null,
+  "race": "human male",
+  "weapons": [
+   "staff",
+   null
+  ],
+  "ref": "tools/setsheets/refs/warlock_affliction_1.png",
+  "prompt": "tools/setsheets/prompts/warlock_affliction_1.txt",
+  "wowhead": "https://www.wowhead.com/wotlk/item-set=203"
+ },
+ {
+  "id": "warlock_affliction_2",
+  "key": "warlock/Affliction",
+  "cls": "warlock",
+  "clsName": "Чорнокнижник",
+  "spec": "Affliction",
+  "slot": 2,
+  "set_id": 529,
+  "set": "Plagueheart Raiment",
+  "label": "T3",
+  "faction": null,
+  "race": "human male",
+  "weapons": [
+   "staff",
+   null
+  ],
+  "ref": "tools/setsheets/refs/warlock_affliction_2.png",
+  "prompt": "tools/setsheets/prompts/warlock_affliction_2.txt",
+  "wowhead": "https://www.wowhead.com/wotlk/item-set=529"
+ },
+ {
+  "id": "warlock_affliction_3",
+  "key": "warlock/Affliction",
+  "cls": "warlock",
+  "clsName": "Чорнокнижник",
+  "spec": "Affliction",
+  "slot": 3,
+  "set_id": -86,
+  "set": "Conqueror's Deathbringer Garb",
+  "label": "T8",
+  "faction": null,
+  "race": "human male",
+  "weapons": [
+   "staff",
+   null
+  ],
+  "ref": "tools/setsheets/refs/warlock_affliction_3.png",
+  "prompt": "tools/setsheets/prompts/warlock_affliction_3.txt",
+  "wowhead": "https://www.wowhead.com/wotlk/item-set=-86"
+ },
+ {
+  "id": "warlock_demonology_1",
+  "key": "warlock/Demonology",
+  "cls": "warlock",
+  "clsName": "Чорнокнижник",
+  "spec": "Demonology",
+  "slot": 1,
+  "set_id": 645,
+  "set": "Voidheart Raiment",
+  "label": "T4",
+  "faction": null,
+  "race": "human male",
+  "weapons": [
+   "staff",
+   null
+  ],
+  "ref": "tools/setsheets/refs/warlock_demonology_1.png",
+  "prompt": "tools/setsheets/prompts/warlock_demonology_1.txt",
+  "wowhead": "https://www.wowhead.com/wotlk/item-set=645"
+ },
+ {
+  "id": "warlock_demonology_2",
+  "key": "warlock/Demonology",
+  "cls": "warlock",
+  "clsName": "Чорнокнижник",
+  "spec": "Demonology",
+  "slot": 2,
+  "set_id": 670,
+  "set": "Malefic Raiment",
+  "label": "T6",
+  "faction": null,
+  "race": "human male",
+  "weapons": [
+   "staff",
+   null
+  ],
+  "ref": "tools/setsheets/refs/warlock_demonology_2.png",
+  "prompt": "tools/setsheets/prompts/warlock_demonology_2.txt",
+  "wowhead": "https://www.wowhead.com/wotlk/item-set=670"
+ },
+ {
+  "id": "warlock_demonology_3",
+  "key": "warlock/Demonology",
+  "cls": "warlock",
+  "clsName": "Чорнокнижник",
+  "spec": "Demonology",
+  "slot": 3,
+  "set_id": 837,
+  "set": "Deathbringer Garb",
+  "label": "T8",
+  "faction": null,
+  "race": "human male",
+  "weapons": [
+   "staff",
+   null
+  ],
+  "ref": "tools/setsheets/refs/warlock_demonology_3.png",
+  "prompt": "tools/setsheets/prompts/warlock_demonology_3.txt",
+  "wowhead": "https://www.wowhead.com/wotlk/item-set=837"
+ },
+ {
+  "id": "warlock_destruction_1",
+  "key": "warlock/Destruction",
+  "cls": "warlock",
+  "clsName": "Чорнокнижник",
+  "spec": "Destruction",
+  "slot": 1,
+  "set_id": 212,
+  "set": "Nemesis Raiment",
+  "label": "T2",
+  "faction": null,
+  "race": "human male",
+  "weapons": [
+   "staff",
+   null
+  ],
+  "ref": "tools/setsheets/refs/warlock_destruction_1.png",
+  "prompt": "tools/setsheets/prompts/warlock_destruction_1.txt",
+  "wowhead": "https://www.wowhead.com/wotlk/item-set=212"
+ },
+ {
+  "id": "warlock_destruction_2",
+  "key": "warlock/Destruction",
+  "cls": "warlock",
+  "clsName": "Чорнокнижник",
+  "spec": "Destruction",
+  "slot": 2,
+  "set_id": 845,
+  "set": "Gul'dan's Regalia",
+  "label": "T9",
+  "faction": "H",
+  "race": "human male",
+  "weapons": [
+   "staff",
+   null
+  ],
+  "ref": "tools/setsheets/refs/warlock_destruction_2.png",
+  "prompt": "tools/setsheets/prompts/warlock_destruction_2.txt",
+  "wowhead": "https://www.wowhead.com/wotlk/item-set=845"
+ },
+ {
+  "id": "warlock_destruction_3",
+  "key": "warlock/Destruction",
+  "cls": "warlock",
+  "clsName": "Чорнокнижник",
+  "spec": "Destruction",
+  "slot": 3,
+  "set_id": 702,
+  "set": "Merciless Gladiator's Dreadgear",
+  "label": "A2",
+  "faction": null,
+  "race": "human male",
+  "weapons": [
+   "staff",
+   null
+  ],
+  "ref": "tools/setsheets/refs/warlock_destruction_3.png",
+  "prompt": "tools/setsheets/prompts/warlock_destruction_3.txt",
+  "wowhead": "https://www.wowhead.com/wotlk/item-set=702"
+ },
+ {
+  "id": "druid_balance_1",
+  "key": "druid/Balance",
+  "cls": "druid",
+  "clsName": "Друїд",
+  "spec": "Balance",
+  "slot": 1,
+  "set_id": 214,
+  "set": "Stormrage Raiment",
+  "label": "T2",
+  "faction": null,
+  "race": "human male",
+  "weapons": [
+   "staff",
+   null
+  ],
+  "ref": "tools/setsheets/refs/druid_balance_1.png",
+  "prompt": "tools/setsheets/prompts/druid_balance_1.txt",
+  "wowhead": "https://www.wowhead.com/wotlk/item-set=214"
+ },
+ {
+  "id": "druid_balance_2",
+  "key": "druid/Balance",
+  "cls": "druid",
+  "clsName": "Друїд",
+  "spec": "Balance",
+  "slot": 2,
+  "set_id": 643,
+  "set": "Nordrassil Regalia",
+  "label": "T5",
+  "faction": null,
+  "race": "human male",
+  "weapons": [
+   "staff",
+   null
+  ],
+  "ref": "tools/setsheets/refs/druid_balance_2.png",
+  "prompt": "tools/setsheets/prompts/druid_balance_2.txt",
+  "wowhead": "https://www.wowhead.com/wotlk/item-set=643"
+ },
+ {
+  "id": "druid_balance_3",
+  "key": "druid/Balance",
+  "cls": "druid",
+  "clsName": "Друїд",
+  "spec": "Balance",
+  "slot": 3,
+  "set_id": 828,
+  "set": "Nightsong Garb",
+  "label": "T8",
+  "faction": null,
+  "race": "human male",
+  "weapons": [
+   "staff",
+   null
+  ],
+  "ref": "tools/setsheets/refs/druid_balance_3.png",
+  "prompt": "tools/setsheets/prompts/druid_balance_3.txt",
+  "wowhead": "https://www.wowhead.com/wotlk/item-set=828"
+ },
+ {
+  "id": "druid_feral_1",
+  "key": "druid/Feral",
+  "cls": "druid",
+  "clsName": "Друїд",
+  "spec": "Feral",
+  "slot": 1,
+  "set_id": 205,
+  "set": "Cenarion Raiment",
+  "label": "T1",
+  "faction": null,
+  "race": "human male",
+  "weapons": [
+   "staff",
+   null
+  ],
+  "ref": "tools/setsheets/refs/druid_feral_1.png",
+  "prompt": "tools/setsheets/prompts/druid_feral_1.txt",
+  "wowhead": "https://www.wowhead.com/wotlk/item-set=205"
+ },
+ {
+  "id": "druid_feral_2",
+  "key": "druid/Feral",
+  "cls": "druid",
+  "clsName": "Друїд",
+  "spec": "Feral",
+  "slot": 2,
+  "set_id": 676,
+  "set": "Thunderheart Harness",
+  "label": "T6",
+  "faction": null,
+  "race": "human male",
+  "weapons": [
+   "staff",
+   null
+  ],
+  "ref": "tools/setsheets/refs/druid_feral_2.png",
+  "prompt": "tools/setsheets/prompts/druid_feral_2.txt",
+  "wowhead": "https://www.wowhead.com/wotlk/item-set=676"
+ },
+ {
+  "id": "druid_feral_3",
+  "key": "druid/Feral",
+  "cls": "druid",
+  "clsName": "Друїд",
+  "spec": "Feral",
+  "slot": 3,
+  "set_id": 887,
+  "set": "Lasherweave Garb",
+  "label": "T10",
+  "faction": null,
+  "race": "human male",
+  "weapons": [
+   "staff",
+   null
+  ],
+  "ref": "tools/setsheets/refs/druid_feral_3.png",
+  "prompt": "tools/setsheets/prompts/druid_feral_3.txt",
+  "wowhead": "https://www.wowhead.com/wotlk/item-set=887"
+ },
+ {
+  "id": "druid_restoration_1",
+  "key": "druid/Restoration",
+  "cls": "druid",
+  "clsName": "Друїд",
+  "spec": "Restoration",
+  "slot": 1,
+  "set_id": 521,
+  "set": "Dreamwalker Raiment",
+  "label": "T3",
+  "faction": null,
+  "race": "human male",
+  "weapons": [
+   "staff",
+   null
+  ],
+  "ref": "tools/setsheets/refs/druid_restoration_1.png",
+  "prompt": "tools/setsheets/prompts/druid_restoration_1.txt",
+  "wowhead": "https://www.wowhead.com/wotlk/item-set=521"
+ },
+ {
+  "id": "druid_restoration_2",
+  "key": "druid/Restoration",
+  "cls": "druid",
+  "clsName": "Друїд",
+  "spec": "Restoration",
+  "slot": 2,
+  "set_id": 638,
+  "set": "Malorne Raiment",
+  "label": "T4",
+  "faction": null,
+  "race": "human male",
+  "weapons": [
+   "staff",
+   null
+  ],
+  "ref": "tools/setsheets/refs/druid_restoration_2.png",
+  "prompt": "tools/setsheets/prompts/druid_restoration_2.txt",
+  "wowhead": "https://www.wowhead.com/wotlk/item-set=638"
+ },
+ {
+  "id": "druid_restoration_3",
+  "key": "druid/Restoration",
+  "cls": "druid",
+  "clsName": "Друїд",
+  "spec": "Restoration",
+  "slot": 3,
+  "set_id": 852,
+  "set": "Runetotem's Garb",
+  "label": "T9",
+  "faction": "H",
+  "race": "human male",
+  "weapons": [
+   "staff",
+   null
+  ],
+  "ref": "tools/setsheets/refs/druid_restoration_3.png",
+  "prompt": "tools/setsheets/prompts/druid_restoration_3.txt",
+  "wowhead": "https://www.wowhead.com/wotlk/item-set=852"
+ }
+]

@@ -1,0 +1,312 @@
+{
+ "version": 1,
+ "updated": "2026-10-03T16:29:15.591Z",
+ "assign": {
+  "warrior/Arms": [
+   657,
+   -212,
+   218
+  ],
+  "warrior/Fury": [
+   567,
+   474,
+   383
+  ],
+  "warrior/Protection": [
+   672,
+   523,
+   868
+  ],
+  "paladin/Holy": [
+   217,
+   726,
+   208
+  ],
+  "paladin/Protection": [
+   680,
+   877,
+   528
+  ],
+  "paladin/Retribution": [
+   629,
+   -267,
+   -69
+  ],
+  "hunter/Beast Mastery": [
+   206,
+   669,
+   838
+  ],
+  "hunter/Marksmanship": [
+   215,
+   652,
+   859
+  ],
+  "hunter/Survival": [
+   530,
+   651,
+   -7
+  ],
+  "rogue/Assassination": [
+   204,
+   213,
+   -277
+  ],
+  "rogue/Outlaw": [
+   622,
+   668,
+   858
+  ],
+  "rogue/Subtlety": [
+   621,
+   -100,
+   512
+  ],
+  "priest/Discipline": [
+   202,
+   833,
+   -92
+  ],
+  "priest/Holy": [
+   211,
+   525,
+   663
+  ],
+  "priest/Shadow": [
+   850,
+   728,
+   390
+  ],
+  "dk/Blood": [
+   897,
+   872,
+   -54
+  ],
+  "dk/Frost": [
+   834,
+   871,
+   -269
+  ],
+  "dk/Unholy": [
+   834,
+   897,
+   -242
+  ],
+  "shaman/Elemental": [
+   527,
+   216,
+   519
+  ],
+  "shaman/Enhancement": [
+   635,
+   386,
+   732
+  ],
+  "shaman/Restoration": [
+   631,
+   207,
+   632
+  ],
+  "mage/Arcane": [
+   201,
+   649,
+   210
+  ],
+  "mage/Fire": [
+   181,
+   -228,
+   579
+  ],
+  "mage/Frost": [
+   -97,
+   526,
+   -62
+  ],
+  "warlock/Affliction": [
+   203,
+   529,
+   -86
+  ],
+  "warlock/Demonology": [
+   645,
+   670,
+   837
+  ],
+  "warlock/Destruction": [
+   212,
+   845,
+   702
+  ],
+  "druid/Balance": [
+   214,
+   643,
+   828
+  ],
+  "druid/Feral": [
+   205,
+   676,
+   887
+  ],
+  "druid/Restoration": [
+   521,
+   638,
+   852
+  ]
+ },
+ "reject": [],
+ "readable": {
+  "assign": {
+   "warrior/Arms": [
+    "T5 Destroyer Battlegear",
+    "A7 Relentless Gladiator's Battlegear",
+    "T2 Battlegear of Wrath"
+   ],
+   "warrior/Fury": [
+    "A1 Gladiator's Battlegear",
+    "ZG Vindicator's Battlegear",
+    "PvP Warlord's Battlegear"
+   ],
+   "warrior/Protection": [
+    "T6 Onslaught Battlegear",
+    "T3 Dreadnaught's Battlegear",
+    "T9 Hellscream's Battlegear"
+   ],
+   "paladin/Holy": [
+    "T2 Judgement Armor",
+    "A3 Vengeful Gladiator's Vindication",
+    "T1 Lawbringer Armor"
+   ],
+   "paladin/Protection": [
+    "T6 Lightbringer Battlegear",
+    "T9 Turalyon's Battlegear",
+    "T3 Redemption Armor"
+   ],
+   "paladin/Retribution": [
+    "T5 Crystalforge Battlegear",
+    "A8 Wrathful Gladiator's Vindication",
+    "T8 Conqueror's Aegis Battlegear"
+   ],
+   "hunter/Beast Mastery": [
+    "T1 Giantstalker Armor",
+    "T6 Gronnstalker's Armor",
+    "T8 Scourgestalker Battlegear"
+   ],
+   "hunter/Marksmanship": [
+    "T2 Dragonstalker Armor",
+    "T5 Rift Stalker Armor",
+    "T9 Windrunner's Battlegear"
+   ],
+   "hunter/Survival": [
+    "T3 Cryptstalker Armor",
+    "T4 Demon Stalker Armor",
+    "A4 Brutal Gladiator's Pursuit"
+   ],
+   "rogue/Assassination": [
+    "T1 Nightslayer Armor",
+    "T2 Bloodfang Armor",
+    "A8 Wrathful Gladiator's Vestments"
+   ],
+   "rogue/Outlaw": [
+    "T5 Deathmantle",
+    "T6 Slayer's Armor",
+    "T9 Garona's Battlegear"
+   ],
+   "rogue/Subtlety": [
+    "T4 Netherblade",
+    "A6 Furious Gladiator's Vestments",
+    "T0.5 Darkmantle Armor"
+   ],
+   "priest/Discipline": [
+    "T1 Vestments of Prophecy",
+    "T8 Sanctification Regalia",
+    "A6 Furious Gladiator's Investiture"
+   ],
+   "priest/Holy": [
+    "T2 Vestments of Transcendence",
+    "T3 Vestments of Faith",
+    "T4 Incarnate Raiment"
+   ],
+   "priest/Shadow": [
+    "T9 Zabra's Regalia",
+    "A3 Vengeful Gladiator's Investiture",
+    "PvP Warlord's Raiment"
+   ],
+   "dk/Blood": [
+    "T10 Scourgelord's Battlegear",
+    "T9 Koltira's Battlegear",
+    "A5 Deadly Gladiator's Desecration"
+   ],
+   "dk/Frost": [
+    "T8 Darkruned Battlegear",
+    "T9 Thassarian's Battlegear",
+    "A8 Wrathful Gladiator's Desecration"
+   ],
+   "dk/Unholy": [
+    "T8 Darkruned Battlegear",
+    "T10 Scourgelord's Battlegear",
+    "T10 Sanctified Scourgelord's Battlegear"
+   ],
+   "shaman/Elemental": [
+    "T3 The Earthshatterer",
+    "T2 The Ten Storms",
+    "T0.5 The Five Thunders"
+   ],
+   "shaman/Enhancement": [
+    "T5 Cataclysm Regalia",
+    "PvP Warlord's Earthshaker",
+    "A3 Vengeful Gladiator's Earthshaker"
+   ],
+   "shaman/Restoration": [
+    "T4 Cyclone Raiment",
+    "T1 The Earthfury",
+    "T4 Cyclone Regalia"
+   ],
+   "mage/Arcane": [
+    "T1 Arcanist Regalia",
+    "T5 Tirisfal Regalia",
+    "T2 Netherwind Regalia"
+   ],
+   "mage/Fire": [
+    "T0 Magister's Regalia",
+    "T10 Sanctified Bloodmage's Regalia",
+    "A1 Gladiator's Regalia"
+   ],
+   "mage/Frost": [
+    "A6 Furious Gladiator's Regalia",
+    "T3 Frostfire Regalia",
+    "A5 Deadly Gladiator's Regalia"
+   ],
+   "warlock/Affliction": [
+    "T1 Felheart Raiment",
+    "T3 Plagueheart Raiment",
+    "T8 Conqueror's Deathbringer Garb"
+   ],
+   "warlock/Demonology": [
+    "T4 Voidheart Raiment",
+    "T6 Malefic Raiment",
+    "T8 Deathbringer Garb"
+   ],
+   "warlock/Destruction": [
+    "T2 Nemesis Raiment",
+    "T9 Gul'dan's Regalia",
+    "A2 Merciless Gladiator's Dreadgear"
+   ],
+   "druid/Balance": [
+    "T2 Stormrage Raiment",
+    "T5 Nordrassil Regalia",
+    "T8 Nightsong Garb"
+   ],
+   "druid/Feral": [
+    "T1 Cenarion Raiment",
+    "T6 Thunderheart Harness",
+    "T10 Lasherweave Garb"
+   ],
+   "druid/Restoration": [
+    "T3 Dreamwalker Raiment",
+    "T4 Malorne Raiment",
+    "T9 Runetotem's Garb"
+   ]
+  },
+  "reject": []
+ }
+}

@@ -1,0 +1,29 @@
+Make a pixel-art PARTS SHEET of a druid's TREE OF LIFE FORM for a 2D fighting game. The parts will be cut out automatically and attached to a two-legged animation skeleton, so the layout and the scale rules matter more than anything else.
+
+ATTACHED IMAGES
+- Image 1 = LAYOUT AND SCALE TEMPLATE. This is the canvas to fill: keep its exact grid, magenta background, black grid lines and the same cells in the same places. The grey dashed shapes only show WHERE each part goes, HOW BIG it is and HOW it is oriented: replace every grey shape with the finished part and leave no grey lines.
+- Image 2 = the druid TREE OF LIFE FORM from World of Warcraft: copy its anatomy and style - a walking treant: a bark-covered trunk body, a face carved in the bark with glowing eyes, a crown of leafy branches and blossoms on top of the head, long branch arms with twig fingers, root legs.
+- Image 3 = the druid's armor set "Malorne Raiment": take only its color scheme and motifs.
+
+THE CREATURE
+TREE OF LIFE FORM for the "Malorne Raiment" skin: warm brown bark with olive leaves and orange blossoms in the crown, glowing green eyes. 3/4 view facing RIGHT, chest turned toward the viewer, like a classic 16-bit fighting-game sprite; every part in this same view. It holds no weapon.
+
+CELLS (never move, merge or skip them)
+   row 1: [tall left cell, rows 1-2] FULL CREATURE | HEAD | BODY | LOWER BODY
+   row 2: SHOULDER | ARM | LEG
+   row 3: [left] PALETTE | (empty) | (empty) | (empty)
+- FULL CREATURE: standing, arms slightly spread, feet near the bottom of the cell. Only a reference for proportions.
+- HEAD only with its leafy crown of branches, 3/4 view facing right.
+- BODY only: chest and belly, no head, no arms, no legs.
+- LOWER BODY only: the lower trunk with hanging roots and bark plates, seen from the front.
+- SHOULDER: a shoulder knot of bark with a few leafy twigs, outer side.
+- ARM: ONE long branch arm, perfectly STRAIGHT and VERTICAL: shoulder at the top, elbow in the middle (at the grey tick), a hand of twig fingers at the bottom.
+- LEG: ONE root leg, perfectly STRAIGHT and VERTICAL: hip at the top, knee in the middle (at the grey tick), a foot of spread roots at the bottom pointing RIGHT.
+- Leave all three weapon/cape cells in the bottom row empty magenta. Palette cell: one row of flat square color swatches.
+
+THE MOST IMPORTANT RULES
+1. ONE SCALE FOR EVERYTHING. Every separate part must be exactly the same size as that part on the full creature in the large cell; match the grey shapes of Image 1. Do NOT enlarge parts to fill their cells; empty magenta space around a part is correct.
+2. BIG CHUNKY PIXELS. In the game the creature is about 100 art-pixels tall, so every art-pixel is a square block of about 6x6 image pixels: bold readable shapes, clean cel shading with 3-4 tones per color, a 1-art-pixel dark outline around every part; no noise, no fine filigree.
+3. CLEAN SEPARATE PARTS. Each part is complete on its own with its own outline and nothing from the other parts.
+4. Flat pure magenta #FF00FF background everywhere outside the parts: no gradient, no shadow, no glow spilling onto the magenta. Keep the black grid lines of Image 1.
+5. NO text, letters, numbers or labels anywhere. Landscape 3:2 image.

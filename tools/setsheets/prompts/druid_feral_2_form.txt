@@ -1,0 +1,24 @@
+Make a pixel-art PARTS SHEET of a druid's CAT FORM for a 2D side-view fighting game. The parts will be cut out automatically and attached to a four-legged animation skeleton, so the layout and the scale rules matter more than anything else.
+
+ATTACHED IMAGES
+- Image 1 = LAYOUT AND SCALE TEMPLATE. This is the canvas to fill: keep its exact grid (a wide cell top-left, a wide cell bottom-left, two cells on the right of each row), the magenta background and the black grid lines. The grey dashed shapes only show WHERE each part goes, HOW BIG it is and HOW it is oriented: replace every grey shape with the finished part and leave no grey lines.
+- Image 2 = the druid CAT FORM from World of Warcraft: copy its anatomy and style - a big muscular feline (panther / sabre-cat), heavy paws with claws, long tail, fierce face with fangs.
+- Image 3 = the druid's armor set "Thunderheart Harness": take only its color scheme and motifs for the fur.
+
+THE CREATURE
+Cat form for the "Thunderheart Harness" skin: bright orange fur with bold black tiger stripes, cream belly, a few red-and-white feathers braided at the neck, amber eyes. Seen strictly from the SIDE, facing RIGHT, like a classic 16-bit fighting-game sprite.
+
+CELLS (never move, merge or skip them)
+- Top-left wide cell: the FULL CAT standing on all four paws, side view facing right, tail up behind. Only a reference for proportions.
+- Top row, third cell: the HEAD alone (no neck), side view facing right, mouth closed, ears up.
+- Top row, fourth cell: the TAIL alone, extended almost horizontally, its base at the RIGHT end and the tip at the LEFT.
+- Bottom-left wide cell: the BODY alone - chest, neck, back, belly and haunches; no head, no legs, no tail. Chest and neck on the right.
+- Bottom row, third cell: ONE FRONT LEG, perfectly STRAIGHT and VERTICAL: shoulder at the top, paw with claws at the bottom, toes pointing right.
+- Bottom row, fourth cell: ONE HIND LEG, STRAIGHT and VERTICAL: hip and thigh at the top, paw at the bottom, toes pointing right.
+
+THE MOST IMPORTANT RULES
+1. ONE SCALE FOR EVERYTHING. Every separate part must be exactly the same size as that part on the full creature in the large cell; match the grey shapes of Image 1. Do NOT enlarge parts to fill their cells; empty magenta space around a part is correct.
+2. BIG CHUNKY PIXELS. In the game the creature is about 100 art-pixels tall, so every art-pixel is a square block of about 6x6 image pixels: bold readable shapes, clean cel shading with 3-4 tones per color, a 1-art-pixel dark outline around every part; no noise, no fine filigree.
+3. CLEAN SEPARATE PARTS. Each part is complete on its own with its own outline and nothing from the other parts.
+4. Flat pure magenta #FF00FF background everywhere outside the parts: no gradient, no shadow, no glow spilling onto the magenta. Keep the black grid lines of Image 1.
+5. NO text, letters, numbers or labels anywhere. Landscape 3:2 image.

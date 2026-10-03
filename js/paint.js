@@ -87,15 +87,17 @@ function pHorn(c,x0,y0,cx,cy,x1,y1,w,col){
    ============================================================ */
 function paintModel(c,m,p,time,lights){
   if(m.kind==='cat') return paintCat(c,m,p,time,lights);
-  const S=solvePose(p,m.style);
-  const P={c,m,p,S,time,lights,pal:m.pal};
+  const ck=typeof cutoutKey==='function'?cutoutKey(m):null;   // набір растрових деталей (?cutout=gpt|gemini) або null
+  const S=solvePose(p,m.style,!!ck);
+  const P={c,m,p,S,time,lights,pal:m.pal,ck};
   OL=m.pal.outline;
   c.save();
   c.translate(p.ox,p.oy);
   if(p.rot){ c.translate(0,RIG.PELVIS); c.rotate(p.rot); c.translate(0,-RIG.PELVIS); }
   if(p.flip!==1){ const f=p.flip; c.scale((f<0?-1:1)*Math.max(0.4,Math.abs(f)),1); }
-  if(m.kind==='moonkin'){ c.scale(1.12,1.12); paintMoonkin(P); c.restore(); return; }
-  if(m.kind==='tree'){ c.scale(1.14,1.14); paintTree(P); c.restore(); return; }
+  if(m.kind==='moonkin'){ c.scale(1.12,1.12); if(ck) paintCutout(P); else paintMoonkin(P); c.restore(); return; }
+  if(m.kind==='tree'){ c.scale(1.14,1.14); if(ck) paintCutout(P); else paintTree(P); c.restore(); return; }
+  if(ck){ paintCutout(P); c.restore(); return; }   // бієць із растрових деталей
   if(m.aura) drawAuraBack(P);
   if(m.wings>0) drawWing(P,true);
   if(m.cape) drawCape(P);
@@ -250,7 +252,7 @@ function armCols(m,side){
   const P=m.pal, d=side==='b';
   const pick=(n)=>d?(P[n+'D']||P[n]):P[n];
   switch(m.armor){
-    case 'plate': return {up:pick('prim'),upD:d?P.primDD:P.primD,upL:d?null:P.primL, fo:pick('prim'),foD:d?P.primDD:P.primD, cuff:pick('trim'), hand:P.glove?(d?P.gloveD:P.glove):pick('metal'),handD:P.glove?P.gloveD:P.metalD};
+    case 'plate': return {up:pick('prim'),upD:d?P.primDD:P.primD,upL:d?null:P.primL, fo:pick('prim'),foD:d?P.primDD:P.primD, cuff:pick(m.cuff||'trim'), hand:P.glove?(d?P.gloveD:P.glove):pick('metal'),handD:P.glove?P.gloveD:P.metalD};
     case 'mail': return {up:pick('prim'),upD:d?P.primDD:P.primD,upL:d?null:P.primL, fo:pick('leath'),foD:P.leathD, cuff:pick('trim'), hand:pick('leath'),handD:P.leathD};
     case 'leather': return m.bands?{up:pick('prim'),upD:d?P.primDD:P.primD,upL:d?null:P.primL, fo:pick('prim'),foD:d?P.primDD:P.primD, cuff:pick(m.bands), hand:pick('leath'),handD:P.leathD}
       :{up:pick('prim'),upD:d?P.primDD:P.primD,upL:null, fo:pick('sec'),foD:P.secD, cuff:pick('trim'), hand:pick('leath'),handD:P.leathD};
@@ -317,6 +319,7 @@ function drawArm(P,side){
     }
     }
   }
+  if(m.veins&&!col.sleeve){ drawVeins(P,sh,el,wt,d?11:3,d); drawVeins(P,el,hd,wt,d?17:7,d); }
   if(wpn && wpn.t!=='shield') drawWeapon(P,wpn,hd,ang,side);
   if(m.wings>0&&wpn&&wpn.t!=='shield'&&!d){ const tip={x:hd.x+Math.sin(ang)*38,y:hd.y-Math.cos(ang)*38}; addLight(P,tip.x,tip.y,26,'#fff2b0',0.9*m.wings); addLight(P,hd.x,hd.y,14,'#ffe27a',0.6*m.wings); }
   if(!col.sleeve){
@@ -401,6 +404,15 @@ function drawLeg(P,side){
     else { pLine(c,-3,-5.2,3.5,-5.2,PU,bootD); pDot(c,1,-5.2,pal.trim,1.1); pLine(c,5.5,-3.2,8,-1.8,PU*0.9,m.armor==='cloth'?pal.leathL:bootD); } // ремінець із пряжкою
   }
   c.restore();
+  if(m.greaves){ // широкий розтруб поножі під коліном: вістря вперед, бронзова кромка (Onslaught)
+    const g1=lp(kn,ft,0.1,sw*0.95), g2=lp(kn,ft,0.1,-sw*0.8), g3=lp(kn,ft,0.62,-sw*0.55), g4=lp(kn,ft,0.62,sw*0.6), tip=lp(kn,ft,0.3,sw*1.15);
+    const q=[g2.x,g2.y, g1.x,g1.y, tip.x,tip.y, g4.x,g4.y, g3.x,g3.y];
+    pPath(c,q); pOut(c,1.6); pPoly(c,q,d?pal.primDD:pal.primD);
+    pPoly(c,[g1.x,g1.y, tip.x,tip.y, g4.x,g4.y, lp(kn,ft,0.6,0).x,lp(kn,ft,0.6,0).y, lp(kn,ft,0.12,0).x,lp(kn,ft,0.12,0).y],d?pal.primD:pal.prim);
+    pLine(c,g2.x,g2.y,g1.x,g1.y,PU*1.3,d?pal.secD:pal.sec);
+    if(hd2) pLine(c,g1.x,g1.y,tip.x,tip.y,PU,pal.secL);
+  }
+  if(m.veins){ drawVeins(P,hip,kn,tw,d?23:5,d,true); drawVeins(P,lp(kn,ft,0.3),ft,sw,d?29:13,d,true); }   // на ногах — приглушені
   if(m.plates){ const pc=d?pal[m.plates+'D']:pal[m.plates];
     pPath(c,[kn.x-3,kn.y-5, kn.x+5,kn.y-5, kn.x+6,kn.y+3, kn.x+1,kn.y+7, kn.x-3,kn.y+3]); pOut(c,2); c.fillStyle=pc; c.fill();
     if(!d) pLine(c,kn.x-1,kn.y-3.5,kn.x+4,kn.y-3.5,PU,pal[m.plates+'L']);
@@ -556,10 +568,13 @@ function drawTorso(P){
     pPoly(c,[1,-38, 11,-38, 12,-27, 6,-19, 0,-27],pal[m.panels]); pLine(c,1.5,-37,10.5,-37,PU,pal[m.panels+'L']);
     if(HD()) pLine(c,6,-35,6,-22,PU,pal[m.panels+'D']); }
   if(m.glows&&m.glows.includes('chest')) glowGem(P,7,-28,false,2.6);
+  if(m.veins) drawTorsoVeins(P);
+  if(m.core) drawCore(P);
   if(m.sash){ pLine(c,14,-38,-9,-8,4,pal[m.sash+'D']); pLine(c,14,-38,-9,-8,2.4,pal[m.sash]); }
   if(m.collar) drawCollar(P);
   if(m.gem){ pCirc(c,8,-29,2.6,pal.trimD); pCirc(c,8,-29,1.8,pal.acc); addLight(P,8,-29,6,pal.acc,0.6); }
   c.restore();
+  if(m.spikeCollar) drawSpikeCollar(P);
   // пояс
   const beltCol=m.belt?pal[m.belt]:m.plates?pal[m.plates]:(m.armor==='cloth'?pal.sec:(m.armor==='plate'?pal.primDD:pal.leath));
   pPath(c,[-11,-7, 12,-7, 12,-1, -11,-1]); pOut(c,1.2);
@@ -630,13 +645,14 @@ function drawEmblem(c,kind,x,y,r,col,dark){
 function drawHead(P){
   const {c,S,m,pal}=P;
   const hd=S.head;
-  pLimb(c,S.neck,{x:hd.x-1,y:hd.y+6},7,pal.skin,pal.skinD);
+  const gorget=m.helm&&m.helm.t==='onslaught';
+  pLimb(c,S.neck,{x:hd.x-1,y:hd.y+6},gorget?9:7,gorget?pal.primD:pal.skin,gorget?pal.primDD:pal.skinD);
   c.save(); c.translate(hd.x,hd.y); c.rotate(hd.a);
   if(m.headScale) c.scale(m.headScale,m.headScale);
   const helm=m.helm||{t:'none'};
   const race=m.race;
   const bald=race==='ghoul'||race==='infernal';
-  const hidesHair=['helm','skull','hood','beast','hat','bandana'].includes(helm.t)||helm.t==='cowl'||race==='draenei'||bald;
+  const hidesHair=['helm','skull','hood','beast','hat','bandana','onslaught'].includes(helm.t)||helm.t==='cowl'||race==='draenei'||bald;
   // волосся ззаду (довге — під капюшоном не видно)
   if(!hidesHair && m.longHair) pPoly(c,[-10,-6, -3,-10, -2,6, -8,16, -13,12],pal.hairD);
   // вуха (під шоломом ховаються, крім ельфів)
@@ -714,6 +730,7 @@ function drawHelm(P,h){
   const hc=pal[h.col||'prim'], hcD=pal[(h.col||'prim')+'D']||pal.primD, hcL=pal[(h.col||'prim')+'L']||pal.primL;
   switch(h.t){
     case 'peakhood': drawPeakHood(P,h,hc,hcD,hcL); break;
+    case 'onslaught': drawOnslaughtHelm(P,hc,hcD,hcL); break;
     case 'hood': case 'cowl':{
       const deep=h.t==='hood';
       const outer=h.spiky
@@ -1065,6 +1082,123 @@ function drawBfDagger(P,d){
   if(!d){ const f=0.7+Math.sin(time*9)*0.15; addLight(P,1,-20,13,pal.acc,0.75*f); }
 }
 
+/* ---------- Onslaught (T6 воїна): каптур-шолом із шипастим забралом, плити-наплічники, золоті прожилки ---------- */
+// детермінований «випадок» для візерунків: однаковий щокадру, різний для частин
+const vrand=(seed,k)=>{ const x=Math.sin(seed*12.9898+k*78.233)*43758.5453; return x-Math.floor(x); };
+// золоті тріщини-прожилки вздовж сегмента кінцівки a→b (w — товщина)
+function drawVeins(P,a,b,w,seed,d,dim){
+  if(!HD()) return;
+  const {c,pal}=P;
+  c.save(); c.lineJoin='miter'; c.lineCap='butt';
+  for(let i=0;i<2;i++){
+    const t0=0.12+vrand(seed,i)*0.5, ln=0.2+vrand(seed,i+9)*0.15, o0=(vrand(seed,i+5)-0.5)*w*0.55;
+    const p1=lp(a,b,t0,o0), p2=lp(a,b,t0+ln*0.45,o0+(vrand(seed,i+3)-0.5)*w*0.5), p3=lp(a,b,t0+ln,o0+(vrand(seed,i+7)-0.5)*w*0.45);
+    c.strokeStyle=d||dim?pal.trimD:pal.trim; c.lineWidth=PU; c.beginPath(); c.moveTo(p1.x,p1.y); c.lineTo(p2.x,p2.y); c.lineTo(p3.x,p3.y); c.stroke();
+    if(!d&&i===0) pDot(c,p2.x,p2.y,pal.acc,1);
+  }
+  c.restore();
+}
+function drawTorsoVeins(P){
+  if(!HD()) return;
+  const {c,pal}=P;
+  c.save(); c.lineJoin='miter'; c.lineCap='butt'; c.strokeStyle=pal.trim; c.lineWidth=PU;
+  for(const v of [[-9,-36, -5,-31, -7,-27],[-11,-19, -7,-16, -9,-12],[2,-12, 5,-15, 8,-12]]){ c.beginPath(); c.moveTo(v[0],v[1]); for(let i=2;i<v.length;i+=2) c.lineTo(v[i],v[i+1]); c.stroke(); }
+  c.restore();
+  for(const [x,y] of [[-5,-31],[-7,-16],[5,-15]]) pDot(c,x,y,pal.acc,1);
+}
+// світне золоте «ядро» під коміром (як на торсі в атласі користувача)
+function drawCore(P){
+  const {c,pal,time}=P;
+  const f=0.85+Math.sin(time*5)*0.15;
+  c.strokeStyle=pal.trim; c.lineWidth=PU*1.3;
+  c.beginPath(); c.moveTo(5,-30); c.quadraticCurveTo(11,-27,16,-31); c.stroke();
+  pEll(c,11.5,-36,4.4,4,pal.trimD); pEll(c,11.5,-36,3.5,3.2,pal.accD); pEll(c,11.8,-36.3,2.6,2.4,pal.acc); pEll(c,12.1,-36.8,1.2,1.1,pal.accL);
+  addLight(P,12,-36,14,pal.acc,0.9*f);
+}
+// шипастий комір-півмісяць із золотими смугами довкола шиї (атлас: «Комір» + шипи на верху торса)
+function drawSpikeCollar(P){
+  const {c,pal}=P;
+  for(const [x,y,tx,ty] of [[-9,-42,-15,-52],[-3,-45,-5,-56],[-12,-38,-20,-44]]){ pHorn(c,x,y,(x+tx)/2,(y+ty)/2,tx,ty,5.4,OL); pHorn(c,x,y,(x+tx)/2,(y+ty)/2,tx,ty,3.8,pal.metalD); pLine(c,x,y-0.6,(x+tx)/2,(y+ty)/2-0.6,PU,pal.metal); }
+  const cr=[-13,-36, -12,-44, -4,-49, 6,-49, 14,-45, 15,-40, 8,-43, -2,-43.5, -8,-40];
+  pPath(c,cr); pOut(c,1.8); pPoly(c,cr,pal.primD);
+  pPoly(c,[-11.5,-38, -10.5,-44, -3.5,-48, 6,-48, 13,-44.5, 8,-44.5, -2,-45, -8,-41.5],pal.prim);
+  c.strokeStyle=pal.trim; c.lineWidth=PU; c.beginPath(); c.moveTo(-11,-40); c.quadraticCurveTo(-6,-47.5,6,-47); c.quadraticCurveTo(11,-46.5,14,-43);
+  c.moveTo(-9,-38.6); c.quadraticCurveTo(-4,-44,6,-44.6); c.stroke();
+  if(HD()) pLine(c,-3,-48,5,-48,PU,pal.primL);
+}
+function drawOnslaughtHelm(P,hc,hcD,hcL){
+  const {c,pal}=P;
+  // за атласом користувача: каптур-шолом із високим лезом на маківці, загнутим назад рогом і гладким «дзьобом»
+  // шипи на комірі позаду шолома
+  for(const [x,y,tx,ty] of [[-12,5,-21,7],[-9,11,-17,17]]){ pHorn(c,x,y,(x+tx)/2,(y+ty)/2-1,tx,ty,5.6,OL); pHorn(c,x,y,(x+tx)/2,(y+ty)/2-1,tx,ty,3.8,pal.metalD); }
+  // високе лезо-гребінь на маківці (за шоломом): темна сталь, золотий кант, трохи нахилене назад
+  const blade=[-7,-10, -12,-29, -10.5,-35, -6,-30, -0.5,-12];
+  pPath(c,blade); pOut(c,1.8); pPoly(c,blade,pal.primDD);
+  pPoly(c,[-6,-11, -10.2,-28.6, -9.6,-32, -6.6,-28.4, -2,-12],pal.primD);
+  pLine(c,-11.6,-29,-10.4,-34,PU,pal.trim); pLine(c,-10.4,-34,-6.2,-29.6,PU,pal.trim);
+  if(HD()){ pLine(c,-8.6,-28,-5.4,-15,PU,pal.trimD); pDot(c,-7.6,-24,pal.acc,1); }
+  // великий ріг, загнутий назад і вгору від скроні
+  pHorn(c,-5,-2,-19,-2,-29,-15,9.2,OL); pHorn(c,-5,-2,-19,-2,-29,-15,7,pal.prim);
+  pHorn(c,-5,-3.6,-18,-4.2,-27.6,-14.4,2.4,pal.primL);
+  pLine(c,-12.6,-5.4,-13.6,-0.4,PU*1.3,pal.trim); pLine(c,-18,-6.6,-19,-2.4,PU,pal.trimD);
+  // закритий каптур-шолом зі злегка загостреною маківкою
+  const shell=()=>{ c.moveTo(8,11); c.lineTo(11.5,5); c.quadraticCurveTo(13,-2,11,-8.5); c.quadraticCurveTo(7,-14,0,-14.5);
+    c.lineTo(-3,-16.5); c.quadraticCurveTo(-9.5,-13.5,-12,-6); c.quadraticCurveTo(-13,2,-11,8.5); c.lineTo(-8,12.5); c.quadraticCurveTo(0,14.5,8,11); c.closePath(); };
+  c.beginPath(); shell(); pOut(c,2); c.fillStyle=hc; c.fill();
+  c.save(); c.beginPath(); shell(); c.clip();
+  c.fillStyle=hcD; c.beginPath(); c.moveTo(-20,-24); c.lineTo(-5,-24); c.quadraticCurveTo(-7,-4,-3,20); c.lineTo(-20,20); c.closePath(); c.fill();
+  c.strokeStyle=hcL; c.lineWidth=PU*1.4; c.beginPath(); c.moveTo(-3,-15.6); c.quadraticCurveTo(6,-13.4,10.4,-7.6); c.stroke();
+  if(HD()){
+    c.strokeStyle=pal.trim; c.lineWidth=PU; c.lineJoin='miter'; c.beginPath(); c.moveTo(-5,-11); c.lineTo(-8,-5); c.lineTo(-6.5,0); c.moveTo(-9,4); c.lineTo(-5,7); c.lineTo(-6,11); c.stroke();
+    pDot(c,-8,-5,pal.acc,1);
+  }
+  c.restore();
+  // золота облямівка лицьової пластини
+  c.strokeStyle=pal.trim; c.lineWidth=PU*1.3; c.beginPath(); c.moveTo(3,-9.6); c.quadraticCurveTo(9.4,-10,11.6,-6.4); c.stroke();
+  // щілина забрала зі світними очима
+  pPoly(c,[2.4,-7, 13.2,-6.4, 13.4,-1.4, 3,-2],pal.shadow);
+  pLine(c,4,-4.2,12.8,-3.8,PU*1.5,pal.accD);
+  pDot(c,8,-4.2,pal.eye,2); pDot(c,11.6,-4,pal.eye,1.8); pDot(c,8,-4.2,pal.accL,0.9);
+  addLight(P,10,-4.1,9,pal.eye,1);
+  // гладке забрало-«дзьоб»: виступає вперед і донизу, золотий кант по краю
+  const beak=[4.4,-0.6, 12.8,-0.6, 16.6,4, 14.6,10.6, 10.2,16.4, 7.4,12.6, 5,5.6];
+  pPath(c,beak); pOut(c,1.8); pPoly(c,beak,hcD);
+  pPoly(c,[5.8,0.4, 12.2,0.4, 15.4,4.2, 13.6,9.8, 10,14.4, 8.4,11.6, 6.2,5.6],hc);
+  pLine(c,12.4,0.4,15.8,4.2,PU*1.2,pal.trim); pLine(c,15.8,4.2,13.8,10.2,PU*1.2,pal.trim); pLine(c,13.8,10.2,10.2,15.4,PU,pal.trimD);
+  pDot(c,9.6,5,pal.acc,1);
+  if(HD()) pLine(c,7,1.6,8.2,11.4,PU,pal.trimD);
+}
+function drawOnslaughtShoulder(P,s,d,col,colD,colL){
+  // за атласом користувача: кругла «куля»-наплічник, шипи на всі боки, золотий зубчастий обід знизу
+  const {c,pal}=P;
+  const mt=d?pal.metalD:pal.metal, mtL=d?pal.metal:pal.metalL, gc=d?pal.trimD:pal.trim;
+  const cx=1*s, cy=-2*s, rx=12*s, ry=11*s;
+  const spike=(a,l,w)=>{ const bx=cx+Math.cos(a)*rx*0.85, by=cy+Math.sin(a)*ry*0.85, tx=cx+Math.cos(a)*(rx+l*s), ty=cy+Math.sin(a)*(ry+l*s);
+    const mx=(bx+tx)/2, my=(by+ty)/2;
+    pHorn(c,bx,by,mx,my,tx,ty,(w+1.6)*s,OL); pHorn(c,bx,by,mx,my,tx,ty,w*s,mt);
+    if(!d&&HD()) pLine(c,bx+(tx-bx)*0.2,by+(ty-by)*0.2-0.5,bx+(tx-bx)*0.65,by+(ty-by)*0.65-0.5,PU,mtL); };
+  for(const [a,l,w] of [[-1.62,10,4.4],[-2.35,9,4.2],[-3.0,8,4],[-0.85,9,4.2],[-0.12,7,3.8],[2.6,6,3.4]]) spike(a,l,w);
+  // куля
+  c.beginPath(); c.ellipse(cx,cy,rx,ry,0,0,7); pOut(c,2); c.fillStyle=colD; c.fill();
+  c.save(); c.beginPath(); c.ellipse(cx,cy,rx,ry,0,0,7); c.clip();
+  pEll(c,cx+2*s,cy-1.5*s,rx*0.82,ry*0.78,col);
+  if(colL) pEll(c,cx+4*s,cy-5*s,rx*0.35,ry*0.26,colL,-0.4);
+  if(HD()){ // золоті прожилки по кулі
+    c.strokeStyle=gc; c.lineWidth=PU; c.lineJoin='miter'; c.beginPath();
+    c.moveTo(cx-8*s,cy-3*s); c.lineTo(cx-3*s,cy+1*s); c.lineTo(cx+1*s,cy-2*s); c.lineTo(cx+6*s,cy+2*s);
+    c.moveTo(cx+1*s,cy-2*s); c.lineTo(cx+2*s,cy-7*s); c.stroke();
+    if(!d) pDot(c,cx-3*s,cy+1*s,pal.acc,1);
+  }
+  c.restore();
+  // заклепки-шипики на поверхні
+  for(const [x,y] of [[-4,-6],[6,-1]]){ pPoly(c,[(x-1.8)*s,y*s, x*s,(y-3.2)*s, (x+1.8)*s,y*s],OL); pPoly(c,[(x-1.1)*s,(y-0.3)*s, x*s,(y-2.4)*s, (x+1.1)*s,(y-0.3)*s],mt); }
+  // золотий обід знизу з зубцями
+  c.strokeStyle=OL; c.lineWidth=4.4*s; c.beginPath(); c.moveTo(cx-11*s,cy+4*s); c.quadraticCurveTo(cx,cy+14*s,cx+11.5*s,cy+4*s); c.stroke();
+  c.strokeStyle=gc; c.lineWidth=2.8*s; c.beginPath(); c.moveTo(cx-11*s,cy+4*s); c.quadraticCurveTo(cx,cy+14*s,cx+11.5*s,cy+4*s); c.stroke();
+  for(let i=0;i<5;i++){ const t=(i+0.5)/5, x=cx-11*s+22.5*s*t, y=cy+4*s+(1-(2*t-1)**2)*5*s+1.6*s; pPoly(c,[x-1.3*s,y, x+1.3*s,y, x,y+2.2*s],gc); }
+  if(!d){ c.strokeStyle=pal.trimL; c.lineWidth=PU; c.beginPath(); c.moveTo(cx-9*s,cy+4.6*s); c.quadraticCurveTo(cx,cy+12*s,cx+9.5*s,cy+4.6*s); c.stroke(); }
+}
+
 // світний самоцвіт (колір акценту): оправа + серце + світло
 function glowGem(P,x,y,dim,r=2.2){
   const {c,pal}=P;
@@ -1160,6 +1294,7 @@ function drawShoulder(P,side){
       if(!d){ pDot(c,0.5*s,-2.4*s,pal.crystL,1.2); addLight(P,1*s,-2*s,15*s,'#b070ff',0.8); }
       break;
     }
+    case 'onslaught': drawOnslaughtShoulder(P,s,d,col,colD,colL); break;
     case 'spiked':
       for(const a of [-2.5,-1.9,-1.3]) sp(Math.cos(a)*8*s,Math.sin(a)*6*s,a,12*s,2.8*s,d?pal.metalD:pal.metalL);
       dome(); break;
@@ -1333,6 +1468,28 @@ function drawWeapon(P,w,hd,ang,side){
       }
       break;
     }
+    case 'darkhammer':{ // шипастий молот за атласом користувача: темна брила з шипами, золоті кути й смуги, дерев'яне руків'я в золотих кільцях (Onslaught)
+      const gc=d?pal.trimD:pal.trim, mt=d?pal.metalD:pal.metal;
+      pLine(c,0,13,0,-30,3.2+PU*1.6,OL); pLine(c,0,13,0,-30,3.2,pal.woodD); pLine(c,-0.5,13,-0.5,-30,1.4,wood);
+      for(const y of [-24,-12,0]) pLine(c,0,y,0,y+1.6,4.2,gc);                                          // золоті кільця
+      pCirc(c,0,14.5,2.8,OL); pCirc(c,0,14.5,2,gc); if(!d) pDot(c,-0.6,14,pal.trimL,0.9);               // навершшя
+      // шипи брили: угору, з обох бойків і по кутах
+      const sp=(x0,y0,x1,y1,w)=>{ pHorn(c,x0,y0,(x0+x1)/2,(y0+y1)/2,x1,y1,w+1.6,OL); pHorn(c,x0,y0,(x0+x1)/2,(y0+y1)/2,x1,y1,w,mt); };
+      sp(0,-44,0,-53,3.8); sp(-6,-44,-9,-51,3); sp(6,-44,9,-51,3);
+      sp(-12,-37,-19,-37,3.6); sp(12,-37,19,-37,3.6); sp(-11,-31,-16,-27,2.8); sp(11,-31,16,-27,2.8);
+      const hb=[-9.5,-45, 9.5,-45, 12.5,-42, 12.5,-31.5, 9.5,-28.5, -9.5,-28.5, -12.5,-31.5, -12.5,-42];
+      pPath(c,hb); pOut(c,2); pPoly(c,hb,d?pal.primDD:pal.primD);
+      pPoly(c,[-9.5,-44, 9.5,-44, 11.5,-41.5, 11.5,-39, -11.5,-39, -11.5,-41.5],d?pal.primD:pal.prim);    // верхня грань
+      for(const x of [-5,5]) pLine(c,x,-44,x,-29.5,PU*1.3,gc);                                          // золоті смуги поперек
+      for(const [x,y,sx,sy] of [[-12,-42.5,1,1],[12,-42.5,-1,1],[-12,-31,1,-1],[12,-31,-1,-1]]){        // золоті кутники
+        pLine(c,x,y,x+sx*3.6,y,PU*1.3,gc); pLine(c,x,y,x,y+sy*3.6,PU*1.3,gc); }
+      pLine(c,-2,-30,2,-30,4.6,gc);                                                                       // муфта
+      if(!d){
+        pLine(c,-8.5,-43.6,8.5,-43.6,PU,pal.primL);
+        for(const [x,y] of [[-8.5,-35],[0,-37],[8.5,-34]]) pDot(c,x,y,pal.acc,1);
+        addLight(P,0,-36,8,pal.acc,0.3);
+      }
+      break; }
     case 'hammer2h':
       pLine(c,0,18,0,-44,3.4,pal.woodD); pLine(c,-0.3,18,-0.3,-44,1.8,wood);
       pPoly(c,[-11,-56, 11,-56, 11,-40, -11,-40],blD);

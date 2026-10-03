@@ -89,10 +89,10 @@ function netOnMsg(m){
 }
 
 /* ---------- вибір бійця: кожен обирає свого, суперника видно наживо ---------- */
-const netPick=([ci,si,ki,race])=>{ const cls=CLASSES[ci], spec=cls.specs[si]; return {cls,spec,skin:spec.skins[ki],race:race||''}; };
+const netPick=([ci,si,ki])=>{ const cls=CLASSES[ci], spec=cls.specs[si]; return {cls,spec,skin:spec.skins[ki]}; };
 function netSendSel(){
   const s=SEL.sides[NET.side]; if(!s) return;
-  const msg=JSON.stringify({t:'sel',ci:s.ci,si:s.si,ki:s.ki,r:s.race,locked:s.locked});
+  const msg=JSON.stringify({t:'sel',ci:s.ci,si:s.si,ki:s.ki,locked:s.locked});
   if(msg===NET.sentSel) return;
   NET.sentSel=msg; if(NET.ws&&NET.ws.readyState===1) NET.ws.send(msg);
 }
@@ -101,7 +101,7 @@ function netApplySel(m){
   if(UI.cur!=='select') return;
   const side=1-NET.side;
   let s=SEL.sides[side];
-  if(s.ci!==m.ci||s.si!==m.si||s.ki!==m.ki||s.race!==(m.r||'')){ s.ci=m.ci; s.si=m.si; s.ki=m.ki; s.race=m.r||''; rebuildFighter(side); s=SEL.sides[side]; }
+  if(s.ci!==m.ci||s.si!==m.si||s.ki!==m.ki){ s.ci=m.ci; s.si=m.si; s.ki=m.ki; rebuildFighter(side); s=SEL.sides[side]; }
   if(m.locked&&!s.locked) lockSide(side);
   else if(!m.locked&&s.locked){ s.locked=false; s.f.anim.stop(); }
   renderSelect();
@@ -111,7 +111,7 @@ function netApplySel(m){
 function netCheckVersus(){
   if(!NET.host||NET.vsPending||UI.cur!=='select'||!SEL.sides[0].locked||!SEL.sides[1].locked) return;
   NET.vsPending=true;
-  const P=SEL.sides.map(s=>[s.ci,s.si,s.ki,s.race]);
+  const P=SEL.sides.map(s=>[s.ci,s.si,s.ki]);
   state.picks=P.map(netPick);
   NET.send({t:'vs',p:P});
   setTimeout(()=>{ if(NET.on) openVersus(); },650);
@@ -123,7 +123,7 @@ function netStartMirror(){
   NET.vsPending=false; NET.snap=null; NET.out=null;
   const P=state.picks, m0=muted;
   muted=true;                               // звук раунду з конструктора пришле хост
-  const p1=new Fighter(P[0].cls,P[0].spec,0,P[0].skin,P[0].race), p2=new Fighter(P[1].cls,P[1].spec,1,P[1].skin,P[1].race);
+  const p1=new Fighter(P[0].cls,P[0].spec,0,P[0].skin), p2=new Fighter(P[1].cls,P[1].spec,1,P[1].skin);
   state.game=new Game(p1,p2);
   muted=m0;
   closePause();
@@ -135,13 +135,13 @@ function netStartMirror(){
 const r1=v=>Math.round(v*10)/10, r3=v=>Math.round(v*1000)/1000;
 // числові поля бійця, що потрібні малюванню й HUD (порядок однаковий на обох кінцях)
 const NF=['x','y','facing','hp','maxHp','shield','guard','gcd','formCd','hitT','shiftT','wingsT','wingsDur','stealthT','dispersT','rootT','rootDur','fearT','stunT','roundWins','knockT',
-  'meter','combo','comboT','growT','ascT'];
+  'meter','combo','comboT','growT','ascT','dotLeft','hotLeft'];
 const poseOf=pose=>{ const po={}; for(const k in pose){ const v=pose[k]; po[k]=typeof v==='number'?r3(v):v; } return po; };
 function snapFighter(f){
   const po=poseOf(f.anim.pose);
   const c=f.casting, p=f.pet;
   return {n:NF.map(k=>r3(+f[k]||0)), fm:f.form, bl:f.blocking?1:0, ko:f.ko?1:0, rk:f.rootKind,
-    cd:f.cds.map(r3), bf:[r3(f.buffs.dmg.t),r3(f.buffs.spd.t),r3(f.buffs.dr.t)], dt:f.dots.length, ht:f.hots.length,
+    cd:f.cds.map(r3), bf:[r3(f.buffs.dmg.t),r3(f.buffs.spd.t),r3(f.buffs.dr.t)],
     cs:c?[c.i,r3(c.t),r3(c.total),c.chan?1:0]:0, cc:f.model.castCol||'', po,
     pt:p?{k:p.kind,x:r1(p.x),f:p.facing,t:r3(p.t),T:p.T,h:r3(p.hitT),po:poseOf(p.anim.pose)}:0};
 }
@@ -171,7 +171,6 @@ function applyFighter(f,d){
   f.blocking=!!d.bl; f.ko=!!d.ko; f.rootKind=d.rk;
   for(let i=0;i<4;i++) f.cds[i]=d.cd[i];
   f.buffs.dmg.t=d.bf[0]; f.buffs.spd.t=d.bf[1]; f.buffs.dr.t=d.bf[2];
-  f.dots.length=d.dt; f.hots.length=d.ht;                    // HUD рахує лише кількість
   f.casting=d.cs?{i:d.cs[0],t:d.cs[1],total:d.cs[2],chan:!!d.cs[3]}:null;
   if(d.pt){ // пет: модель і кеш спрайта переживають кадри, оновлюються лише числа
     const q=d.pt; let p=f.pet;

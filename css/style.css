@@ -308,13 +308,9 @@ img.broken{display:none}
 .abil.six .arow b{font-size:1.05cqw}
 .slot.su{background:linear-gradient(#fff4b0,var(--gold))}
 .arow b small{font:400 .8cqw var(--display); color:var(--gold); margin-left:.3cqw}
-/* раса на вітрині: на своїй — кнопка зі стрілками, на чужій — підпис */
-.sc-race{display:block; margin:.45cqw auto 0; font:400 1.05cqw var(--display); color:var(--ink); padding:.15cqw .6cqw; pointer-events:none}
-.sc-race.mine{color:var(--goldL); background:rgba(0,0,0,.45); box-shadow:inset 0 0 0 .12cqw var(--goldD); pointer-events:auto; cursor:pointer}
-.sc-race.mine:hover{background:rgba(233,185,73,.2)}
 .arow.form{border-top:.14cqw dashed var(--stone3); padding-top:.45cqw}
 
-.skins{display:grid; grid-template-columns:repeat(4,1fr); gap:.6cqw}
+.skins{display:grid; grid-template-columns:repeat(3,1fr); gap:.6cqw}
 .skin{--c:.7cqw; --b:.28cqw; display:flex; flex-direction:column; align-items:center; padding:.35cqw .3cqw .45cqw; --fa:#6a5040; --fb:#4a3528; --fc:#2a1c15}
 .skin canvas{width:100%; height:6cqw; display:block}
 .skin span{font-size:.95cqw; color:var(--ink); white-space:nowrap}

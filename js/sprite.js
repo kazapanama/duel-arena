@@ -17,6 +17,9 @@ function modelLUT(m){
   m._cols=cols;
   m._lut=new Int32Array(32768).fill(-1);
   m._outline=hexToRgb(m.pal.outline);
+  // растрові деталі мають плавні переходи: щокадру з'являються нові відтінки й лінива таблиця весь час добудовується
+  // (перебір ~120 кольорів на піксель, ~15 мс на бійця) — тож для них рахуємо всю таблицю одразу (~20 мс раз на модель)
+  if(m._cutPal){ const lut=m._lut; for(let k=0;k<32768;k++) lut[k]=nearestCol(m,((k>>10)<<3)|4,(((k>>5)&31)<<3)|4,((k&31)<<3)|4); }
   return m._lut;
 }
 function nearestCol(m,r,g,b){
@@ -31,10 +34,16 @@ function nearestCol(m,r,g,b){
   return (c[0]<<16)|(c[1]<<8)|c[2];
 }
 
+/* Бійці з растрових деталей мають удвічі дрібніший арт-піксель (≈160 замість 80 по висоті): якщо задано
+   SPR_HD.ctx — шар у k разів більшої роздільності за поточну ціль, — такий спрайт малюється туди
+   (бій: шар 1280×720 між світом і ефектами, game.js; вітрини меню: PixelView.hd, ui.js) */
+const SPR_HD={ctx:null,k:2};
 /* obj: {model, pose, facing, x, y, flash, outline:[r,g,b]?, alpha, time}
    Малює в поточний ctx з його трансформацією (світ → пікселі цілі). */
 function drawSprite(obj,out){
-  const T=ctx.getTransform();
+  const hd=SPR_HD.ctx&&obj.model&&typeof cutoutKey==='function'&&cutoutKey(obj.model);
+  const dst=hd?SPR_HD.ctx:ctx;
+  const T=hd?new DOMMatrix().scale(SPR_HD.k).multiply(ctx.getTransform()):ctx.getTransform();
   const s=Math.hypot(T.a,T.b);               // пікселів цілі на світову одиницю
   const B=SPR_BOUNDS;
   const w=Math.ceil((B.R-B.L)*s)+4, h=Math.ceil((B.B-B.T)*s)+4;
@@ -54,24 +63,26 @@ function drawSprite(obj,out){
   // корінь моделі → ціле піксельне положення
   const p=T.transformPoint(new DOMPoint(obj.x,obj.y));
   const X=Math.round(p.x)-ox, Y=Math.round(p.y)-oy;
-  ctx.save();
-  ctx.setTransform(1,0,0,1,0,0);
-  ctx.imageSmoothingEnabled=false;
-  ctx.globalAlpha=obj.alpha??1;
-  ctx.drawImage(cv,X,Y);
+  const g=dst;
+  g.save();
+  g.setTransform(1,0,0,1,0,0);
+  g.imageSmoothingEnabled=false;
+  g.globalAlpha=obj.alpha??1;
+  g.drawImage(cv,X,Y);
   // світіння — адитивно поверх спрайта
-  ctx.globalCompositeOperation='lighter';
+  g.globalCompositeOperation='lighter';
   const la=obj.fade??obj.pose.fade;
   for(const L of lights){
     const r=Math.max(2,L.r), gx=X+L.x, gy=Y+L.y;
     if(!isFinite(r+gx+gy)) continue;
-    const gr=ctx.createRadialGradient(gx,gy,0,gx,gy,r);
+    const gr=g.createRadialGradient(gx,gy,0,gx,gy,r);
     gr.addColorStop(0,L.col); gr.addColorStop(1,'rgba(0,0,0,0)');
-    ctx.globalAlpha=0.4*L.a*la*(obj.alpha??1); // м'якше світіння — спрайт лишається чітким
-    ctx.fillStyle=gr; ctx.fillRect(gx-r,gy-r,r*2,r*2);
+    g.globalAlpha=0.4*L.a*la*(obj.alpha??1); // м'якше світіння — спрайт лишається чітким
+    g.fillStyle=gr; g.fillRect(gx-r,gy-r,r*2,r*2);
   }
-  ctx.restore();
-  if(out){ out.X=X; out.Y=Y; out.ox=ox; out.oy=oy; out.s=s; }
+  g.restore();
+  // out — у координатах поточного ctx (для HD-спрайта перераховуємо назад)
+  if(out){ const k=hd?SPR_HD.k:1; out.X=X/k; out.Y=Y/k; out.ox=ox/k; out.oy=oy/k; out.s=s/k; }
 }
 
 function pixelate(c,w,h,obj){
@@ -109,3 +120,8 @@ function pixelate(c,w,h,obj){
 const LOW={cv:document.createElement('canvas')};
 LOW.cv.width=Math.ceil(W/PIX); LOW.cv.height=Math.ceil(H/PIX);
 LOW.ctx=LOW.cv.getContext('2d');
+// бій: бійці з растрових деталей — у шарі повної роздільності, ефекти після них — у ще одному низькому шарі поверх (game.js)
+const HDL={cv:document.createElement('canvas')};
+HDL.cv.width=W; HDL.cv.height=H; HDL.ctx=HDL.cv.getContext('2d');
+const POST={cv:document.createElement('canvas')};
+POST.cv.width=LOW.cv.width; POST.cv.height=LOW.cv.height; POST.ctx=POST.cv.getContext('2d');
