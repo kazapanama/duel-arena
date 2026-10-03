@@ -5,7 +5,7 @@
    UI.key(code) і UI.pad(button) — точки входу з input.js.
    ============================================================ */
 const $=id=>document.getElementById(id);
-const screens={title:$('title'),settings:$('settings'),controls:$('controls'),netLobby:$('netLobby'),select:$('select'),versus:$('versus'),pauseMenu:$('pauseMenu'),overlay:$('overlay')};
+const screens={arenaSel:$('arenaSel'),title:$('title'),settings:$('settings'),controls:$('controls'),netLobby:$('netLobby'),select:$('select'),versus:$('versus'),pauseMenu:$('pauseMenu'),overlay:$('overlay')};
 const randomOf=arr=>arr[Math.floor(Math.random()*arr.length)];
 // картинка, якої нема (набір іконок не в репозиторії), просто ховається — не лишає «битої» рамки
 addEventListener('error',e=>{ if(e.target instanceof HTMLImageElement) e.target.classList.add('broken'); },true);
@@ -228,7 +228,7 @@ function makeSide(side,ci,si,ki){
   const cls=CLASSES[ci], spec=cls.specs[si], skin=spec.skins[ki];
   const f=new Fighter(cls,spec,side,skin);
   f.preview=true; f.facing=side===0?1:-1; f.x=0; f.y=0;
-  return {ci,si,ki,locked:false,f,nextT:2.5+Math.random()};
+  return {ci,si,ki,locked:false,stage:'spec',f,nextT:2.5+Math.random()};   // stage: 'spec' — клас і спек, 'skin' — вигляд
 }
 function pickDefaults(side){
   const p=state.picks[side];
@@ -263,17 +263,17 @@ function buildSelectDom(){
 }
 function curSide(){ return SEL.sides[SEL.side]; }
 function rebuildFighter(side){
-  const s=SEL.sides[side]; const n=makeSide(side,s.ci,s.si,s.ki); n.locked=s.locked; SEL.sides[side]=n;
+  const s=SEL.sides[side]; const n=makeSide(side,s.ci,s.si,s.ki); n.locked=s.locked; n.stage=s.stage; SEL.sides[side]=n;
   n.f.shiftT=0.35; // спалах при зміні
   const fx=SEL.fx[side]; fx.flash=Math.max(fx.flash,.7); fxBurst(fx,62,168,CLASSES[n.ci].color,18,1);
 }
 function selSetClass(ci){
-  const s=curSide(); if(s.locked||s.ci===ci) return;
+  const s=curSide(); if(s.locked||s.stage!=='spec'||s.ci===ci) return;
   s.ci=ci; s.si=0; const cls=CLASSES[ci]; s.ki=cls.specs[0].skins.indexOf(preferredSkin(cls,cls.specs[0]));
   rebuildFighter(SEL.side); sfx('tick'); renderSelect();
 }
 function selSetSpec(si){
-  const s=curSide(); if(s.locked) return; const cls=CLASSES[s.ci];
+  const s=curSide(); if(s.locked||s.stage!=='spec') return; const cls=CLASSES[s.ci];
   si=(si+3)%3; if(si===s.si) return;
   s.si=si; s.ki=cls.specs[si].skins.indexOf(preferredSkin(cls,cls.specs[si]));
   rebuildFighter(SEL.side); sfx('tick'); renderSelect();
@@ -285,6 +285,7 @@ function selSetSkin(ki){
 }
 function selMoveClass(dx,dy){
   const s=curSide(); if(s.locked) return;
+  if(s.stage==='skin'){ if(dx) selSetSkin(s.ki+dx); return; }   // на кроці вигляду стрілки гортають скіни
   let c=s.ci%5, r=Math.floor(s.ci/5);
   c=(c+dx+5)%5; r=(r+dy+2)%2; selSetClass(r*5+c);
 }
@@ -305,15 +306,17 @@ function lockSide(side){
 }
 function selLock(){
   const s=curSide(); if(s.locked) return;
+  if(s.stage==='spec'){ s.stage='skin'; sfx('ok'); renderSelect(); return; }   // клас і спек обрано — далі вигляд
   const spec=CLASSES[s.ci].specs[s.si];
   rememberSkin(CLASSES[s.ci],spec,spec.skins[s.ki]);
   lockSide(SEL.side);
   if(NET.on){ renderSelect(); netCheckVersus(); return; }
   if(SEL.side===0){ SEL.side=1; }
-  else { setTimeout(openVersus,650); }
+  else { setTimeout(openArenaSel,650); }
   renderSelect();
 }
 function selBack(){
+  { const s=curSide(); if(!s.locked&&s.stage==='skin'){ s.stage='spec'; sfx('tick'); renderSelect(); return; } }   // з вигляду — назад до спеку
   if(NET.on){ // у мережі «назад» знімає свою фіксацію, а без неї — вихід із мережевої гри
     const s=curSide();
     if(NET.vsPending) return;               // обидва вже готові — летимо на VS
@@ -321,7 +324,7 @@ function selBack(){
     else { netLeave(); show('title'); }
     return;
   }
-  if(SEL.side===1&&!SEL.sides[1].locked){ SEL.side=0; SEL.sides[0].locked=false; SEL.sides[0].f.anim.stop(); renderSelect(); }
+  if(SEL.side===1&&!SEL.sides[1].locked){ SEL.side=0; SEL.sides[0].locked=false; SEL.sides[0].stage='skin'; SEL.sides[0].f.anim.stop(); renderSelect(); }
   else if(SEL.side===0){ show('title'); }
 }
 function renderSelect(){
@@ -329,7 +332,10 @@ function renderSelect(){
   $('selTagL').textContent=NET.on?(NET.side===0?'Ти':'Суперник'):'Гравець 1';
   $('selTagR').textContent=ai?`Бот, ${DIFF_NAMES[state.aiSkill].toLowerCase()}`:(NET.on?(NET.side===1?'Ти':'Суперник'):'Гравець 2');
   $('selTagL').classList.toggle('active',SEL.side===0); $('selTagR').classList.toggle('active',SEL.side===1);
-  $('selTitle').textContent=NET.on?(curSide().locked?'Чекаємо суперника…':'Обери бійця'):(SEL.side===0?'Обери бійця':(ai?'Обери суперника':'Гравець 2 обирає'));
+  const stg=curSide().stage;
+  $('selTitle').textContent=NET.on?(curSide().locked?(SEL.sides[0].locked&&SEL.sides[1].locked?'Хост обирає арену…':'Чекаємо суперника…'):(stg==='skin'?'Обери вигляд':'Обери бійця'))
+    :(stg==='skin'?(SEL.side===0||!ai?'Обери вигляд':'Вигляд суперника'):(SEL.side===0?'Обери бійця':(ai?'Обери суперника':'Гравець 2 обирає')));
+  document.querySelector('.sel-center').classList.toggle('stage-skin',stg==='skin');
   // вітрини
   SEL.shows.forEach((sh,side)=>{
     const s=SEL.sides[side], cls=CLASSES[s.ci], spec=cls.specs[s.si], skin=spec.skins[s.ki];
@@ -383,15 +389,15 @@ function renderSelect(){
   }
   // скіни
   const ss=$('skinStrip'); ss.innerHTML=''; SEL.thumbs=[];
-  spec.skins.forEach((sk,ki)=>{
+  if(stg==='skin') spec.skins.forEach((sk,ki)=>{   // великі картки скінів — лише на кроці вигляду
     const b=document.createElement('button'); b.className='pf skin'+(ki===s.ki?' on':'');
-    b.innerHTML=`<canvas></canvas><span>${sk.tier}</span>`; b.title=sk.name;
-    b.addEventListener('click',()=>selSetSkin(ki));
+    b.innerHTML=`<canvas></canvas><span><b>${sk.tier}</b> ${sk.name}</span>`; b.title=sk.name;
+    b.addEventListener('click',()=>{ if(s.ki===ki) selLock(); else selSetSkin(ki); });   // повторний тап — підтвердити
     ss.appendChild(b);
     const f=new Fighter(cls,spec,SEL.side,sk); f.preview=true; f.facing=1; f.x=0; f.y=0;
-    SEL.thumbs.push({view:new PixelView(b.querySelector('canvas'),44,52),f});
+    SEL.thumbs.push({view:new PixelView(b.querySelector('canvas'),72,112),f,w:72,h:112,k:0.8});
   });
-  $('selLock').textContent=SEL.side===1&&state.mode==='ai'?'У бій':'Готово';
+  $('selLock').textContent=stg==='spec'?'Далі':'Готово';
   if(NET.on) netSendSel();   // суперник бачить мій вибір наживо (дублікати не шлються)
 }
 function frameSelect(dt){
@@ -414,11 +420,45 @@ function frameSelect(dt){
   });
   for(const th of SEL.thumbs){
     th.f.anim.update(dt,{mode:'idle',speed:0,vy:0});
-    const g=th.view.g; g.setTransform(1,0,0,1,0,0); g.clearRect(0,0,44,52);
-    renderFighterTo(th.view,th.f,0.38,22,50,SEL.t);
-    th.view.present();
+    const g=th.view.g; g.setTransform(1,0,0,1,0,0); g.clearRect(0,0,th.w,th.h);
+    renderFighterTo(th.view,th.f,th.k,th.w/2,th.h-3,SEL.t);
+    th.view.present('center');
   }
 }
+
+/* ============================================================
+   ВИБІР АРЕНИ: після обох бійців (у мережі — обирає хост); перша плитка — випадкова
+   ============================================================ */
+const AS={i:0};
+function openArenaSel(){
+  const g=$('arenaGrid'); g.innerHTML='';
+  const items=[{name:'Випадкова',rnd:true},...THEMES];
+  items.forEach((th,i)=>{
+    const b=document.createElement('button'); b.className='pf atile'+(th.rnd?' rnd':'');
+    b.innerHTML=(th.rnd?'<b class="q">?</b>':`<img src="${th.thumb||th.img||''}" alt="" loading="lazy">`)+`<span>${th.name}</span>`;
+    b.addEventListener('click',()=>{ if(AS.i===i) arenaGo(); else { AS.i=i; renderArenaSel(); sfx('tick'); } });
+    g.appendChild(b);
+  });
+  if(AS.i>=items.length) AS.i=0;
+  show('arenaSel'); renderArenaSel();
+}
+function renderArenaSel(){
+  [...$('arenaGrid').children].forEach((t,i)=>t.classList.toggle('on',i===AS.i));
+  $('arenaName').textContent=AS.i?THEMES[AS.i-1].name:'Випадкова арена';
+  const t=$('arenaGrid').children[AS.i]; if(t&&t.scrollIntoView) t.scrollIntoView({block:'nearest'});
+}
+function arenaMove(d){ const n=THEMES.length+1; AS.i=(AS.i+d+n)%n; renderArenaSel(); sfx('tick'); }
+function arenaGo(){
+  state.arena=AS.i?THEMES[AS.i-1]:null; sfx('lock');
+  if(NET.on){ netAnnounceVersus(); return; }
+  openVersus();
+}
+function arenaBack(){
+  const side=NET.on?NET.side:1; SEL.side=side;
+  const s=SEL.sides[side]; s.locked=false; s.stage='skin'; s.f.anim.stop(); show('select'); renderSelect();
+}
+$('arenaBack').addEventListener('click',arenaBack);
+$('arenaGo').addEventListener('click',arenaGo);
 
 /* ============================================================
    VS — двоє бійців навпроти, вибух «VS», потім бій
@@ -518,6 +558,15 @@ UI.key=function(code){
   if(!cur) return false;
   if(cur==='title'&&!UI.awake){ wake(); return true; }
   if(cur==='versus'){ if(K_OK.includes(code)||code==='Escape') startFight(); return true; }
+  if(cur==='arenaSel'){
+    const t0=$('arenaGrid').children[0], cols=t0?Math.max(1,Math.round($('arenaGrid').clientWidth/t0.offsetWidth)):1;
+    if(K_L.includes(code)) arenaMove(-1); else if(K_R.includes(code)) arenaMove(1);
+    else if(K_UP.includes(code)) arenaMove(-cols); else if(K_DN.includes(code)) arenaMove(cols);
+    else if(code==='KeyR'){ AS.i=1+Math.floor(Math.random()*THEMES.length); renderArenaSel(); }
+    else if(K_OK.includes(code)) arenaGo();
+    else if(code==='Escape'||code==='Backspace') arenaBack();
+    return true;
+  }
   if(cur==='select'){
     if(K_L.includes(code)) selMoveClass(-1,0); else if(K_R.includes(code)) selMoveClass(1,0);
     else if(K_UP.includes(code)) selMoveClass(0,-1); else if(K_DN.includes(code)) selMoveClass(0,1);

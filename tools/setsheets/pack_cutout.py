@@ -16,6 +16,7 @@ WEAPON_AXIS = {'staff': (44, -62), 'spear': (44, -72), 'axe2h': (18, -66), 'hamm
                'axe1h': (8, -36), 'sword1h': (9, -39), 'mace1h': (8, -35), 'hammer1h': (8, -35), 'dagger': (6, -23)}
 
 R = lambda v: round(float(v), 1)
+BLADES = {'dagger', 'sword1h', 'sword2h', 'bfdagger'}
 
 def _load(src, name):
     im = Image.open(os.path.join(src, name + '.png')).convert('RGBA')
@@ -56,6 +57,12 @@ def weapon_def(src, part, t):
         return {'t': t, 'pommel': [R(a[0]), R(a[1])], 'head': [R(b[0]), R(b[1])], 'to': [[-3, 34], [-3, -34]]}, 68 / np.linalg.norm(b - a)
     if t == 'pistol':
         return {'t': t, 'pommel': [R(a[0]), R(a[1])], 'head': [R(b[0]), R(b[1])], 'to': [[-1, 6], [17, -4]]}, 19.5 / np.linalg.norm(b - a)
+    if t in BLADES:
+        # генератор малює клинки і руків'ям донизу, і вістрям донизу: лезо — світліший метал, руків'я — темніше
+        _, rgb = _load(src, part); ys, xs = np.nonzero(m); pts = np.stack([xs, ys], 1).astype(float)
+        d = (b - a) / np.linalg.norm(b - a); tt = (pts - a) @ d; L = tt.max()
+        lum = rgb[ys, xs].mean(1) + (rgb[ys, xs].max(1) - rgb[ys, xs].min(1)) * 0.3
+        if lum[tt < 0.3 * L].mean() > lum[tt > 0.7 * L].mean(): a, b = b, a   # світліший кінець — вістря
     p0, p1 = WEAPON_AXIS.get(t, (12, -40))
     return {'t': t, 'pommel': [R(a[0]), R(a[1])], 'head': [R(b[0]), R(b[1])], 'to': [[0, p0], [0, p1]]}, (p0 - p1) / np.linalg.norm(b - a)
 
@@ -184,7 +191,17 @@ def tweak(D, K, src, kind):
         m, _ = _load(src, 'shoulder'); xs = np.nonzero(m.any(0))[0]; w = xs[-1] - xs[0]
         D['shoulder']['near'], D['shoulder']['far'] = round(t['shoulder'][0] / w, 4), round(t['shoulder'][1] / w, 4); K['shoulder'] = t['shoulder'][0] / w
 
+def pack_whole(name, height=118):
+    """Мункін і дерево — цільний спрайт повної фігури з аркуша: на гуманоїдному ригу з окремих деталей вони
+    збираються «стовпчиком» (тулуб, черево й ноги налазять одне на одне). Кріплення — за ступнями."""
+    src = os.path.join(ROOT, 'img', 'cutout', name)
+    m, _ = _load(src, 'full'); ys, xs = np.nonzero(m); y1 = ys.max(); h = y1 - ys.min()
+    foot = np.nonzero(m[int(y1 - 0.06 * h):int(y1) + 1].any(0))[0]
+    D = {'whole': {'feet': [R((foot.min() + foot.max()) / 2), R(y1)], 'k': round(height / h, 4)}}
+    return _write(name, src, ['full'], D, {'full': height / h})
+
 def pack(name, weapons=(None, None), kind=None):
+    if kind in ('moonkin', 'tree', 'whole'): return pack_whole(name)
     src = os.path.join(ROOT, 'img', 'cutout', name)
     parts = sorted(f[:-4] for f in os.listdir(src) if f.endswith('.png') and f[:-4] != 'full')
     if not weapons[0]: parts = [p for p in parts if p not in ('weapon', 'weapon2')]

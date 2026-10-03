@@ -457,3 +457,55 @@ body.touch .sel-keys,body.touch .nav-hint,body.touch .foot-hint{visibility:hidde
   *,*::before,*::after{animation:none !important; transition:none !important}
   .showcase.locked .sc-stamp{opacity:1; transform:translate(-50%,-50%) rotate(-10deg)}
 }
+
+/* ---------- головне меню поверх ключового арту: темна підкладка під пункти, більший шрифт ---------- */
+#title .mainmenu{isolation:isolate}
+#title .mainmenu::before{content:''; position:absolute; inset:-4cqw -9cqw -3cqw -4.5cqw; z-index:-1; pointer-events:none;
+  background:radial-gradient(ellipse 70% 65% at 30% 55%,rgba(8,4,6,.78),rgba(8,4,6,.45) 55%,transparent 80%)}
+#title .mi{font-size:2.9cqw}
+/* телефони й планшети: меню крупніше, щоб пальцем влучати */
+@media (hover:none) and (pointer:coarse){
+  .mi{font-size:3.6cqw; padding:.45cqw .6cqw .45cqw 4cqw}
+  #title .mi{font-size:4.2cqw}
+  .mainmenu{gap:.9cqw}
+  .mi.small{font-size:2.6cqw; padding-left:3cqw}
+  .mi.focus::before{width:2.4cqw; height:3cqw}
+  #title .mainmenu{left:3.5cqw; bottom:4cqw}
+  .screen-title{font-size:5cqw}
+  .logo{transform:scale(.82); transform-origin:50% 0}
+  .press{font-size:2.8cqw}
+  .nav-hint{display:none}
+}
+/* колонка вибору: ростер, спеки, скіни й кнопки не стискаються (WebKit на iPad стискав сітку ростера, і плитки з
+   aspect-ratio наїжджали на спеки) — місце, якщо його бракує, віддає список здібностей (прокручується) */
+.sel-center>.roster,.sel-center>.specs,.sel-center>.skins,.sel-center>.sel-actions{flex:none}
+.sel-center>.roster{grid-auto-rows:min-content}
+.sel-center>.abil{flex:1 1 auto; min-height:0; overflow-y:auto}
+/* Safari на iPad рахує висоту рядка сітки ростера не так, як висоту плиток з aspect-ratio, і плитки вилазять
+   на вкладки спеків — тому висота рядків і плиток задана явно (≈ ширина плитки), без aspect-ratio */
+.sel-center>.roster{grid-auto-rows:8.1cqw}
+.sel-center>.roster>.rtile{aspect-ratio:auto; height:8.1cqw; min-height:0}
+
+/* ---------- вибір: крок 1 — клас і спек, крок 2 — вигляд (великі картки скінів) ---------- */
+.sel-center:not(.stage-skin)>.skins{display:none}
+.sel-center.stage-skin>.roster,.sel-center.stage-skin>.specs,.sel-center.stage-skin>.abil{display:none}
+.sel-center.stage-skin>.skins{flex:1 1 auto; min-height:0; gap:1cqw}
+.stage-skin .skin{justify-content:flex-end; padding:.8cqw .6cqw 1cqw; gap:.6cqw; min-height:0}
+.stage-skin .skin canvas{flex:1 1 auto; height:auto; min-height:0; width:100%; object-fit:contain}
+.stage-skin .skin span{white-space:normal; text-align:center; font-size:1.25cqw; line-height:1.15; color:var(--parch)}
+.stage-skin .skin span b{display:block; font:400 1.5cqw var(--display); color:var(--gold)}
+.stage-skin .skin.on span{color:var(--goldL)}
+
+/* ---------- вибір арени ---------- */
+#arenaSel{justify-content:flex-start; gap:1.2cqw; padding:2cqw 3cqw 1.6cqw; background:rgba(12,7,9,.92)}
+.arena-grid{flex:1 1 auto; min-height:0; width:100%; overflow-y:auto; display:grid; grid-template-columns:repeat(6,1fr); gap:.9cqw; align-content:start; padding:.5cqw}
+.atile{--c:.6cqw; --b:.28cqw; --fa:#6a5040; --fb:#4a3528; --fc:#2a1c15; position:relative; padding:.35cqw; height:7.3cqw; overflow:hidden; transition:transform .12s}
+.atile img{display:block; width:100%; height:100%; object-fit:cover; filter:saturate(.7) brightness(.75); transition:filter .12s}
+.atile span{position:absolute; left:.35cqw; right:.35cqw; bottom:.35cqw; padding:.2cqw .4cqw; font-size:1cqw; color:var(--parch); background:linear-gradient(transparent,rgba(0,0,0,.85)); text-align:left; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.atile .q{display:flex; align-items:center; justify-content:center; width:100%; height:100%; font:400 4.5cqw var(--display); color:var(--gold); background:radial-gradient(circle,#3a2a18,#120c08)}
+.atile:hover,.atile.on{transform:translateY(-.25cqw)}
+.atile:hover img,.atile.on img{filter:none}
+.atile.on{--fa:var(--goldL); --fb:var(--gold); --fc:var(--goldD); z-index:2}
+#arenaSel .sel-actions{width:100%; justify-content:center; align-items:center; gap:2cqw}
+.arena-name{font:400 1.8cqw var(--display); color:var(--goldL); min-width:24cqw; text-align:center}
+@media (hover:none) and (pointer:coarse){ .atile span{font-size:1.3cqw} }

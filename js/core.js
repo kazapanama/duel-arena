@@ -10,7 +10,24 @@ let ctx=cv.getContext('2d'); // let — інтерфейс тимчасово п
 /* Полотно рендериться в роздільності ЕКРАНА (не 1280×720, розтягнуте браузером з розмиттям).
    Логіка й HUD лишаються в координатах 1280×720 — базова трансформація VIEW_K. */
 let VIEW_K=1;
+// розмір кадру 16:9 рахуємо самі за видимою областю: після перемикання застосунків мобільний браузер
+// показує/ховає панелі, а 100%/100dvh у CSS лишаються старими — кадр вилазить за екран (iPad, iOS)
+const WRAP=document.getElementById('wrap');
+let wrapKey='';
+function fitWrap(){
+  const vv=window.visualViewport, w=Math.round(vv?vv.width:innerWidth), h=Math.round(vv?vv.height:innerHeight);
+  const key=w+'x'+h; if(!WRAP||key===wrapKey||!w||!h) return;   // галерея — без кадру гри
+  wrapKey=key;
+  document.body.style.height=h+'px';
+  const ww=Math.floor(Math.min(w,h*16/9));
+  WRAP.style.width=ww+'px'; WRAP.style.height=Math.floor(ww*9/16)+'px';
+  if(window.scrollY) window.scrollTo(0,0);
+}
+for(const ev of ['resize','orientationchange','pageshow','focus']) window.addEventListener(ev,()=>{ wrapKey=''; fitWrap(); });
+if(window.visualViewport) visualViewport.addEventListener('resize',()=>{ wrapKey=''; fitWrap(); });
+document.addEventListener('visibilitychange',()=>{ if(!document.hidden) for(const t of [0,250,700]) setTimeout(()=>{ wrapKey=''; fitWrap(); },t); });
 function fitCanvas(){
+  fitWrap();
   const r=cv.getBoundingClientRect(); if(!r.width) return;
   const pw=Math.max(640,Math.round(r.width*Math.min(2,window.devicePixelRatio||1))); // DPR ≤ 2: телефонам із DPR 3 вистачає й так
   if(cv.width!==pw){ cv.width=pw; cv.height=Math.round(pw*H/W); }
@@ -19,8 +36,9 @@ function fitCanvas(){
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const rnd=(a,b)=>a+Math.random()*(b-a);
 
-const THEMES=[
-  {kind:'shadow',name:'Тінисте плато'},     // піксельні шари — arena.js
+// арени: картинки (js/arenas_data.js, tools/arenas/arenas.py); якщо їх немає — процедурні піксельні шари arena.js
+const THEMES=(typeof ARENA_IMG!=='undefined'&&ARENA_IMG.length)?ARENA_IMG:[
+  {kind:'shadow',name:'Тінисте плато'},
   {kind:'durotar',name:'Дуротар'},
   {kind:'northrend',name:'Нордскол'},
 ];

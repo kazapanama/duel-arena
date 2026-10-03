@@ -162,6 +162,17 @@
     <div class="sel-keys" id="selKeys"></div>
   </section>
 
+  <!-- ВИБІР АРЕНИ (після вибору обох бійців) -->
+  <section id="arenaSel" class="screen hidden">
+    <h2 class="sel-title">Обери арену</h2>
+    <div class="arena-grid" id="arenaGrid"></div>
+    <div class="sel-actions">
+      <button class="mi small" id="arenaBack">Назад</button>
+      <span class="arena-name" id="arenaName"></span>
+      <button class="cta" id="arenaGo">У бій</button>
+    </div>
+  </section>
+
   <!-- ЕКРАН «VS» перед боєм -->
   <section id="versus" class="screen hidden">
     <div class="vs-half l"><span class="vs-who" id="vsWhoL"></span><canvas class="vs-cv" id="vsL"></canvas><div class="vs-name" id="vsNameL"></div></div>
@@ -209,6 +220,7 @@
 <div id="rotate"><div><b>⟳</b>Поверни телефон горизонтально</div></div>
 
 <!-- Порядок важливий: константи → звук → дані → ввід (+сенсор) → риг/моделі/спрайти → бійці → гра → інтерфейс → мережа → цикл -->
+<script src="js/arenas_data.js"></script>
 <script src="js/core.js"></script>
 <script src="js/audio.js"></script>
 <script src="js/data.js"></script>

@@ -1,0 +1,29 @@
+Make a pixel-art CHARACTER PARTS SHEET of a death knight's RISEN GHOUL for a 2D fighting game. The parts will be cut out automatically and attached to an animation skeleton, so the layout and the scale rules below matter more than anything else.
+
+ATTACHED IMAGES
+- Image 1 = LAYOUT AND SCALE TEMPLATE. This is the canvas to fill: keep its exact grid, magenta background, black grid lines and the same cells in the same places. The grey dashed shapes only show WHERE each part goes, HOW BIG it is and HOW it is oriented: replace every grey shape with the finished part and leave no grey lines.
+- Image 2 = the death knight's RISEN GHOUL from World of Warcraft: copy its anatomy, armor and colors faithfully.
+
+THE CREATURE
+a hunched, emaciated undead ghoul: grey-green rotting skin, long stringy pale hair, a huge jaw full of jagged fangs, glowing green eyes, rags and scraps of leather, exposed bones and stitches, very long arms ending in big claws. 3/4 view facing RIGHT, chest turned toward the viewer, like a classic 16-bit fighting-game sprite; every part in this same view.
+
+CELLS (never move, merge or skip them)
+   row 1: [tall left cell, rows 1-2] FULL CREATURE | HEAD | TORSO | LOWER BODY
+   row 2: SHOULDER | ARM | LEG
+   row 3: [left] PALETTE | MAIN WEAPON | SECOND WEAPON | CAPE
+- FULL CREATURE: standing in a combat stance, feet near the bottom of the cell. Only a reference for proportions.
+- HEAD only (with its hair, horns or mohawk), 3/4 view facing right.
+- TORSO only: chest and belt, no head, no arms and no shoulder pads.
+- LOWER BODY only: a torn loincloth of rags, seen from the front, hanging from the belt.
+- SHOULDER: a bony shoulder with a scrap of torn leather, outer side.
+- ARM: ONE arm, perfectly STRAIGHT and VERTICAL: shoulder at the top, elbow in the middle (at the grey tick), a big clawed hand with long talons at the bottom.
+- LEG: ONE leg, perfectly STRAIGHT and VERTICAL: hip at the top, knee in the middle (at the grey tick), a bare clawed foot at the bottom pointing RIGHT.
+- Leave both weapon cells empty magenta: the ghoul fights with its claws.
+- Leave the CAPE cell empty magenta. Palette cell: one row of flat square color swatches.
+
+THE MOST IMPORTANT RULES
+1. ONE SCALE FOR EVERYTHING. Every separate part must be exactly the same size as that part on the full creature in the large cell; match the grey shapes of Image 1. Do NOT enlarge parts to fill their cells; empty magenta space around a part is correct.
+2. BIG CHUNKY PIXELS. In the game the creature is about 100 art-pixels tall, so every art-pixel is a square block of about 6x6 image pixels: bold readable shapes, clean cel shading with 3-4 tones per color, a 1-art-pixel dark outline around every part; no noise, no fine filigree.
+3. CLEAN SEPARATE PARTS. Each part is complete on its own with its own outline and nothing from the other parts.
+4. Flat pure magenta #FF00FF background everywhere outside the parts: no gradient, no shadow, no glow spilling onto the magenta. Keep the black grid lines of Image 1.
+5. NO text, letters, numbers or labels anywhere. Landscape 3:2 image.

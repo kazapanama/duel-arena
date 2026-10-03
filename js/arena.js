@@ -109,9 +109,47 @@ function bgBuild(kind){
   return L;
 }
 
+/* ---------- арени-картинки ---------- */
+const PROC_KINDS=new Set(['shadow','durotar','northrend']);
+function arenaImg(th){
+  if(!th||!th.img) return null;
+  if(!th._im){ th._im=new Image(); th._im.src=th.img; }
+  return th._im.complete&&th._im.naturalWidth?th._im:null;
+}
+// картинка — частина світу: рухається й масштабується разом із камерою, як земля під бійцями
+// (інакше при наближенні камери бійці «ростуть» і «їздять» відносно нерухомого фону). Ширина — трохи більша
+// за арену (WORLD_W), лінія землі картинки (th.ground — частка висоти) — на рівні GROUND.
+const ARENA_BW=WORLD_W+100;
+function drawArenaImage(game,g){
+  const im=arenaImg(game.theme); if(!im) return null;
+  const cam=game.cam, k=cam.scale;
+  const shx=game._shx||0, shy=game._shy||0;
+  const bh=ARENA_BW*im.naturalHeight/im.naturalWidth;
+  const x=cam.offX+shx+(WORLD_W/2-ARENA_BW/2)*k, y=cam.offY+shy+(GROUND-game.theme.ground*bh)*k;
+  const dw=ARENA_BW*k, dh=bh*k;
+  g.save(); g.setTransform(VIEW_K,0,0,VIEW_K,0,0); g.imageSmoothingEnabled=true; g.imageSmoothingQuality='high';   // базова трансформація: полотно на HiDPI-екранах більше за 1280×720
+  g.fillStyle='#000'; g.fillRect(0,0,W,H);   // на випадок, якщо картинка не накриє край
+  g.drawImage(im,x,y,dw,dh);
+  g.restore();
+  return im;
+}
+// анімація поверх картинки (у LOW): сніг, жарини
+function drawArenaFx(game){
+  const th=game.theme, t=game.time, g=ctx;
+  if(!th.snow&&!th.ember) return;
+  if(!th._fx){ const r=bgRng(th.kind.length*31); th._fx=[]; for(let i=0;i<70;i++) th._fx.push([r()*640,r()*360,0.4+r()*0.8,r()*7]); }
+  g.save(); g.setTransform(1,0,0,1,0,0);
+  for(const s of th._fx){
+    if(th.snow){ const y=(s[1]+t*22*s[2])%360, x=(s[0]+Math.sin(t*0.8+s[3])*10+640)%640; g.fillStyle='#ffffff'; g.globalAlpha=0.45+s[2]*0.4; g.fillRect(x|0,y|0,s[2]>0.9?2:1,1); }
+    else { const y=360-((s[1]+t*18*s[2])%360), x=(s[0]+Math.sin(t*1.3+s[3])*8+640)%640; g.fillStyle=s[2]>0.8?'#ffd24a':'#ff6a1a'; g.globalAlpha=0.35+s[2]*0.5; g.fillRect(x|0,y|0,1,1); }
+  }
+  g.restore();
+}
+
 /* ---------- щокадрове малювання ---------- */
 function drawArenaBG(game,shx,shy){
-  const th=game.theme, kind=th.kind;
+  if(game._bgImg) return drawArenaFx(game);
+  const th=game.theme, kind=PROC_KINDS.has(th.kind)?th.kind:'shadow';   // поки картинка вантажиться — процедурний фон
   const L=BG[kind]||(BG[kind]=bgBuild(kind));
   const g=ctx, t=game.time, cam=game.cam;
   g.save(); g.setTransform(1,0,0,1,0,0); g.imageSmoothingEnabled=false;

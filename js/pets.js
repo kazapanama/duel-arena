@@ -31,6 +31,8 @@ const PET_LOOK={
     stance:{lean:0.18,py:6}}},
 };
 
+// растрові деталі петів (tools/setsheets/pet_jobs.py → img/cutout/pet_*.js, js/cutout.js); поки вантажаться — процедурна модель
+const PET_CUTOUT={wolf:'pet_wolf',spiritwolf:'pet_spiritwolf',ghoul:'pet_ghoul',felguard:'pet_felguard',infernal:'pet_infernal'};
 CLASS_LOOK.pet={armor:'cloth',helm:{t:'none'},sh:null,lower:'pants',hair:'#2a2420'};   // база для petModel
 const PET_MODEL={};
 function petModel(kind){
@@ -44,10 +46,10 @@ function petModel(kind){
       leaf:'#6ab04a', leafD:'#3a6a2a', stripe:hexShade(fur,-0.5)};
     pal.outline=hexMix(hexShade(fur,-0.8),'#0a0608',0.6);
     m={kind:'cat',style:'cat',pal,look:L,castCol:acc,castSide:'f',glowEye:true,
-      fxKind:kind==='spiritwolf'?{cols:['#bfe6ff','#ffffff'],vy:-30,g:-20,rate:6}:null,name:kind,key:'pet/'+kind};
+      fxKind:kind==='spiritwolf'?{cols:['#bfe6ff','#ffffff'],vy:-30,g:-20,rate:6}:null,name:kind,key:'pet/'+kind,cutout:PET_CUTOUT[kind]||null};
   } else {
     const D=PET_LOOK[kind];
-    const cls={id:'pet',color:D.L.acc}, spec={name:kind}, skin={name:'#pet-'+kind,tier:1,body:D.L.prim,trim:D.L.trim,head:D.L.skin,eyes:D.L.acc};
+    const cls={id:'pet',color:D.L.acc}, spec={name:kind}, skin={name:'#pet-'+kind,tier:1,body:D.L.prim,trim:D.L.trim,head:D.L.skin,eyes:D.L.acc,cutout:PET_CUTOUT[kind]};
     SET_LOOK[skin.name]=D.L;
     m=resolveModel(cls,spec,skin);
     m.style=D.style; m.armor=D.armor;

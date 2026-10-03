@@ -168,7 +168,61 @@ function mbgBolt(){
   while(y<PT.floor-4){ x+=(Math.random()-0.5)*22; y+=4+Math.random()*8; x=clamp(x,PT.gateL+2,PT.gateR-2); pts.push([x,y]); }
   return {pts,t:0.12+Math.random()*0.12,branch:Math.random()<0.5};
 }
+// ключовий арт меню (tools/arenas/arenas.py → img/arenas/menu.webp); поки вантажиться — процедурний Темний Портал
+const MENU_ART=new Image(); MENU_ART.src='img/arenas/menu.webp';
+// вир порталу на арті — частки зображення (центр і розмір арки): поверх нього крутиться фел-вихор
+const ART_PORTAL={cx:0.669,cy:0.54,w:0.16,h:0.365};
+function drawMenuArt(dt){
+  MBG.t+=dt;
+  const t=MBG.t, surge=MBG.surge=Math.max(0,(MBG.surge||0)-dt*0.9);
+  const k=1.04+Math.sin(t*0.15)*0.015;                       // повільний «подих» камери
+  const dw=W*k, dh=dw*MENU_ART.naturalHeight/MENU_ART.naturalWidth;
+  const sh=surge>0.3?Math.round((Math.random()-0.5)*surge*10):0;
+  const ox=(W-dw)/2+sh+Math.sin(t*0.11)*6, oy=(H-dh)/2-Math.abs(sh)/2;
+  const px=ox+ART_PORTAL.cx*dw, py=oy+ART_PORTAL.cy*dh, pw=ART_PORTAL.w*dw, ph=ART_PORTAL.h*dh;
+  const c=ctx;
+  c.save(); c.setTransform(VIEW_K,0,0,VIEW_K,0,0); c.imageSmoothingEnabled=true; c.imageSmoothingQuality='high';
+  c.drawImage(MENU_ART,ox,oy,dw,dh);
+  c.globalCompositeOperation='lighter';
+  // фел-вихор: спіральні рукави часток, що обертаються й затягуються в центр
+  c.save(); c.beginPath(); c.rect(px-pw/2,py-ph/2,pw,ph); c.clip();
+  const greens=['#1a5a0a','#2a8a12','#4ac01e','#8aff4a','#d8ffa0'];
+  for(let i=0;i<220;i++){
+    const r=((i*0.618+t*0.25)%1);                            // радіус 0..1: частка повзе до центру
+    const rr=1-r, a=i*2.4+t*(1.2+rr*2.5)+rr*6;
+    const x=px+Math.cos(a)*rr*pw*0.62, y=py+Math.sin(a)*rr*ph*0.55;
+    c.globalAlpha=0.25+0.5*(1-rr); c.fillStyle=greens[Math.min(4,(r*5)|0)];
+    const s2=2+((i%3)===0?2:0); c.fillRect(x|0,y|0,s2,s2);
+  }
+  c.restore();
+  // пульс сяйва порталу
+  const pulse=0.55+Math.sin(t*2.2)*0.18+surge*0.6;
+  const gl=c.createRadialGradient(px,py,4,px,py,Math.max(pw,ph)*1.1);
+  gl.addColorStop(0,`rgba(150,255,80,${0.35*pulse})`); gl.addColorStop(0.5,`rgba(70,200,30,${0.16*pulse})`); gl.addColorStop(1,'rgba(0,0,0,0)');
+  c.globalAlpha=1; c.fillStyle=gl; c.fillRect(px-pw*1.6,py-ph*1.3,pw*3.2,ph*2.6);
+  // фел-блискавки по краях арки
+  MBG.boltT-=dt;
+  if(MBG.boltT<=0){ MBG.boltT=(0.12+Math.random()*0.4)*(1-surge*0.8);
+    const side=Math.random()<0.5?-1:1, y0=py-ph/2+Math.random()*ph, pts=[[px+side*pw*0.5,y0]];
+    let x=pts[0][0], y=y0; for(let j=0;j<6;j++){ x+=side*(6+Math.random()*16); y+=(Math.random()-0.6)*18; pts.push([x,y]); }
+    MBG.bolts.push({pts,t:0.12+Math.random()*0.1}); }
+  for(const bt of MBG.bolts){ bt.t-=dt;
+    c.strokeStyle='rgba(190,255,120,.85)'; c.lineWidth=3; c.beginPath(); bt.pts.forEach(([x,y],i)=>i?c.lineTo(x,y):c.moveTo(x,y)); c.stroke();
+    c.strokeStyle='#ffffff'; c.lineWidth=1.2; c.stroke(); }
+  MBG.bolts=MBG.bolts.filter(bt=>bt.t>0);
+  // зелені іскри зі сходів порталу і жарини з лави
+  if(MBG.motes.length<40&&Math.random()<0.7) MBG.motes.push({x:px+(Math.random()-0.5)*pw,y:py+ph*0.5,vy:-(20+Math.random()*40),life:2+Math.random()*2});
+  for(const m of MBG.motes){ m.y+=m.vy*dt; m.x+=Math.sin(t*3+m.y*0.05)*0.4; m.life-=dt; c.globalAlpha=Math.min(1,m.life); c.fillStyle='#9aff5a'; c.fillRect(m.x|0,m.y|0,2,2); }
+  MBG.motes=MBG.motes.filter(m=>m.life>0);
+  if(MBG.embers.length<90&&Math.random()<0.7) MBG.embers.push({x:Math.random()*W,y:H+4,vx:(Math.random()-0.3)*24,vy:-(40+Math.random()*70),life:4+Math.random()*4,s:Math.random()<0.25?3:2});
+  for(const e of MBG.embers){ e.x+=e.vx*dt+Math.sin(t*2+e.y*0.03)*0.3; e.y+=e.vy*dt; e.life-=dt;
+    c.fillStyle=e.life>2?'#ffb03a':'#b8401a'; c.globalAlpha=Math.min(1,e.life)*0.8; c.fillRect(e.x|0,e.y|0,e.s,e.s); }
+  c.globalAlpha=1; MBG.embers=MBG.embers.filter(e=>e.life>0&&e.y>-6);
+  if(surge>0){ c.fillStyle=`rgba(150,255,110,${surge*surge*0.45})`; c.fillRect(0,0,W,H); }
+  c.restore();
+}
 function drawMenuBG(dt){
+  if(MENU_ART.complete&&MENU_ART.naturalWidth) return drawMenuArt(dt);
   if(!MBG.stat) mbgBuildStatic();
   MBG.t+=dt;
   const surge=MBG.surge=Math.max(0,(MBG.surge||0)-dt*0.9); // «вибух» порталу при вході в меню

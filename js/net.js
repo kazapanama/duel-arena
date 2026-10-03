@@ -110,11 +110,15 @@ function netApplySel(m){
 // обидва готові → хост оголошує VS, і обидва пристрої показують його одночасно
 function netCheckVersus(){
   if(!NET.host||NET.vsPending||UI.cur!=='select'||!SEL.sides[0].locked||!SEL.sides[1].locked) return;
+  setTimeout(()=>{ if(NET.on&&UI.cur==='select'&&SEL.sides[0].locked&&SEL.sides[1].locked) openArenaSel(); },650);   // хост обирає арену
+}
+function netAnnounceVersus(){
+  if(!NET.host||NET.vsPending) return;
   NET.vsPending=true;
   const P=SEL.sides.map(s=>[s.ci,s.si,s.ki]);
   state.picks=P.map(netPick);
   NET.send({t:'vs',p:P});
-  setTimeout(()=>{ if(NET.on) openVersus(); },650);
+  openVersus();
 }
 
 /* ---------- гість: дзеркальна гра без власної симуляції ---------- */

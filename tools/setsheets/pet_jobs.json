@@ -1,0 +1,82 @@
+[
+ {
+  "id": "pet_wolf",
+  "kind": "cat",
+  "set": "pet_wolf",
+  "label": "PET",
+  "skin": "pet_wolf",
+  "template": "tools/setsheets/cat_layout_template.png",
+  "ref": "tools/setsheets/refs/pet_wolf.png",
+  "prompt": "tools/setsheets/prompts/pet_wolf.txt",
+  "weapons": [
+   null,
+   null
+  ],
+  "faction": null,
+  "pack": null
+ },
+ {
+  "id": "pet_spiritwolf",
+  "kind": "cat",
+  "set": "pet_spiritwolf",
+  "label": "PET",
+  "skin": "pet_spiritwolf",
+  "template": "tools/setsheets/cat_layout_template.png",
+  "ref": "tools/setsheets/refs/pet_spiritwolf.png",
+  "prompt": "tools/setsheets/prompts/pet_spiritwolf.txt",
+  "weapons": [
+   null,
+   null
+  ],
+  "faction": null,
+  "pack": null
+ },
+ {
+  "id": "pet_ghoul",
+  "kind": "human",
+  "set": "pet_ghoul",
+  "label": "PET",
+  "skin": "pet_ghoul",
+  "template": "tools/setsheets/layout_template.png",
+  "ref": "tools/setsheets/refs/pet_ghoul.png",
+  "prompt": "tools/setsheets/prompts/pet_ghoul.txt",
+  "weapons": [
+   null,
+   null
+  ],
+  "faction": null,
+  "pack": null
+ },
+ {
+  "id": "pet_felguard",
+  "kind": "human",
+  "set": "pet_felguard",
+  "label": "PET",
+  "skin": "pet_felguard",
+  "template": "tools/setsheets/layout_template.png",
+  "ref": "tools/setsheets/refs/pet_felguard.png",
+  "prompt": "tools/setsheets/prompts/pet_felguard.txt",
+  "weapons": [
+   "two-handed great axe",
+   null
+  ],
+  "faction": null,
+  "pack": null
+ },
+ {
+  "id": "pet_infernal",
+  "kind": "human",
+  "set": "pet_infernal",
+  "label": "PET",
+  "skin": "pet_infernal",
+  "template": "tools/setsheets/layout_template.png",
+  "ref": "tools/setsheets/refs/pet_infernal.png",
+  "prompt": "tools/setsheets/prompts/pet_infernal.txt",
+  "weapons": [
+   null,
+   null
+  ],
+  "faction": null,
+  "pack": "whole"
+ }
+]

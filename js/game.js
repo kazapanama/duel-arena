@@ -10,7 +10,8 @@ class Game{
     this.hitstop=0; this.slowmo=0; // завмирання при влучанні, сповільнення на KO
     this.round=1; this.roundTimer=90;
     this.phase='intro'; this.phaseT=3.6; this.banner='';
-    this.theme=THEMES[Math.floor(Math.random()*THEMES.length)];
+    this.theme=(typeof state!=='undefined'&&state.arena)||THEMES[Math.floor(Math.random()*THEMES.length)];   // обрана на екрані арени або випадкова
+    if(typeof arenaImg==='function') arenaImg(this.theme);   // почати завантаження картинки
     this.winner=null;
     this.cam={scale:1.2,x:WORLD_W/2,offX:0,offY:0,punch:0};
     this.updateCam(0);
@@ -203,6 +204,8 @@ class Game{
     HDL.ctx.setTransform(1,0,0,1,0,0); HDL.ctx.clearRect(0,0,W,H);
     SPR_HD.ctx=HDL.ctx; SPR_HD.k=PIX;   // бійці з растрових деталей — у повній роздільності
     this._post=false;
+    this._bgImg=drawArenaImage(this,main);        // картинка арени — одразу на екран, світ (LOW) поверх із прозорістю
+    if(this._bgImg){ LOW.ctx.setTransform(1,0,0,1,0,0); LOW.ctx.clearRect(0,0,LOW.cv.width,LOW.cv.height); }
     ctx=LOW.ctx;
     ctx.setTransform(1/PIX,0,0,1/PIX,0,0);
     ctx.imageSmoothingEnabled=false;

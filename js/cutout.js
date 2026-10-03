@@ -84,7 +84,8 @@ const P2=(a)=>({x:a[0],y:a[1]});
 function paintCutout(P){
   const {c,S}=P;
   const D=cutDef(P.ck), I=cutoutImgs(P.ck);
-  c.imageSmoothingEnabled=true; c.imageSmoothingQuality='low';   // деталі вже зменшені пакувальником — білінійного досить, а вище коштує ~2 мс на бійця
+  c.imageSmoothingEnabled=true; c.imageSmoothingQuality='low';
+  if(D.whole&&I.full) return paintWhole(P,D.whole,I.full);   // деталі вже зменшені пакувальником — білінійного досить, а вище коштує ~2 мс на бійця
   const dim=on=>{ CUT_DIM=on; };   // дальні кінцівки — у тіні
   if(I.cape&&D.cape) cutCape(P,D,I);
   // одноручна зброя в дальній руці (щит+зброя, дві зброї) має бути перед тілом — таку руку малюємо поверх тулуба
@@ -225,4 +226,18 @@ function catTailCut(P,D,I){
     const lo=Math.min(a0[0],a1[0])-(s?2:30), hi=Math.max(a0[0],a1[0])+(s<2?2:30);
     cutPiece(c,I.tail,a0,a1,pts[idx[s]],pts[idx[s+1]],k,[lo,-999,hi,999]);
   }
+}
+
+/* ---------- мункін і дерево: цільний спрайт, що рухається за тазом рига (присід, нахил, ривки) ---------- */
+function paintWhole(P,W,img){
+  const {c,S,p}=P;
+  const bob=S.pel.y-RIG.PELVIS;                    // присід/стрибок
+  c.save();
+  c.translate(S.pel.x,bob);
+  c.rotate(S.lean*0.6);                            // нахил від ступень
+  c.scale(W.k*(1+Math.max(0,-bob)*0.002),W.k*(1-Math.max(0,bob)*0.004));   // легке стискання при присіданні
+  c.translate(-W.feet[0],-W.feet[1]);
+  cutDraw(c,img);
+  c.restore();
+  if(p.glow>0.05){ const hx=S.handF.x, hy=S.handF.y; addLight(P,hx,hy,10+p.glow*14,P.m.castCol||P.pal.acc,0.9); }
 }

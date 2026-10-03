@@ -91,6 +91,15 @@ def main():
         cut_sheet(f['id'], cat=f['kind'] == 'cat')
         out, parts = pack_cutout.pack_cat(f['id']) if f['kind'] == 'cat' else pack_cutout.pack(f['id'], kind=f['kind'])
         print(f"  ✔ {f['id']:24} {os.path.getsize(out) // 1024:4} KB  {','.join(parts)}")
+    # пети (вовки, гуль, фелгард) — pet_jobs.json; підключені в js/pets.js (PET_CUTOUT)
+    pp = os.path.join(HERE, 'pet_jobs.json')
+    for f in (json.load(open(pp, encoding='utf-8')) if os.path.exists(pp) else []):
+        if sel is not jobs and not any(fnmatch.fnmatch(f['id'], p) for p in pats): continue
+        if not os.path.exists(os.path.join(HERE, 'out', f"{f['id']}.png")): continue
+        cut_sheet(f['id'], cat=f['kind'] == 'cat')
+        w = tuple(WTYPE.get(x) if x else None for x in f['weapons'])
+        out, parts = pack_cutout.pack_cat(f['id']) if f['kind'] == 'cat' else pack_cutout.pack(f['id'], w, kind=f.get('pack'))
+        print(f"  ✔ {f['id']:24} {os.path.getsize(out) // 1024:4} KB  {','.join(parts)}")
     ready = write_skins(jobs)
     build_jobs.write_todo(jobs, done={j['id'] for j in ready})
     print(f'у грі: {len(ready)} з {len(jobs)}')
