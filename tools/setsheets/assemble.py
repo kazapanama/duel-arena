@@ -31,6 +31,15 @@ def cut_sheet(jid, cat=False):
         if name == 'palette': continue
         try: slicer.cut(img, box).save(os.path.join(dst, name + '.png'))
         except ValueError: pass                       # порожня клітинка: немає плаща чи другої зброї
+    # перемальовані деталі (gen.py --part → out/<id>_<деталь>.png) замінюють деталь з аркуша; генератор малює
+    # їх крупніше, тож зводимо до висоти старої деталі (масштаби форм рахуються від тулуба — pack_cutout.BULK)
+    for f in os.listdir(os.path.join(HERE, 'out')):
+        if not (f.startswith(jid + '_') and f.endswith('.png')): continue
+        part = f[len(jid) + 1:-4]; old = os.path.join(dst, part + '.png')
+        if part.startswith('_') or not os.path.exists(old): continue
+        im = Image.open(os.path.join(HERE, 'out', f)); new = slicer.cut(im, (0, 0, im.width, im.height))
+        h = Image.open(old).height; new = new.resize((max(1, round(new.width * h / new.height)), h), Image.LANCZOS)
+        new.save(old); print(f'    {jid}: {part} — перемальована деталь')
     return dst
 
 def colors(dst):

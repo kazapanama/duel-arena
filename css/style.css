@@ -202,7 +202,7 @@ kbd.mini{display:inline-block; min-width:1.5cqw; padding:0 .35cqw; font:600 .95c
 .tip{display:flex; gap:1cqw; align-items:flex-start}
 /* без набору іконок: емодзі в тій самій рамці (див. iconHtml в ui.js) */
 .ico-fb{display:grid; place-items:center; flex:none; font-weight:400; font-family:serif; line-height:1; background:rgba(0,0,0,.35)}
-.rtile .ico-fb{width:100%; height:100%; font-size:3.4cqw; filter:saturate(.35) brightness(.7); transition:filter .12s}
+.rtile .ico-fb{width:100%; height:100%; font-size:3.4cqw; filter:saturate(.35) brightness(.7)}
 .stab .ico-fb{width:2.8cqw; height:2.8cqw; font-size:1.8cqw}
 .arow .ico-fb{width:2.6cqw; height:2.6cqw; font-size:1.6cqw; border:.18cqw solid #120806}
 .abil.five .arow .ico-fb{width:2.2cqw; height:2.2cqw; font-size:1.4cqw}
@@ -270,7 +270,8 @@ img.broken{display:none}
 .sel-center{display:flex; flex-direction:column; gap:.75cqw; min-height:0; min-width:0}
 .roster{display:grid; grid-template-columns:repeat(5,1fr); gap:.6cqw}
 .rtile{--c:.7cqw; --b:.3cqw; --fa:#6a5040; --fb:#4a3528; --fc:#2a1c15; aspect-ratio:1; padding:.55cqw; transition:transform .12s cubic-bezier(.2,1.6,.4,1), filter .1s}
-.rtile img{display:block; width:100%; height:100%; object-fit:cover; image-rendering:pixelated; filter:saturate(.35) brightness(.55); transition:filter .12s}
+/* без transition на filter: плавне проявлення фільтра перемальовує плитки щокадру й при зміні класу смикало вітрини */
+.rtile img{display:block; width:100%; height:100%; object-fit:cover; image-rendering:pixelated; filter:saturate(.35) brightness(.55)}
 .rtile:hover,.rtile.hl{transform:translateY(-.3cqw)}
 .rtile:hover img,.rtile.hl img,.rtile.sel0 img,.rtile.sel1 img,.rtile:hover .ico-fb,.rtile.hl .ico-fb,.rtile.sel0 .ico-fb,.rtile.sel1 .ico-fb{filter:none}
 .rtile.sel0,.rtile.sel1{transform:scale(1.07); z-index:2}

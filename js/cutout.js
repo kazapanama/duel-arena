@@ -33,22 +33,28 @@ function dimOf(img){
   return img._dim=cv;
 }
 function cutDraw(c,img){ const [k,pad]=img._k||[1,0]; c.drawImage(CUT_DIM?dimOf(img):img,-pad,-pad,img.width*k,img.height*k); }
+// після завантаження кожна картинка копіюється в полотно — уже розкодовані пікселі (усі набори разом ~21 МБ):
+// інакше браузер витісняє розкодовані PNG зі свого кешу й перерозкодовує їх під час растеризації спрайта,
+// і в кадрах після зміни бійця в меню вітрини малювалися в кілька разів довше
+const CUTOUT_DONE={};
 function cutoutImgs(name){
   if(CUTOUT_IMGS[name]) return CUTOUT_IMGS[name];
   const src=(typeof CUTOUT_IMG!=='undefined')&&CUTOUT_IMG[name];
   if(!src) return null;
   const set={}; let left=0;
   for(const k in src){ const im=new Image(); left++;
-    im.onload=()=>{ if(--left===0&&typeof onCutoutReady==='function') onCutoutReady(name); };   // галерея перемальовується
-    im._k=(typeof CUTOUT_SCALE!=='undefined'&&CUTOUT_SCALE[name]&&CUTOUT_SCALE[name][k])||[1,0];
+    const sc=(typeof CUTOUT_SCALE!=='undefined'&&CUTOUT_SCALE[name]&&CUTOUT_SCALE[name][k])||[1,0];
+    im.onload=()=>{
+      const cv=document.createElement('canvas'); cv.width=im.naturalWidth; cv.height=im.naturalHeight;
+      cv.getContext('2d',{willReadFrequently:true}).drawImage(im,0,0); cv._k=sc; set[k]=cv;   // willReadFrequently — полотно в пам'яті, без GPU
+      if(--left===0){ CUTOUT_DONE[name]=true; if(typeof onCutoutReady==='function') onCutoutReady(name); }   // галерея перемальовується
+    };
     im.src=src[k]; set[k]=im; }
   return CUTOUT_IMGS[name]=set;
 }
 const cutDef=name=>(typeof CUTOUT_AUTO!=='undefined'&&CUTOUT_AUTO[name])||null;
 function cutoutReady(name){
-  const s=cutoutImgs(name); if(!s||!cutDef(name)) return false;
-  for(const k in s) if(!s[k].complete||!s[k].naturalWidth) return false;
-  return true;
+  return !!(cutoutImgs(name)&&CUTOUT_DONE[name]&&cutDef(name));
 }
 // набір деталей моделі, якщо він уже готовий (і заодно — кольори деталей у палітру квантизації)
 function cutoutKey(m){
@@ -85,6 +91,7 @@ function paintCutout(P){
   const {c,S}=P;
   const D=cutDef(P.ck), I=cutoutImgs(P.ck);
   c.imageSmoothingEnabled=true; c.imageSmoothingQuality='low';
+  if(BULK_LAYOUT[D.kind]) return paintBulkCutout(P);   // сова, дерево, інфернал
   if(D.whole&&I.full) return paintWhole(P,D.whole,I.full);   // деталі вже зменшені пакувальником — білінійного досить, а вище коштує ~2 мс на бійця
   const dim=on=>{ CUT_DIM=on; };   // дальні кінцівки — у тіні
   if(I.cape&&D.cape) cutCape(P,D,I);
@@ -149,7 +156,7 @@ function cutLeg(P,D,I,side){
   const {c,S}=P, G=D.leg, d=side==='b';
   if(!G||!I.leg) return;
   const hip=d?S.hipB:S.hipF, kn=d?S.kneeB:S.kneeF, ft=d?S.footB:S.footF;
-  const ank={x:ft.x-1,y:ft.y-9};
+  const ank={x:ft.x-1,y:ft.y-(G.ah||9)};   // щиколотка над ступнею (у мункіна — вища: великі пазурі)
   cutPiece(c,I.leg,G.hip,G.kn,hip,kn,G.k,[-999,-999,999,G.cut1]);
   cutPiece(c,I.leg,G.kn,G.ank,kn,ank,G.k,[-999,G.cut1-8,999,G.cut2]);
   // чобіт стоїть рівно на землі (у повітрі трохи нахилений), щиколотка — над ступнею
@@ -228,7 +235,83 @@ function catTailCut(P,D,I){
   }
 }
 
-/* ---------- мункін і дерево: цільний спрайт, що рухається за тазом рига (присід, нахил, ривки) ---------- */
+/* ---------- масивні форми: мункін, дерево життя, інфернал ----------
+   Тулуб — центр мас у системі таза; голова втоплена між плечима й малюється останньою (крило чи кулак не закривають обличчя);
+   суглоби беремо з рига (solvePose у напівоберті), але кріпимо до тіла форми: плечі — на боках тулуба, руки подовжені
+   в armS разів (поза кисті та сама), стегна — під тулубом (ступні з рига, коліна — ik2).
+   Масштаби деталей — у пакунку (pack_cutout.py BULK → D.k, D.rel); тут — розкладка в частках тулуба (tw — ширина, th — висота):
+   bot — низ тулуба відносно таза; chin — підборіддя [x, частка th від верху]; shF/shB — плечі; hips — стегна [ближнє, дальнє];
+   lower — «низ» позаду тулуба: keep — скільки згори лишити (частка висоти; у дерева й інфернала нижче — самі ноги),
+   top — де його верх (частка th) або bot — де низ (частка th нижче низу тулуба); tuft — пучки на плечах; legs — розпрямленість лап у стійці */
+const BULK_LAYOUT={
+  moonkin:{bot:6,chin:[3,0.2],shF:[-0.3,0.24],shB:[0.28,0.2],hips:[-0.17,0.15],lower:{keep:1,bot:0.3},tuft:'f',legs:0.93,glow:'cast'},
+  tree:{bot:4,chin:[3,0.13],shF:[-0.3,0.14],shB:[0.26,0.12],hips:[-0.16,0.14],lower:{keep:0.42,top:0.72},tuft:'f',legs:0.95,glow:'cast'},
+  golem:{bot:8,chin:[5,0.26],shF:[-0.44,0.14],shB:[0.4,0.12],hips:[-0.22,0.2],lower:null,tuft:'both',legs:0.93,glow:'fel'},
+};
+function bulkGeom(D,py){
+  if(D._g) return D._g;
+  const k=D.k, R=D.rel||{}, d=(a,b,kk)=>Math.hypot(b[0]-a[0],b[1]-a[1])*kk;
+  const th=(D.torso.bot[1]-D.torso.top[1])*k, tw=D.torso.w*k;
+  const A=D.arm, G=D.leg, ka=A.k, kg=G.k;
+  const thigh=d(G.hip,G.kn,kg), shin=d(G.kn,G.ank,kg), ah=(G.sole[1]-G.ank[1])*kg;
+  const Lay=BULK_LAYOUT[D.kind], restPel=RIG.PELVIS+py;
+  return D._g={th,tw,top:Lay.bot-th,Lay,R,
+    armS:(d(A.sh,A.el,ka)+d(A.el,A.hand,ka))/(RIG.UPPER+RIG.FORE),
+    thigh,shin,ah,hipY:(-ah-Lay.legs*(thigh+shin))-restPel,
+    legDef:{...G,ah}};
+}
+function paintBulkCutout(P){
+  const {c,S,p,time,pal,m}=P, D=cutDef(P.ck), I=cutoutImgs(P.ck), k=D.k, T=S.T;
+  const g=bulkGeom(D,(m.stance&&m.stance.py!=null)?m.stance.py:(STANCE[m.style]||{}).py||0), Lay=g.Lay, rel=n=>k*(g.R[n]||1);
+  c.imageSmoothingEnabled=true; c.imageSmoothingQuality='low';
+  const shF=T(g.tw*Lay.shF[0],g.top+g.th*Lay.shF[1]), shB=T(g.tw*Lay.shB[0],g.top+g.th*Lay.shB[1]);
+  const arm=(sh,rs,re,rh)=>({sh,el:{x:sh.x+(re.x-rs.x)*g.armS,y:sh.y+(re.y-rs.y)*g.armS},hd:{x:sh.x+(rh.x-rs.x)*g.armS,y:sh.y+(rh.y-rs.y)*g.armS}});
+  const aF=arm(shF,S.shF,S.elF,S.handF), aB=arm(shB,S.shB,S.elB,S.handB);
+  const leg=(hip,ft)=>{ const r=ik2(hip.x,hip.y,ft.x-1,ft.y-g.ah,g.thigh,g.shin,1); return {hip,kn:{x:r.jx,y:r.jy},ft}; };
+  const lF=leg(T(g.tw*Lay.hips[0],g.hipY),S.footF), lB=leg(T(g.tw*Lay.hips[1],g.hipY),S.footB);
+  const Q={shF:aF.sh,elF:aF.el,handF:aF.hd,shB:aB.sh,elB:aB.el,handB:aB.hd,
+    hipF:lF.hip,kneeF:lF.kn,footF:lF.ft,hipB:lB.hip,kneeB:lB.kn,footB:lB.ft};
+  const PQ={...P,S:Q}, DD={arm:D.arm,leg:g.legDef};
+  // пучок на плечі (пір'я, листя, брила) трохи йде за плечовою кісткою руки
+  const tuft=(a,far)=>{ if(!I.shoulder||!D.shoulder) return;
+    const ua=Math.atan2(a.el.y-a.sh.y,a.el.x-a.sh.x)-Math.PI/2, s=rel('shoulder')*(far?0.9:1);
+    c.save(); c.translate(a.sh.x+(far?-1:1),a.sh.y+3); c.rotate(S.lean*0.5+clamp(ua*0.5,-0.35,0.35)); c.scale(far?-s:s,s);
+    c.translate(-D.shoulder.c[0],-D.shoulder.c[1]); cutDraw(c,I.shoulder); c.restore(); };
+  CUT_DIM=true; cutArm(PQ,DD,I,'b'); if(Lay.tuft==='both') tuft(aB,true); cutLeg(PQ,DD,I,'b'); CUT_DIM=false;
+  cutLeg(PQ,DD,I,'f');
+  // тіло — у системі таза з нахилом торса; «низ»: черево сови позаду грудей або таз дерева над розвилкою коренів
+  c.save(); c.translate(S.pel.x,S.pel.y); c.rotate(S.lean);
+  const L=D.lower, LL=Lay.lower;
+  if(L&&LL&&I.lower){
+    const kl=rel('lower'), h=(L.bot[1]-L.top[1])*kl, y0=LL.top!=null?g.top+g.th*LL.top:Lay.bot+g.th*LL.bot-h;
+    cutPiece(c,I.lower,L.top,L.bot,{x:0,y:y0},{x:0,y:y0+h},null,[-9999,-9999,9999,L.top[1]+(L.bot[1]-L.top[1])*LL.keep]);
+  }
+  cutPiece(c,I.torso,D.torso.top,D.torso.bot,{x:1,y:g.top},{x:1,y:Lay.bot},null);
+  if(Lay.glow==='fel'){ const q=cutMap(D.torso.top,D.torso.bot,{x:1,y:g.top},{x:1,y:Lay.bot},D.torso.c);
+    addLight(P,q.x,q.y,16+Math.sin(time*5)*2,pal.acc,0.7); }
+  c.restore();
+  cutArm(PQ,DD,I,'f');
+  if(Lay.tuft) tuft(aF,false);
+  // голова — втоплена в тулуб, хитається навколо підборіддя
+  c.save(); c.translate(S.pel.x,S.pel.y); c.rotate(S.lean);
+  const H=D.helm, kh=rel('helm');
+  c.translate(Lay.chin[0],g.top+g.th*Lay.chin[1]); c.rotate(p.head);
+  cutPiece(c,I.helm,H.c,H.top,{x:0,y:0},{x:0,y:-(H.c[1]-H.top[1])*kh},null);
+  if(Lay.glow==='fel') addLight(P,3,-(H.c[1]-H.top[1])*kh*0.45,9,pal.acc,0.8);   // очі-вогні
+  c.restore();
+  // заряд у пазурах / гілках під час касту — в обох руках
+  if(Lay.glow==='cast'&&p.glow>0.05){
+    const col=m.castCol||pal.acc;
+    for(const a of [aF,aB]){
+      const h=a.hd, e=a.el, L2=Math.hypot(h.x-e.x,h.y-e.y)||1, gx=h.x+(h.x-e.x)/L2*3, gy=h.y+(h.y-e.y)/L2*3;
+      const r=1.6+p.glow*2.2+Math.sin(time*20+gx)*0.5;
+      pCirc(c,gx,gy,r,col); pCirc(c,gx,gy,r*0.55,lightOf(col,0.5)); pCirc(c,gx,gy,r*0.25,pal.white);
+      addLight(P,gx,gy,10+p.glow*12,col,0.9);
+    }
+  }
+}
+
+/* ---------- запасний варіант: цільний спрайт, що рухається за тазом рига (присід, нахил, ривки) ---------- */
 function paintWhole(P,W,img){
   const {c,S,p}=P;
   const bob=S.pel.y-RIG.PELVIS;                    // присід/стрибок

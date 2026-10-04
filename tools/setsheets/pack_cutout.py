@@ -192,16 +192,57 @@ def tweak(D, K, src, kind):
         D['shoulder']['near'], D['shoulder']['far'] = round(t['shoulder'][0] / w, 4), round(t['shoulder'][1] / w, 4); K['shoulder'] = t['shoulder'][0] / w
 
 def pack_whole(name, height=118):
-    """Мункін і дерево — цільний спрайт повної фігури з аркуша: на гуманоїдному ригу з окремих деталей вони
-    збираються «стовпчиком» (тулуб, черево й ноги налазять одне на одне). Кріплення — за ступнями."""
+    """Цільний спрайт повної фігури з аркуша (запасний варіант, без анімації кінцівок). Кріплення — за ступнями.
+    Мункін, дерево й інфернал мають власну збірку — pack_bulk."""
     src = os.path.join(ROOT, 'img', 'cutout', name)
     m, _ = _load(src, 'full'); ys, xs = np.nonzero(m); y1 = ys.max(); h = y1 - ys.min()
     foot = np.nonzero(m[int(y1 - 0.06 * h):int(y1) + 1].any(0))[0]
     D = {'whole': {'feet': [R((foot.min() + foot.max()) / 2), R(y1)], 'k': round(height / h, 4)}}
     return _write(name, src, ['full'], D, {'full': height / h})
 
+# масивні форми — мункін, дерево життя, інфернал: власна збірка (js/cutout.js paintBulkCutout) — тулуб як центр мас,
+# голова втоплена, плечі на боках тулуба, кінцівки за ригом. Масштаб — від висоти тулуба (TH одиниць гри),
+# rel — відносний розмір деталі (аркуші малюють деталі не зовсім в одному масштабі; звірено з повною фігурою),
+# scale — масштаб малювання моделі в грі (paintModel / PET_DEFS), щоб пакувальник зберіг потрібну роздільність
+BULK = {'moonkin': {'TH': 48, 'scale': 1.12, 'rel': {'helm': 0.92, 'lower': 0.95, 'shoulder': 0.8}},
+        'tree':    {'TH': 40, 'scale': 1.14, 'rel': {'helm': 0.95, 'lower': 0.95, 'shoulder': 0.8, 'arm': 1.15, 'leg': 1.25}},
+        'golem':   {'TH': 52, 'scale': 1.18, 'nolower': 1, 'rel': {'helm': 1.15, 'shoulder': 0.55, 'arm': 0.95, 'leg': 0.9}}}
+
+def bulk_def(src, kind):
+    C = BULK[kind]; rel = {p: C['rel'].get(p, 1.0) for p in ('torso', 'lower', 'helm', 'shoulder', 'arm', 'leg')}
+    D = {'kind': kind, 'rel': rel}; K = {}
+    # тулуб і низ — вертикальна вісь посередині рамки (верхній край буває кривий: комір, пір'я, зрізаний стовбур)
+    m, _ = _load(src, 'torso'); ys, xs = np.nonzero(m); y0, y1 = ys.min(), ys.max(); cx = R((xs.min() + xs.max()) / 2)
+    k = C['TH'] / (y1 - y0); D['k'] = round(k, 5)
+    D['torso'] = {'top': [cx, R(y0)], 'bot': [cx, R(y1)], 'w': R(xs.max() - xs.min()), 'c': [R(xs.mean()), R(ys.mean())]}
+    if os.path.exists(os.path.join(src, 'lower.png')) and not C.get('nolower'):
+        m, _ = _load(src, 'lower'); ys, xs = np.nonzero(m); y0, y1 = ys.min(), ys.max(); cx = R((xs.min() + xs.max()) / 2)
+        D['lower'] = {'top': [cx, R(y0)], 'bot': [cx, R(y1)], 'w': R(xs.max() - xs.min())}
+    # голова: вісь — середина нижніх 40% (без рогів і крони), кріплення за низ
+    m, _ = _load(src, 'helm'); ys = np.nonzero(m.any(1))[0]; y0, y1 = ys[0], ys[-1]
+    xb = float(np.mean([_cx(m, y) for y in range(int(y0 + 0.6 * (y1 - y0)), int(y1) + 1)]))
+    D['helm'] = {'c': [R(xb), R(y1)], 'top': [R(xb), R(y0)]}
+    m, _ = _load(src, 'shoulder'); ys, xs = np.nonzero(m)
+    D['shoulder'] = {'c': [R((xs.min() + xs.max()) / 2), R(ys.min() + 0.45 * (ys.max() - ys.min()))]}
+    m, _ = _load(src, 'arm'); ys = np.nonzero(m.any(1))[0]; y0, h = ys[0], ys[-1] - ys[0]
+    P = lambda f: [R(_cx(m, y0 + f * h)), R(y0 + f * h)]
+    D['arm'] = {'sh': P(0.07), 'el': P(0.47), 'hand': P(0.88), 'cut': R(y0 + 0.47 * h), 'k': round(k * rel['arm'], 5)}
+    m, _ = _load(src, 'leg'); ys = np.nonzero(m.any(1))[0]; y0, y1 = ys[0], ys[-1]; h = y1 - y0
+    P = lambda f: [R(_cx(m, y0 + f * h)), R(y0 + f * h)]
+    hip, kn, ank = P(0.05), P(0.46), P(0.76)
+    D['leg'] = {'hip': hip, 'kn': kn, 'ank': ank, 'cut1': R(kn[1] + 0.03 * h), 'cut2': ank[1], 'sole': [ank[0], R(y1)], 'k': round(k * rel['leg'], 5)}
+    for p, r in rel.items(): K[p] = k * r * C['scale']
+    return D, K
+
+def pack_bulk(name, kind):
+    src = os.path.join(ROOT, 'img', 'cutout', name)
+    D, K = bulk_def(src, kind)
+    parts = [p for p in ('torso', 'lower', 'helm', 'shoulder', 'arm', 'leg') if os.path.exists(os.path.join(src, p + '.png')) and (p != 'lower' or 'lower' in D)]
+    return _write(name, src, parts, D, K)
+
 def pack(name, weapons=(None, None), kind=None):
-    if kind in ('moonkin', 'tree', 'whole'): return pack_whole(name)
+    if kind in BULK: return pack_bulk(name, kind)
+    if kind == 'whole': return pack_whole(name)
     src = os.path.join(ROOT, 'img', 'cutout', name)
     parts = sorted(f[:-4] for f in os.listdir(src) if f.endswith('.png') and f[:-4] != 'full')
     if not weapons[0]: parts = [p for p in parts if p not in ('weapon', 'weapon2')]

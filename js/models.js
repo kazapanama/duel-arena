@@ -544,6 +544,8 @@ function resolveFormModel(cls,spec,skin,form){
     kind:form, style:form==='cat'?'cat':'owl', pal, look:L,
     cutout:skin.formCutout||null,   // растрові деталі форми (js/cutout.js; кіт — paintCatCutout)
     castCol:acc, castSide:'f', glowEye:true,
+    // форми з деталей (js/cutout.js paintBulkCutout): крила-руки сови звисають обабіч тіла; дерево стоїть рівно, гілки вздовж стовбура
+    stance:!skin.formCutout?null:form==='moonkin'?{fhx:-1,fhy:-48,bhx:15,bhy:-48}:form==='tree'?{py:3,lean:0.03,bfx:-11,ffx:11,fhx:-3,fhy:-47,bhx:13,bhy:-47}:null,
     fxKind:skin.tier&&skin.glow?{cols:[skin.glow,acc],vy:-30,g:-20,rate:4}:null,
     name:skin.name+' ('+form+')', key:cls.id+'/'+spec.name,
   };

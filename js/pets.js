@@ -26,9 +26,8 @@ const PET_LOOK={
     stance:{lean:0.5,py:15}}},
   felguard:{style:'2h',armor:'plate',L:{prim:'#3a2a30',sec:'#5a1e1e',trim:'#9a8a4a',acc:'#9dff70',skin:'#6a7a3a',race:'demon',
     helm:{t:'none'},sh:{t:'spiked',s:1.35},cape:null,tabard:null,main:{t:'axe2h',edge:1},lower:'tassets',bulk:1.22,mohawk:1,fx:'fel'}},
-  infernal:{style:'2h',armor:'plate',L:{prim:'#3a3632',sec:'#26221e',trim:'#7cff6b',acc:'#7cff6b',skin:'#4a4440',race:'infernal',
-    helm:{t:'none'},sh:{t:'bigspikes',s:1.2},cape:null,tabard:null,main:null,off:null,lower:'tassets',bulk:1.38,fx:'fel',
-    stance:{lean:0.18,py:6}}},
+  infernal:{style:'golem',armor:'plate',L:{prim:'#3a3632',sec:'#26221e',trim:'#7cff6b',acc:'#7cff6b',skin:'#4a4440',race:'infernal',
+    helm:{t:'none'},sh:{t:'bigspikes',s:1.2},cape:null,tabard:null,main:null,off:null,lower:'tassets',bulk:1.38,fx:'fel'}},
 };
 
 // растрові деталі петів (tools/setsheets/pet_jobs.py → img/cutout/pet_*.js, js/cutout.js); поки вантажаться — процедурна модель

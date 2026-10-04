@@ -11,16 +11,44 @@ const BAYER4=[0,8,2,10,12,4,14,6,3,11,1,9,15,7,13,5];
 const SPR_BOUNDS={L:-130,R:130,T:-205,B:45};
 
 // палітра моделі → таблиця швидкого пошуку найближчого кольору (15-біт ключ)
+// таблиці спільні для моделей з однаковою палітрою: у меню кожне перемикання бійця створює нову модель того ж скіну
+const LUT_CACHE=new Map();
+const lutSig=m=>(m._cutPal?'F':'L')+[...new Set(Object.values(m.pal))].join('');
 function modelLUT(m){
   if(m._lut) return m._lut;
   const cols=[...new Set(Object.values(m.pal))].map(hexToRgb);
   m._cols=cols;
-  m._lut=new Int32Array(32768).fill(-1);
   m._outline=hexToRgb(m.pal.outline);
+  const sig=lutSig(m), hit=LUT_CACHE.get(sig);
+  if(hit) return m._lut=hit;
   // растрові деталі мають плавні переходи: щокадру з'являються нові відтінки й лінива таблиця весь час добудовується
-  // (перебір ~120 кольорів на піксель, ~15 мс на бійця) — тож для них рахуємо всю таблицю одразу (~20 мс раз на модель)
-  if(m._cutPal){ const lut=m._lut; for(let k=0;k<32768;k++) lut[k]=nearestCol(m,((k>>10)<<3)|4,(((k>>5)&31)<<3)|4,((k&31)<<3)|4); }
+  // (перебір ~120 кольорів на піксель, ~15 мс на бійця) — тож для них рахуємо всю таблицю одразу (~10 мс)
+  if(m._cutPal){ const b=lutBuilder(cols); b.step(32); m._lut=b.lut; } else m._lut=new Int32Array(32768).fill(-1);
+  LUT_CACHE.set(sig,m._lut);
   return m._lut;
+}
+// уся таблиця 32×32×32 → найближчий колір палітри (та сама метрика, що й nearestCol). Будується зрізами за G —
+// step(n) додає n зрізів (прогрів меню розтягує побудову на кілька вільних проміжків, ui.js selPrewarm).
+// Палітра відсортована за G (найбільша вага): від найближчого за G кольору йдемо вгору й униз, доки сама різниця G
+// не перевищить найкращу відстань
+function lutBuilder(cols){
+  const n=cols.length, ord=cols.map((c,i)=>i).sort((a,b)=>cols[a][1]-cols[b][1]);
+  const R=new Float64Array(n), G=new Float64Array(n), B=new Float64Array(n), P=new Int32Array(n);
+  ord.forEach((k,i)=>{ const c=cols[k]; R[i]=c[0]; G[i]=c[1]; B[i]=c[2]; P[i]=(c[0]<<16)|(c[1]<<8)|c[2]; });
+  const lut=new Int32Array(32768); let gi=0;
+  return {lut, done:()=>gi>=32, step(k){
+    for(const end=Math.min(32,gi+k);gi<end;gi++){ const g=(gi<<3)|4;
+      let p0=0; while(p0<n-1&&G[p0]<g) p0++;                 // перший колір з G ≥ g
+      for(let ri=0;ri<32;ri++){ const r=(ri<<3)|4;
+        for(let bi=0;bi<32;bi++){ const b=(bi<<3)|4;
+          let best=p0, bd=1e18;
+          for(let i=p0;i<n;i++){ const dg=G[i]-g, dg2=dg*dg*0.59; if(dg2>=bd) break;
+            const dr=R[i]-r, db=B[i]-b, d=dr*dr*0.3+dg2+db*db*0.11; if(d<bd){ bd=d; best=i; } }
+          for(let i=p0-1;i>=0;i--){ const dg=G[i]-g, dg2=dg*dg*0.59; if(dg2>=bd) break;
+            const dr=R[i]-r, db=B[i]-b, d=dr*dr*0.3+dg2+db*db*0.11; if(d<bd){ bd=d; best=i; } }
+          lut[(ri<<10)|(gi<<5)|bi]=P[best];
+        } } }
+    return gi>=32; }};
 }
 function nearestCol(m,r,g,b){
   let best=0, bd=1e9;
@@ -38,6 +66,20 @@ function nearestCol(m,r,g,b){
    SPR_HD.ctx — шар у k разів більшої роздільності за поточну ціль, — такий спрайт малюється туди
    (бій: шар 1280×720 між світом і ефектами, game.js; вітрини меню: PixelView.hd, ui.js) */
 const SPR_HD={ctx:null,k:2};
+/* Чернетки для спрайтів — пул полотен за розміром. Раніше кожен об'єкт мав власне полотно: у меню кожне перемикання
+   бійця створювало нове, і перше getImageData на свіжому willReadFrequently-полотні коштувало до ~100 мс (виділення
+   буфера) — помітний ривок. Одне спільне полотно на всіх теж погано: після drawImage у ціль наступне читання з нього
+   чекає синхронізації. Тож у межах кадру (поточного завдання) кожен виклик бере наступне полотно свого розміру;
+   порядок малювання стабільний — та сама вітрина щокадру отримує те саме полотно. */
+const SPR_POOL=new Map(); let sprUsed=null;
+function sprScratch(w,h){
+  if(!sprUsed){ sprUsed=new Map(); queueMicrotask(()=>{ sprUsed=null; }); }   // кінець кадру — пул знову з початку
+  const key=w*4096+h, i=sprUsed.get(key)||0; sprUsed.set(key,i+1);
+  let list=SPR_POOL.get(key);
+  if(!list){ if(SPR_POOL.size>=16) SPR_POOL.delete(SPR_POOL.keys().next().value); SPR_POOL.set(key,list=[]); }   // розмірів небагато (масштаби вітрин і бою)
+  if(!list[i]){ const cv=document.createElement('canvas'); cv.width=w; cv.height=h; list[i]={cv,c:cv.getContext('2d',{willReadFrequently:true})}; }
+  return list[i];
+}
 /* obj: {model, pose, facing, x, y, flash, outline:[r,g,b]?, alpha, time}
    Малює в поточний ctx з його трансформацією (світ → пікселі цілі). */
 function drawSprite(obj,out){
@@ -47,12 +89,7 @@ function drawSprite(obj,out){
   const s=Math.hypot(T.a,T.b);               // пікселів цілі на світову одиницю
   const B=SPR_BOUNDS;
   const w=Math.ceil((B.R-B.L)*s)+4, h=Math.ceil((B.B-B.T)*s)+4;
-  let cv=obj._cv;
-  if(!cv||cv.width!==w||cv.height!==h){
-    cv=obj._cv=document.createElement('canvas'); cv.width=w; cv.height=h;
-    obj._cx=cv.getContext('2d',{willReadFrequently:true});
-  }
-  const c=obj._cx;
+  const {cv,c}=sprScratch(w,h);
   c.setTransform(1,0,0,1,0,0); c.clearRect(0,0,w,h);
   const ox=Math.round(-B.L*s)+2, oy=Math.round(-B.T*s)+2;
   c.setTransform(s*obj.facing,0,0,s,ox,oy);

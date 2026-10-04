@@ -45,7 +45,7 @@ class Fighter{
     if(this.formDef){
       const fm=resolveFormModel(cls,spec,this.skin,this.formDef.id);
       this.forms.alt={abilities:[...this.formDef.abilities,this.formDef.classAb],cds:[0,0,0,0],model:fm,h:this.formDef.h,
-        mkAnim:()=>fm.kind==='cat'?new CatAnimCtl():new AnimCtl(fm.style)};
+        mkAnim:()=>fm.kind==='cat'?new CatAnimCtl():new AnimCtl(fm.style,fm.stance)};
     }
     for(const F of Object.values(this.forms)){ F.anim=F.mkAnim(); F.pref=Fighter.rangeFor(F.abilities); }
     this.form='base'; this.formCd=0; this.shiftT=0;
@@ -589,7 +589,7 @@ class Fighter{
           game.ring(x,GROUND-20,160,'#7cff6b'); game.burst(x,GROUND-20,'#9dff70',30); game.dust(x,GROUND);
           game.shake=Math.max(game.shake,14); sfx('big');
           hit(x,130,170,{stun:1.2,unblockable:true});
-          if(!this.ko){ this.summonPet('infernal',x,8,30,1.2,game); this.pet.atkT=1.3; }
+          if(!this.ko){ this.summonPet('infernal',x,8,30,1.2,game); this.pet.atkT=1.3; this.pet.anim.play('land'); }   // присідає від удару об землю
         });
         break;
       }

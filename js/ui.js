@@ -241,6 +241,7 @@ function openSelect(){
   for(const s of [0,1]){ const [ci,si,ki]=pickDefaults(s); SEL.sides[s]=makeSide(s,ci,si,ki); }
   buildSelectDom();
   show('select');
+  selPrewarm();
   if(NET.on&&NET.remoteSel) netApplySel(NET.remoteSel);   // суперник міг обрати раніше, ніж відкрився екран
   renderSelect();
 }
@@ -327,6 +328,84 @@ function selBack(){
   if(SEL.side===1&&!SEL.sides[1].locked){ SEL.side=0; SEL.sides[0].locked=false; SEL.sides[0].stage='skin'; SEL.sides[0].f.anim.stop(); renderSelect(); }
   else if(SEL.side===0){ show('title'); }
 }
+// розмітка рядків списку здібностей і вкладок спеків (спільна для екрана й прогріву selPrewarm)
+const abilRowHtml=(a,i,keys)=>`<i class="slot s${i}">${keys?keys[i]:''}</i>${iconHtml(a.img,a.icon)}<div><b>${a.name}</b><span>${descr(a)}</span></div>`;
+const ultRowHtml=(cls,keys,side)=>{ const U=ULTS[cls.id];
+  return `<i class="slot su">${keys?(keys===KEYS_PAD?'RT':(side===0?'O':'6')):'★'}</i>${iconHtml(U.img,U.icon)}<div><b>${U.ua} <small>ультимейт</small></b><span>${U.d}</span></div>`; };
+const formRowHtml=(spec,keys)=>`<i class="slot s4">${keys?keys[4]:''}</i>${iconHtml(spec.form.img,spec.form.em)}<div><b>${spec.form.name}</b><span>${spec.form.abilities.map(a=>a.name).join(', ')}, ${spec.form.classAb.name}. ${spec.form.note}</span></div>`;
+const specTabHtml=sp=>`${iconHtml(specIconOf(sp),sp.em)}<div><b>${sp.name}</b><span>${sp.role}</span></div>`;
+
+/* ПРОГРІВ ЕКРАНА ВИБОРУ. Перше перемикання на кожен клас смикалося: (1) холодний шейпінг нових слів шрифтом
+   (перекомпоновка 50–130 мс замість ~5), (2) завантаження набору деталей, (3) таблиця найближчих кольорів моделі
+   (sprite.js modelLUT). Прогрів починається ще на титулці (там рендер легкий і є вільний час) і йде дрібними
+   завданнями в requestIdleCallback: тексти — по рядку в прихованій копії розмітки екрана вибору (той самий #wrap,
+   отже ті самі шрифти й розміри cqw, хоч сам екран ще не показано), моделі — один кадр у чернетку.
+   Порядок: перший спек кожного класу (на нього стає вибір при зміні класу), далі інші спеки, наостанок — інші скіни. */
+const WARM={q:null,host:null};
+const warmIdle=window.requestIdleCallback?cb=>requestIdleCallback(cb,{timeout:150}):cb=>setTimeout(()=>cb({timeRemaining:()=>6,didTimeout:false}),40);
+function selPrewarm(){
+  if(WARM.q) return;
+  const q=WARM.q=[], later=[];
+  for(const si of [0,1,2]) CLASSES.forEach(cls=>{ const spec=cls.specs[si]; if(!spec) return;
+    for(const html of warmTexts(cls,spec,si)) q.push({text:html});
+    const pref=preferredSkin(cls,spec);
+    q.push({model:[cls,spec,pref],tries:0});
+    spec.skins.forEach(sk=>{ if(sk!==pref) later.push({model:[cls,spec,sk],tries:0}); });
+  });
+  q.push(...later);
+  const step=dl=>{
+    const t0=performance.now();
+    do {   // щонайменше одне завдання (без вільного часу — по тайм-ауту, до ~8 мс)
+      const t=q.shift();
+      if(t.text) warmText(t.text);
+      else if(!warmModel(...t.model,t)&&(t._b||++t.tries<80)) q.splice(t._b?0:Math.min(2,q.length),0,t);   // таблиця добудовується — далі зразу; набір ще вантажиться — за кілька завдань (одночасно 2–3 набори)
+    } while(q.length&&(dl.didTimeout?performance.now()-t0<8:dl.timeRemaining()>3));
+    if(q.length) warmIdle(step);
+    else if(WARM.host){ WARM.host.remove(); WARM.host=null; }
+  };
+  warmIdle(step);
+}
+// тексти спеку порціями: [куди (селектор у копії), клас блока, розмітка, класи контейнера]
+function warmTexts(cls,spec,si){
+  const keys=['J','K','L','U','I'], out=[], ab=spec.form?'pf abil five six':'pf abil five';   // як у renderSelect (розмір шрифту залежить від five/six)
+  [...spec.abilities,spec.classAb||cls.classAb].forEach((a,i)=>out.push(['.abil','arow',abilRowHtml(a,i,keys),ab]));
+  out.push(['.abil','arow ult',ultRowHtml(cls,keys,0),ab]);
+  if(spec.form) out.push(['.abil','arow form',formRowHtml(spec,keys),ab]);
+  if(si===0) out.push(['.specs','pf stab',cls.specs.map(specTabHtml).join('')]);
+  out.push(['.sc-plate',cls.name.length>9?'sc-class long':'sc-class',cls.name]);
+  for(const sk of spec.skins) out.push(['.sc-plate','sc-spec',sk.tier?`${spec.name}, ${sk.name}`:spec.name]);
+  out.push(['.sc-plate','sc-tags',`<i>${spec.role}</i><i>Дальній бій</i><i>Ближній бій</i>`]);
+  return out;
+}
+function warmText([sel,cn,html,boxCls]){
+  if(!WARM.host){   // копія розмітки екрана вибору без id; невидима, але компонується
+    const h=WARM.host=screens.select.cloneNode(true);
+    h.removeAttribute('id'); h.classList.remove('hidden'); h.setAttribute('aria-hidden','true');
+    h.querySelectorAll('[id]').forEach(e=>e.removeAttribute('id'));
+    h.querySelectorAll('canvas,.roster,.skins').forEach(e=>e.remove());
+    Object.assign(h.style,{visibility:'hidden',pointerEvents:'none',zIndex:'-1'});
+    WRAP.appendChild(h);
+  }
+  const box=WARM.host.querySelector(sel); if(!box) return;
+  if(boxCls) box.className=boxCls;
+  box.innerHTML=`<div class="${cn}">${html}</div>`;
+  void box.offsetHeight;   // компонування (і шейпінг нових слів) — тут, у вільний час
+}
+// модель скіну: набір деталей завантажено, затемнені копії дальніх кінцівок готові, таблиця кольорів — у кеші.
+// Таблицю будуємо зрізами (sprite.js lutBuilder), щоб жодне завдання не з'їдало кадр. false — ще не готово (повторити)
+function warmModel(cls,spec,skin,t){
+  const m=t._m||(t._m=resolveModel(cls,spec,skin));
+  if(m.cutout&&!cutoutKey(m)) return CUTOUT_LOAD[m.cutout]==='err';
+  if(!t._b){
+    if(m.cutout) for(const im of Object.values(cutoutImgs(m.cutout))) dimOf(im);
+    const sig=lutSig(m); if(!m._cutPal||LUT_CACHE.has(sig)) return true;
+    t._b=lutBuilder([...new Set(Object.values(m.pal))].map(hexToRgb)); t._sig=sig;
+  }
+  if(!t._b.step(6)) return false;
+  if(!LUT_CACHE.has(t._sig)) LUT_CACHE.set(t._sig,t._b.lut);
+  return true;
+}
+
 function renderSelect(){
   const ai=state.mode==='ai';
   $('selTagL').textContent=NET.on?(NET.side===0?'Ти':'Суперник'):'Гравець 1';
@@ -363,7 +442,7 @@ function renderSelect(){
   const st=$('specTabs'); st.innerHTML='';
   cls.specs.forEach((sp,si)=>{
     const b=document.createElement('button'); b.className='pf stab'+(si===s.si?' on':'');
-    b.innerHTML=`${iconHtml(specIconOf(sp),sp.em)}<div><b>${sp.name}</b><span>${sp.role}</span></div>`;
+    b.innerHTML=specTabHtml(sp);
     b.addEventListener('click',()=>selSetSpec(si));
     st.appendChild(b);
   });
@@ -373,17 +452,17 @@ function renderSelect(){
   const al=$('abilList'); al.innerHTML=''; al.classList.toggle('five',true); al.classList.toggle('six',!!spec.form);
   list.forEach((a,i)=>{
     const row=document.createElement('div'); row.className='arow';
-    row.innerHTML=`<i class="slot s${i}">${keys?keys[i]:''}</i>${iconHtml(a.img,a.icon)}<div><b>${a.name}</b><span>${descr(a)}</span></div>`;
+    row.innerHTML=abilRowHtml(a,i,keys);
     row.addEventListener('pointerenter',()=>{ const f=curSide().f; const an=actionForAbility(f,a,i); if(an) f.anim.play(an); });
     al.appendChild(row);
   });
-  { const U=ULTS[cls.id], row=document.createElement('div'); row.className='arow ult';
-    row.innerHTML=`<i class="slot su">${keys?(keys===KEYS_PAD?'RT':(SEL.side===0?'O':'6')):'★'}</i>${iconHtml(U.img,U.icon)}<div><b>${U.ua} <small>ультимейт</small></b><span>${U.d}</span></div>`;
+  { const row=document.createElement('div'); row.className='arow ult';
+    row.innerHTML=ultRowHtml(cls,keys,SEL.side);
     row.addEventListener('pointerenter',()=>{ const f=curSide().f; f.anim.play('roar'); });
     al.appendChild(row); }
   if(spec.form){
     const row=document.createElement('div'); row.className='arow form';
-    row.innerHTML=`<i class="slot s4">${keys?keys[4]:''}</i>${iconHtml(spec.form.img,spec.form.em)}<div><b>${spec.form.name}</b><span>${spec.form.abilities.map(a=>a.name).join(', ')}, ${spec.form.classAb.name}. ${spec.form.note}</span></div>`;
+    row.innerHTML=formRowHtml(spec,keys);
     row.addEventListener('pointerenter',()=>{ const f=curSide().f; f.setForm(f.form==='base'?'alt':'base'); f.shiftT=0.35; });
     al.appendChild(row);
   }
@@ -603,3 +682,4 @@ UI.frame=function(dt){
 };
 
 show('title');
+setTimeout(selPrewarm,1500);   // прогрів екрана вибору — поки гравець на титулці

@@ -28,6 +28,7 @@ const STANCE={
   bow:{lean:0.04,bfx:-11,ffx:11,fhx:15,fhy:-58,wf:0.2,bhx:-4,bhy:-53},
   spear:{lean:0.12,py:4,bfx:-14,ffx:14,fhx:16,fhy:-62,wf:1.15},
   claw:{lean:0.32,py:9,bfx:-16,ffx:14,fhx:20,fhy:-58,wf:1.6,bhx:10,bhy:-64,wb:1.5},
+  golem:{lean:0.14,py:6,bfx:-15,ffx:15,fhx:-7,fhy:-49,wf:0,bhx:16,bhy:-50,wb:0}, // інфернал: кулаки-брили звисають
   owl:{lean:0.06,py:11,bfx:-15,ffx:15,fhx:24,fhy:-52,wf:0,bhx:-18,bhy:-56,wb:0}, // мункін: крила-руки трохи розведені
 };
 // стійки бійців із растрових деталей (напівоберт 3/4): посох — навскіс уперед, щоб не закривав обличчя;
@@ -125,6 +126,18 @@ function actionSpec(style,name){
     A.atkB={dur:0.34,upper:true,keys:[[0,{fhx:-4,fhy:-96,wf:-0.6}],[0.1,{fhx:-6,fhy:-100,wf:-0.9}],[0.2,{fhx:30,fhy:-58,wf:2.2,lean:0.35,ffx:20}],[0.34,{}]]};
     A.heavy=A.atkB;
   }
+  // мункін: б'є крилами-руками, касти — обома крилами (руки довгі, тож кисті тримаємо на рівні грудей, не перед обличчям)
+  if(style==='owl'){
+    A.atkA={dur:0.32,upper:true,keys:[[0,{fhx:-16,fhy:-82,lean:-0.06}],[0.09,{fhx:-20,fhy:-86,lean:-0.1}],[0.18,{fhx:30,fhy:-56,lean:0.28,ffx:18}],[0.32,{}]]};
+    A.atkB={dur:0.32,upper:true,keys:[[0,{bhx:2,bhy:-90,lean:-0.06}],[0.09,{bhx:-2,bhy:-94,lean:-0.1}],[0.18,{bhx:38,bhy:-62,lean:0.3,fhx:6,fhy:-60,ffx:18}],[0.32,{}]]};
+    A.heavy={dur:0.5,keys:[[0,{}],[0.16,{py:4,fhx:-14,fhy:-104,bhx:16,bhy:-106,lean:-0.14,head:-0.2}],[0.28,{py:16,fhx:28,fhy:-46,bhx:34,bhy:-50,lean:0.42,ffx:20,head:0.1}],[0.5,{}]]};
+  }
+  // інфернал: розмашисті удари кулаками-брилами, важкий — обома кулаками згори
+  if(style==='golem'){
+    A.atkA={dur:0.4,upper:true,keys:[[0,{fhx:-18,fhy:-92,lean:-0.06}],[0.14,{fhx:-22,fhy:-96,lean:-0.12}],[0.24,{fhx:36,fhy:-62,lean:0.38,ffx:20}],[0.4,{}]]};
+    A.atkB={dur:0.4,upper:true,keys:[[0,{bhx:0,bhy:-96,lean:-0.06}],[0.14,{bhx:-4,bhy:-100,lean:-0.12}],[0.24,{bhx:42,bhy:-60,lean:0.4,fhx:2,fhy:-58,ffx:20}],[0.4,{}]]};
+    A.heavy={dur:0.56,keys:[[0,{}],[0.2,{py:0,fhx:-10,fhy:-114,bhx:14,bhy:-116,lean:-0.16,head:-0.2}],[0.32,{py:16,fhx:30,fhy:-34,bhx:36,bhy:-36,lean:0.5,ffx:20}],[0.56,{}]]};
+  }
   // у стилях без ближнього бою (посох/лук) — удар посохом/луком
   if(!A.atkA){
     A.atkA={dur:0.32,upper:true,keys:[[0,{fhx:0,fhy:-90,wf:-0.5}],[0.1,{fhx:-4,fhy:-94,wf:-0.8}],[0.2,{fhx:30,fhy:-62,wf:1.9,lean:0.3,ffx:18}],[0.32,{}]]};
@@ -141,6 +154,12 @@ function actionSpec(style,name){
     else if(castHand==='b'){ o.bhx=20; o.bhy=-86+s; o.wb=b.wb; }
     else { o.fhx=16; o.fhy=-98+s; o.wf=-0.1; }
     o.glow=1; return o; }};
+  if(style==='owl'){   // крила вгору «V», заряд над плечима; викид — поштовх ближнім крилом уперед
+    A.channel={dur:1,loop:true,fn:(t,b)=>{ const s=Math.sin(t*Math.PI*2*1.5);
+      return {...b,lean:-0.08,head:-0.12,py:(b.py||0)+1+s*0.8,fhx:-17,fhy:-106+s*2,bhx:20,bhy:-110-s*2,glow:1}; }};
+    A.release={dur:0.36,upper:true,keys:[[0,{fhx:-13,fhy:-106,bhx:20,bhy:-108,lean:-0.08,glow:1}],[0.08,{fhx:-16,fhy:-100,bhx:16,bhy:-104,lean:-0.12,glow:1}],
+      [0.17,{fhx:34,fhy:-70,bhx:30,bhy:-74,lean:0.24,ffx:16,glow:0.4}],[0.36,{}]]};
+  } else
   A.release={dur:0.34,upper:true,keys:[[0,H(8,-80,{glow:1})],[0.07,H(2,-84,{lean:-0.08,glow:1})],[0.15,H(38,-80,{lean:0.22,ffx:16,glow:0.4,...(style==='staff'?{fhx:22,fhy:-68,wf:0.5}:{})})],[0.34,{}]]};
   A.shoot={dur:0.4,upper:true,keys:[[0,{fhx:30,fhy:-82,wf:0.02,bhx:26,bhy:-82,bow:0}],[0.14,{fhx:30,fhy:-82,wf:0.02,bhx:4,bhy:-82,bow:1}],[0.18,{fhx:31,fhy:-82,wf:0.02,bhx:-6,bhy:-86,bow:0,lean:-0.04}],[0.4,{}]]};
   A.pistol={dur:0.34,upper:true,keys:[[0,{bhx:34,bhy:-80,wb:1.57}],[0.06,{bhx:36,bhy:-80,wb:1.57}],[0.11,{bhx:28,bhy:-86,wb:1.1,lean:-0.06}],[0.34,{}]]};

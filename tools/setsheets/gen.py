@@ -7,6 +7,7 @@
    python tools/setsheets/gen.py                               # усі незроблені (зроблені — ті, що вже лежать в out/)
    python tools/setsheets/gen.py --only X --force              # перегенерувати
    python tools/setsheets/gen.py --only X --part shoulder      # домалювати одну деталь до готового аркуша → out/X_shoulder.png
+   python tools/setsheets/gen.py --only X --part torso --extra "..."   # своє уточнення замість стандартного для деталі
    python tools/setsheets/gen.py --anchor out/warrior_protection_1.png   # третім зображенням — схвалений аркуш (тримає стиль)
    python tools/setsheets/gen.py --review                      # контактний лист усіх готових аркушів → out/_review.png
 
@@ -113,6 +114,7 @@ def main():
     ap.add_argument('--dry', action='store_true')
     ap.add_argument('--review', action='store_true')
     ap.add_argument('--part', choices=sorted(PART_EXTRA))
+    ap.add_argument('--extra', help='для --part: власне уточнення замість PART_EXTRA (напр. «тулуб дерева без обличчя»)')
     ap.add_argument('--anchor', help='схвалений аркуш — третім зображенням, щоб тримати однаковий стиль')
     ap.add_argument('--model', default='gpt-image-2.5-sunburst')
     ap.add_argument('--quality', default='high')
@@ -145,7 +147,7 @@ def main():
         j, out_png = item
         if args.part:
             images = [os.path.join(OUT, f"{j['id']}.png"), os.path.join(ROOT, j['ref'])]
-            prompt = PART_PROMPT.format(part=args.part.upper(), extra=PART_EXTRA[args.part])
+            prompt = PART_PROMPT.format(part=args.part.upper(), extra=args.extra or PART_EXTRA[args.part])
         else:
             # шаблон завдання (кіт має власний), реф, додаткові референси (сет скіну для форм друїда)
             images = [os.path.join(ROOT, j['template']) if j.get('template') else TEMPLATE, os.path.join(ROOT, j['ref'])]

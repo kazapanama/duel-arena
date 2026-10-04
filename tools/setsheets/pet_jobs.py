@@ -78,7 +78,7 @@ def main():
                     'template': 'tools/setsheets/cat_layout_template.png' if kind == 'cat' else 'tools/setsheets/layout_template.png',
                     'ref': f'tools/setsheets/refs/{pid}.png', 'prompt': f'tools/setsheets/prompts/{pid}.txt',
                     'weapons': ['two-handed great axe', None] if pid == 'pet_felguard' else [None, None], 'faction': None,
-                    'pack': 'whole' if pid == 'pet_infernal' else None})   # інфернал — цільна брила, з деталей збирається погано
+                    'pack': 'golem' if pid == 'pet_infernal' else None})   # інфернал — масивна збірка (pack_cutout.pack_bulk)
     json.dump(out, open(os.path.join(HERE, 'pet_jobs.json'), 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
     print(len(out), 'петів')
 

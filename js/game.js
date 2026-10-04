@@ -553,6 +553,29 @@ class Game{
         ctx.font='11px "Tiny5",monospace'; ctx.fillStyle='#ffd97a';
         ctx.fillText(keysLabel[k],ax+abW-9,ay+abW-9);
       }
+      // плитка ультимейта — над L (у пада — над B): заповнюється разом із супершкалою, повна — пульсує золотом
+      { const U=ULTS[f.cls.id], fr=clamp(f.meter/ULT_MAX,0,1), full=fr>=1;
+        const ux=ax0+2*cell, uy=ay0;
+        if(full){ ctx.save(); ctx.globalAlpha=0.45+Math.sin(this.time*8)*0.3; ctx.fillStyle='#ffd23a';
+          roundRect(ux-4,uy-4,abW+8,abW+8,13); ctx.fill(); ctx.restore(); }
+        ctx.fillStyle='rgba(8,12,20,.85)'; roundRect(ux,uy,abW,abW,10); ctx.fill();
+        const im=iconImg(U.img);
+        ctx.textAlign='center'; ctx.textBaseline='middle';
+        if(im){ ctx.save(); roundRect(ux+3,uy+3,abW-6,abW-6,8); ctx.clip(); ctx.drawImage(im,ux+3,uy+3,abW-6,abW-6); ctx.restore(); }
+        else { ctx.font='25px serif'; ctx.fillText(U.icon,ux+abW/2,uy+abW/2-3); }
+        if(!full){ // незаповнена частина — затемнення по колу, як відкат
+          ctx.save(); ctx.beginPath(); ctx.moveTo(ux+abW/2,uy+abW/2);
+          ctx.arc(ux+abW/2,uy+abW/2,abW,-Math.PI/2+fr*Math.PI*2,Math.PI*1.5); ctx.closePath(); ctx.clip();
+          ctx.fillStyle='rgba(5,8,14,.72)'; roundRect(ux,uy,abW,abW,10); ctx.fill(); ctx.restore();
+          ctx.font='14px "Tiny5",sans-serif'; ctx.strokeStyle='rgba(0,0,0,.85)'; ctx.lineWidth=3; ctx.fillStyle='#ffe9a0';
+          ctx.strokeText(`${Math.floor(fr*100)}`,ux+abW/2,uy+abW/2); ctx.fillText(`${Math.floor(fr*100)}`,ux+abW/2,uy+abW/2);
+        }
+        ctx.strokeStyle=full?'#fff4b0':'#c99a2a'; ctx.lineWidth=full?3:2; roundRect(ux,uy,abW,abW,10); ctx.stroke();
+        const uk=usePad?'RT':(i===0?'O':'6');
+        ctx.font='11px "Tiny5",monospace'; ctx.strokeStyle='rgba(0,0,0,.85)'; ctx.lineWidth=3; ctx.fillStyle='#ffd97a';
+        ctx.strokeText(uk,ux+abW-9,uy+abW-9); ctx.fillText(uk,ux+abW-9,uy+abW-9);
+        ctx.font='10px "Tiny5",sans-serif'; ctx.fillStyle=full?'#fff4b0':'#8b95a8';
+        ctx.fillText('УЛЬТА',ux+abW/2,uy-8); }
       // плитка блоку — світиться, коли гравець блокує
       const bkx=left?ax0+gridW+16:ax0-16-abW;
       const bky=ay0+cell;
