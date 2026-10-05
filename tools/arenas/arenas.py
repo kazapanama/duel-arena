@@ -18,24 +18,12 @@ ARENAS = [
     ('shadow', 'Тінисте плато', 'a haunted plateau of purple rock under a huge pale moon and a starry violet night sky, glowing violet crystals growing from the cliffs, ruined dark stone pillars', {}),
     ('durotar', 'Дуротар', 'the red desert canyons of Durotar at sunset, orange sky, flat-topped red mesas, an orcish palisade of spiked logs with red Horde banners, dry cracked red earth', {'ember': 1}),
     ('northrend', 'Нордскол', 'the frozen wastes of Northrend at night, aurora borealis over snowy mountains, dark snowy pine forest, blue-fire braziers, snow-covered ground', {'snow': 1}),
-    # арени World of Warcraft
+    # арени World of Warcraft (лише ті, що були у WotLK 3.3.5a)
     ('nagrand', 'Арена Наґранда', "the Nagrand Arena (Ring of Trials) in Outland: a round ogre-built stone arena with wooden spiked palisades and hanging bones, green grassy plains of Nagrand and floating rock islands in a bright alien sky", {}),
     ('blades_edge', 'Арена Блейдс-Еджу', "the Blade's Edge Arena (Circle of Blood) in Outland: a wooden ogre arena on a rock plateau among huge jagged blade-like red rock spires, rope bridges, a dusty orange sky", {}),
     ('lordaeron', 'Руїни Лордерону', "the Ruins of Lordaeron arena: the collapsed throne room of Lordaeron's capital city, broken gothic arches and pillars, ivy, an undead green-tinted gloomy sky seen through the ruined roof, coffins and a green-glowing Forsaken banner", {}),
     ('dalaran', 'Каналізація Даларану', 'the Dalaran Sewers arena (the Underbelly): a stone sewer arena under the magical city, arched brick walls, violet magic lamps, pipes and green-blue water channels, the Underbelly bar balconies above', {}),
     ('ring_of_valor', 'Кільце Звитяги', 'the Ring of Valor arena in Orgrimmar: a large circular orcish gladiator coliseum of dark red stone and iron spikes, roaring crowd of orcs and trolls in the stands, braziers, huge red Horde banners', {'ember': 1}),
-    ('tolviron', "Арена Тол'вірону", "the Tol'viron Arena in Uldum: sun-bleached sandstone arena of the titans with tol'vir cat-headed statues, golden obelisks and palm trees, a blazing desert sun in a turquoise sky", {}),
-    ('tigers_peak', 'Тигрова вершина', "the Tiger's Peak arena in Kun-Lai Summit, Pandaria: a pandaren stone courtyard on a snowy mountain peak, red wooden pagoda gates with golden roofs, prayer flags, misty snowy peaks", {'snow': 1}),
-    ('black_rook', 'Фортеця Чорного Грака', 'the Black Rook Hold arena in Val\'sharah: the dark gothic courtyard of the haunted Ravencrest fortress, black stone towers, ravens, blue spectral light, a purple stormy night sky', {}),
-    ('ashamane', 'Падіння Ашамане', "Ashamane's Fall arena in Val'sharah: a sacred night elf glade, ancient moonwells, huge purple-leaved trees, moonlit night elf ruins with crescent-moon arches, glowing blue wisps", {}),
-    ('hook_point', 'Гук-Пойнт', 'the Hook Point arena in Boralus harbor, Kul Tiras: wooden pirate docks and ship decks, tall ship masts with sails, Kul Tiran blue-and-gold flags, the sea and a cloudy sky', {}),
-    ('mugambala', 'Муґамбала', 'the Mugambala arena in Zuldazar: a golden troll gladiator pit of the Zandalari, golden pyramid temple, jungle vines, dinosaur skulls, torches and a bright tropical sky', {}),
-    ('robodrome', 'Рободром', 'the Robodrome arena on Mechagon Island: a gnomish mechanical arena of riveted steel plates, gears, pipes, tesla coils with blue sparks, neon lights and smoke', {}),
-    ('empyrean', 'Емпірейський домен', 'the Empyrean Domain arena in Bastion, the Shadowlands: white marble and gold kyrian terraces floating above the clouds, winged kyrian statues, bright blue-and-gold heavenly light', {}),
-    ('maldraxxus', 'Колізей Малдраксуса', 'the Maldraxxus Coliseum, the Shadowlands: a grim green necrotic gladiator coliseum of bone and dark metal, spiked towers, green plague fog and a sickly green sky, skeletal crowd', {}),
-    ('enigma', 'Горнило Загадок', 'the Enigma Crucible arena in Zereth Mortis, the Shadowlands: a golden automa structure of the First Ones, geometric floating golden glyph shapes, a cosmic purple-teal sky', {}),
-    ('nokhudon', 'Полігон Нокхудонів', "the Nokhudon Proving Grounds in the Ohn'ahran Plains, Dragon Isles: a centaur ring of tall carved standing stones on green windy steppes, colorful centaur banners, wide blue sky", {}),
-    ('cage_carnage', 'Клітка Різанини', 'the Cage of Carnage arena in Undermine: a goblin fight cage in a neon-lit underground city, chain-link fences, gold coins, flashing signs, smoky industrial pipes', {}),
     # світові арени
     ('gurubashi', 'Арена Гурубаші', 'the Gurubashi Arena in Stranglethorn Vale: an ancient troll stone amphitheater in the jungle, crumbling stone tiers, tiki torches, jungle trees and a hot tropical sky', {}),
     ('darkmoon', 'Ярмарок Темного Місяця', "the Darkmoon Faire on Darkmoon Island at night: striped carnival tents in purple and gold, lanterns, a Ferris wheel, carnival lights in the starry sky", {}),
@@ -97,12 +85,13 @@ def gen(jid, prompt, args):
 def publish():
     """out/*.png → img/arenas/*.webp і js/arenas_data.js (список арен для гри)."""
     os.makedirs(DST, exist_ok=True)
-    for f in os.listdir(OUT):
-        if f.endswith('.png'):
-            Image.open(os.path.join(OUT, f)).convert('RGB').save(os.path.join(DST, f[:-4] + '.webp'), 'WEBP', quality=86, method=6)
+    ids = {a[0] for a in ARENAS} | {'menu'}   # лише арени зі списку: прибрані з ARENAS не повертаються зі старих out/*.png
+    pngs = [f for f in os.listdir(OUT) if f.endswith('.png') and f[:-4] in ids]
+    for f in pngs:
+        Image.open(os.path.join(OUT, f)).convert('RGB').save(os.path.join(DST, f[:-4] + '.webp'), 'WEBP', quality=86, method=6)
     os.makedirs(os.path.join(DST, 'thumbs'), exist_ok=True)
-    for f in os.listdir(OUT):
-        if f.endswith('.png'):
+    for f in pngs:
+        if True:
             im = Image.open(os.path.join(OUT, f)).convert('RGB'); im.thumbnail((400, 400), Image.LANCZOS)
             im.save(os.path.join(DST, 'thumbs', f[:-4] + '.webp'), 'WEBP', quality=82, method=6)
     have = [a for a in ARENAS if os.path.exists(os.path.join(DST, a[0] + '.webp'))]

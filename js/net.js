@@ -20,6 +20,10 @@ function netOpen(){
     netLobby('Гру відкрито як файл — мережа недоступна.',[],'Запусти на комп\'ютері <code>node tools/server.js</code> і відкрий адресу, яку він покаже.',true);
     return;
   }
+  if(location.hostname.endsWith('github.io')){ // статичний хостинг: сервера-ретранслятора тут нема
+    netLobby('На сайті гра по мережі недоступна.',[],'Вона працює в домашній Wi-Fi: завантаж гру з GitHub, запусти на комп\'ютері <code>node tools/server.js</code> і відкрий адресу, яку він покаже, на обох пристроях.',false);
+    return;
+  }
   netLobby('Підключення до сервера…');
   netConnect();
 }
