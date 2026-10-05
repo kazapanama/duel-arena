@@ -382,7 +382,7 @@ function descr(a){
 /* ============================================================
    ІКОНКИ з паку "WoW Icon Pack"
    ============================================================ */
-const ICON_ROOT='WoW Icon Pack/';
+const ICON_ROOT='img/icons/';   // іконки WoW, перемальовані в піксель-арт гри (tools/icons/stylize.py); шляхи — як у WoW Icon Pack
 const CLASS_ICONS={
   warrior:'Characters and Creatures/warrior.png',
   paladin:'Characters and Creatures/paladin.png',
@@ -546,7 +546,7 @@ for(const c of CLASSES){
   for(const s of c.specs) if(s.form){ s.form.img=ICON_ROOT+FORM_ICONS[s.form.id]; s.form.baseImg=ICON_ROOT+FORM_ICONS.base; }
 }
 for(const k in ULTS) ULTS[k].img=ICON_ROOT+ULTS[k].ic;
-/* Набір іконок (папка ICON_ROOT) не входить у репозиторій. Якщо його нема — прибираємо всі шляхи,
+/* Якщо іконки не завантажились (папки ICON_ROOT нема) — прибираємо всі шляхи,
    і інтерфейс малює емодзі (em / icon), як полотно бою й так робить без картинок. */
 const ICONS={ok:null};
 function dropIcons(){

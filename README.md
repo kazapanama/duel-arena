@@ -40,14 +40,11 @@ npm start              # або: node tools/server.js [порт], на Windows �
 
 ## Іконки
 
-Іконки здібностей і класів беруться з набору **WoW Icon Pack**, якого в репозиторії нема: це стороння графіка. Без нього гра повністю працює і малює замість іконок емодзі. Щоб були іконки, поклади набір у корінь проєкту:
+Іконки здібностей і класів лежать у `img/icons/`: це оригінальні іконки WoW, перемальовані в піксель-арт гри через OpenAI Images API (`tools/icons/stylize.py`). Шляхи всередині — такі самі, як у наборі **WoW Icon Pack**, з якого вони зроблені.
 
-```
-WoW Icon Pack/
-  Abilities/  Spells/  Characters and Creatures/  …
-```
+Відповідність «здібність → файл» задана в `js/data.js` (`ABILITY_ICONS`, `CLASS_ICONS`, `SPEC_ICONS`, `FORM_ICONS`, `ic` в `ULTS`).
 
-Відповідність «здібність → файл» задана в `js/data.js` (`ABILITY_ICONS`, `CLASS_ICONS`, `SPEC_ICONS`).
+Нова іконка: поклади оригінал у `WoW Icon Pack/` (його в репозиторії нема; оригінал з Wowhead — `python tools/fetch_icon.py <назва іконки>`), пропиши шлях у `js/data.js` і запусти `python tools/icons/stylize.py` — він перемалює лише ті, яких ще нема в `img/icons/`.
 
 ## Структура
 

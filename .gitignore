@@ -28,3 +28,4 @@ tools/setsheets/refs/
 # проміжні PNG нарізки (гра вантажить лише img/cutout/<id>.js)
 img/cutout/*/
 tools/arenas/out/
+tools/icons/out/
