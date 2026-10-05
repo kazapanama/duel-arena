@@ -31,6 +31,7 @@ NET.rin=newVin();
 function vinApply(f,v,game,st){
   const now=performance.now();
   if(v.mv) st.mv=v.mv;
+  if(st.mv) f.inputDir=st.mv;   // напрямок — до здібностей: Blink/Sprint летять туди, куди тягнеш стік
   st.jump=st.jump||v.jump||now<v.jumpUntil;
   st.block=st.block||v.block||now<v.blockUntil;
   for(let i=0;i<4;i++) if(v.ab[i]&&(now-v.ab[i]>BUF_MS||f.useAbility(i,game))) v.ab[i]=0;

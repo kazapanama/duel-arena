@@ -733,7 +733,6 @@ class Fighter{
         if(this.idx===(NET.on?NET.side:0)){ // сенсорне керування — за першим гравцем (у мережі — за своїм)
           const st={mv,jump:wantJump,block:wantBlock};
           vinApply(this,TIN,game,st);
-          if(TIN.mv) this.inputDir=TIN.mv;
           mv=st.mv; wantJump=st.jump; wantBlock=st.block;
         }
       }
