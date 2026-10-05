@@ -32,7 +32,7 @@ WEAPONS = {
     'hunter/Marksmanship': ('longbow', None, 'bow held out in the far hand, near hand drawing the string'),
     'hunter/Survival': ('spear', None, 'spear held diagonally in both hands, tip pointing forward'),
     'rogue/Assassination': ('dagger', 'dagger', 'a dagger in each hand, crouched and ready'),
-    'rogue/Outlaw': ('one-handed sword', 'flintlock pistol', 'sword in the near hand, pistol in the far hand'),
+    'rogue/Combat': ('one-handed sword', 'flintlock pistol', 'sword in the near hand, pistol in the far hand'),
     'rogue/Subtlety': ('dagger', 'dagger', 'a dagger in each hand, crouched and ready'),
     'priest/Discipline': ('staff', None, 'staff held upright in the near hand, far hand open as if casting'),
     'priest/Holy': ('staff', None, 'staff held upright in the near hand, far hand open as if casting'),

@@ -73,7 +73,7 @@ class Game{
       x,y,vx:dir*a.speed*PROJ_SPEED,dmg:a.dmg*dmgM,color:a.pcolor||owner.color,size:a.psize||10,
       slot:owner.abilities.indexOf(a), school:PROJ_SCHOOL[a.name]||null,
       owner,riders:{stun:a.stun,slow:a.slow,dot:a.dot,healFrac:a.healFrac,selfHeal:a.selfHeal,aoeOnHit:a.aoeOnHit},
-      kind:owner.model.style==='bow'?'arrow':(a.name==='Pistol Shot'?'bullet':'orb'),
+      kind:owner.model.style==='bow'?'arrow':(a.name==='Deadly Throw'?'knife':'orb'),
     });
   }
 

@@ -101,7 +101,7 @@ class Fighter{
     this.guard=GUARD_MAX; this.guardDelay=0; this.parryT=0; this.parryCd=0; this.prevBlock=false;
     this.aiPending=null;
     this.tossed=false; this.tossT=0; this.knockT=0; this.wallHit=false; this.leap=null; this.inputDir=0;
-    this.wingsT=0; this.wingsDur=0; this.dispersT=0; this.featherT=0;
+    this.wingsT=0; this.wingsDur=0; this.dispersT=0; this.featherT=0; this.pomT=0;
     this.combo=0; this.comboT=0; this.cancelT=0; this.lastBlocked=false;
     this.growT=0; this.ascT=0;   // Avatar (боєць більшає) і Ascendance (сяйво блискавок)
     if(this.forms){ // новий раунд — знову гуманоїд, свіжі аніматори й КД
@@ -266,7 +266,9 @@ class Fighter{
       game.float(this.x,this.y-this.h-30,'Задалеко','#9aa4b5',13); this.gcd=0.2; return false;
     }
     this.gcd=a.gcd??GCD;
-    if(a.cast){ // кастований спел: КД піде після завершення касту
+    if(a.cast&&this.pomT>0){ // Presence of Mind: заряд витрачено — закляття без касту
+      this.pomT=0; game.float(this.x,this.y-this.h-30,'Миттєво!','#c9e6ff',14);
+    } else if(a.cast){ // кастований спел: КД піде після завершення касту
       this.casting={i,t:a.cast,total:a.cast};
       this.anim.stop();
       sfx('cast');
@@ -363,6 +365,7 @@ class Fighter{
         if(a.wings){ this.wingsT=a.dur; this.wingsDur=a.dur; game.burst(this.x,this.y-this.h*0.7,'#fff2b0',24); }
         if(a.disperse){ this.dispersT=a.dur; this.blocking=false; game.float(this.x,this.y-this.h-30,'Dispersion','#c9a8ff',15); }
         if(a.feather){ this.featherT=a.dur; }
+        if(a.instantCast){ this.pomT=a.dur; game.burst(this.x,this.y-this.h*0.7,'#9fd0ff',16); }
         game.burst(this.x,this.y-this.h/2,a.disperse?'#a878ff':(a.feather?'#ffffff':(a.dmgTakenMult?'#9fd7ff':'#ffb03a')),16);
         break;
       case 'aoe':{
@@ -389,7 +392,7 @@ class Fighter{
             foe.takeDamage((a.dmg||0)*dmgM,this,game,{stun:a.stun,slow:a.slow});
           }
         } else {
-          const dd=a.move?(this.inputDir||dir):(a.back?-dir:dir); // Disengage — від ворога; Grappling Hook — куди біжиш
+          const dd=a.move?(this.inputDir||dir):(a.back?-dir:dir); // Disengage — від ворога; Sprint — куди біжиш
           const nx=clamp(this.x+dd*(a.dist||240),80,WORLD_W-80);
           game.trail(this.x,nx,this.y-this.h/2,this.color);
           this.x=nx;
@@ -624,7 +627,7 @@ class Fighter{
     this.staggerT=Math.max(0,this.staggerT-dt);
     this.knockT=Math.max(0,this.knockT-dt); if(this.tossed) this.tossT+=dt;
     this.wingsT=Math.max(0,this.wingsT-dt);
-    this.dispersT=Math.max(0,this.dispersT-dt); this.featherT=Math.max(0,this.featherT-dt);
+    this.dispersT=Math.max(0,this.dispersT-dt); this.featherT=Math.max(0,this.featherT-dt); this.pomT=Math.max(0,this.pomT-dt);
     this.parryT=Math.max(0,this.parryT-dt); this.parryCd=Math.max(0,this.parryCd-dt);
     this.cancelT=Math.max(0,this.cancelT-dt); this.growT=Math.max(0,this.growT-dt); this.ascT=Math.max(0,this.ascT-dt);
     if(this.comboT>0){ this.comboT-=dt; if(this.comboT<=0) this.combo=0; }
@@ -829,6 +832,8 @@ class Fighter{
         game.particles.push({x:this.x+rnd(-24,24),y:this.y-rnd(10,120),vx:rnd(-25,25),vy:rnd(-50,-15),t:rnd(0.4,0.9),color:Math.random()<0.6?'#7a4cc8':'#c9a8ff',size:rnd(3,6),g:-30});
       if(this.fearT>0&&Math.random()<dt*16)
         game.particles.push({x:this.x+rnd(-18,18),y:this.y-rnd(60,130),vx:rnd(-20,20),vy:rnd(-40,-10),t:rnd(0.3,0.6),color:Math.random()<0.5?'#8a5cff':'#2a1440',size:rnd(2,4),g:-20});
+      if(this.pomT>0&&Math.random()<dt*14) // заряд Presence of Mind — блакитні іскри біля рук
+        game.particles.push({x:this.x+this.facing*rnd(10,30),y:this.y-this.h*rnd(0.45,0.7),vx:rnd(-15,15),vy:rnd(-45,-15),t:rnd(0.3,0.6),color:Math.random()<0.6?'#9fd0ff':'#ffffff',size:rnd(2,3),g:-20});
       if(this.featherT>0&&Math.random()<dt*12)
         game.particles.push({x:this.x-this.facing*rnd(10,40),y:this.y-rnd(40,110),vx:-this.vx*0.2+rnd(-15,15),vy:rnd(5,30),t:rnd(0.6,1.1),color:Math.random()<0.7?'#ffffff':'#ffe9a3',size:rnd(2,4),g:30});
     }
@@ -944,6 +949,7 @@ class Fighter{
         case 'buff':
           if(a.disperse) s=(hpF<0.55?80:0)+(dist<130&&(this.x<280||this.x>WORLD_W-280)?70:0); // притиснули до стіни — пройти крізь
           else if(a.feather) s=!melee&&dist<200?75:(melee&&dist>320?50:0);
+          else if(a.instantCast) s=this.pomT<=0&&this.abilities.some((b,j)=>b.cast&&this.cds[j]<=0)?70:0; // заряд — лише під готовий каст
           else s=a.dmgTakenMult?(hpF<0.6?70:0):(dist<want+120?55:0);
           break;
         case 'stealth': s=dist>220?45:0; break;
@@ -955,7 +961,7 @@ class Fighter{
           break;
         case 'aoe': s=dist<(a.radius||150)*0.85?(foeOpen?90:70):0; if(a.fear&&foe.fearT>0) s=0; break;
         case 'proj': case 'multi':
-          if(a.cast) s=foeOpen?90:(dist>260?55:15);
+          if(a.cast) s=this.pomT>0?95:(foeOpen?90:(dist>260?55:15));
           else if(a.chan) s=dist<170&&!foeOpen?8:(foeOpen||foe.rootT>0?85:60); // канал упритул — зіб'ють
           else s=dist>130?(foeBlocking?30:65):20;
           break;

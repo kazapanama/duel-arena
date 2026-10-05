@@ -103,11 +103,11 @@ const CLASSES = [
      mk.melee('Envenom','🧪',5,125,{dot:{dps:18,dur:4}}),
      mk.buff('Vendetta','🎯',15,6,{dmgMult:1.4}),
    ]},
-   { name:'Outlaw', em:'🏴‍☠️', role:'Бій',
-     classAb: mk.dash('Grappling Hook','🪝',6,{move:true,dist:340}),
+   { name:'Combat', em:'⚔️', role:'Бій',   // у 3.3.5 Outlaw ще звався Combat
+     classAb: mk.dash('Sprint','💨',6,{move:true,dist:340}),
      abilities:[
      mk.melee('Sinister Strike','🗡️',1.1,58),
-     mk.proj('Pistol Shot','🔫',4,115,{slow:{mult:0.6,dur:2},speed:1000,pcolor:'#ffdf8a'}),
+     mk.proj('Deadly Throw','🔪',4,115,{slow:{mult:0.6,dur:2},speed:1000,pcolor:'#ffdf8a'}),
      mk.buff('Adrenaline Rush','⚡',15,6,{spdMult:1.4,dmgMult:1.25}),
    ]},
    { name:'Subtlety', em:'🌑', role:'Бій', abilities:[
@@ -199,13 +199,13 @@ const CLASSES = [
      abilities:[
      mk.proj('Fire Blast','🔥',1.4,46,{dot:{dps:8,dur:2},pcolor:'#ff9440'}),
      mk.proj('Pyroblast','☄️',7,250,{cast:1.3,speed:560,psize:16,pcolor:'#ff6a2a'}),
-     mk.buff('Combustion','💥',15,5,{dmgMult:1.45}),
+     mk.buff('Presence of Mind','⏳',15,10,{instantCast:true}),   // наступний Pyroblast — без касту
    ]},
    { name:'Frost', em:'❄️', role:'Бій',
      classAb: mk.shield('Ice Barrier','🧊',14,115,6),
      abilities:[
-     mk.proj('Frostbolt','❄️',1.4,50,{slow:{mult:0.6,dur:2.5},pcolor:'#aee8ff'}),
-     mk.proj('Glacial Spike','🧊',6,212,{cast:1.0,stun:0.5,speed:700,psize:15,pcolor:'#aee8ff'}),
+     mk.proj('Ice Lance','🧊',1.4,50,{pcolor:'#aee8ff'}),
+     mk.proj('Frostbolt','❄️',6,212,{cast:1.0,slow:{mult:0.6,dur:2.5},speed:700,psize:15,pcolor:'#aee8ff'}),
      mk.aoe('Frost Nova','❄️',9,55,160,{root:{dur:2.5,kind:'ice'}}),
    ]},
   ]},
@@ -323,7 +323,7 @@ const SPEC_ACCENT={
   'warrior/Arms':'#ffd23a','warrior/Fury':'#ff5a3a','warrior/Protection':'#9fd7ff',
   'paladin/Holy':'#ffe27a','paladin/Protection':'#9fd7ff','paladin/Retribution':'#ff9440',
   'hunter/Beast Mastery':'#ff8866','hunter/Marksmanship':'#aee8ff','hunter/Survival':'#9dff70',
-  'rogue/Assassination':'#7cff6b','rogue/Outlaw':'#ffdf8a','rogue/Subtlety':'#b48cff',
+  'rogue/Assassination':'#7cff6b','rogue/Combat':'#ffdf8a','rogue/Subtlety':'#b48cff',
   'priest/Discipline':'#9fd7ff','priest/Holy':'#ffe9a3','priest/Shadow':'#a878ff',
   'dk/Blood':'#ff4a4a','dk/Frost':'#7de0ff','dk/Unholy':'#7cff6b',
   'shaman/Elemental':'#ff7733','shaman/Enhancement':'#8fd0ff','shaman/Restoration':'#6bd6ff',
@@ -346,6 +346,7 @@ function descr(a){
       if(a.dmgMult) b.push(`+${Math.round((a.dmgMult-1)*100)}% шкоди`);
       if(a.spdMult) b.push(`+${Math.round((a.spdMult-1)*100)}% швидкості`);
       if(a.dmgTakenMult) b.push(`−${Math.round((1-a.dmgTakenMult)*100)}% отримуваної шкоди`);
+      if(a.instantCast){ p.push(`Наступне закляття з кастом летить миттєво (заряд ${a.dur}с)`); break; }
       p.push(`Підсилення: ${b.join(', ')} (${a.dur}с)${a.wings?' · золоті крила; твої удари не можна парирувати (лише заблокувати)':''}${a.disperse?' · розсіюєшся тінню: проходиш крізь ворога, але не атакуєш':''}`); break;
     }
     case 'aoe':   p.push(`Вибух довкола себе: ${a.dmg} шкоди`); break;
@@ -388,7 +389,7 @@ const CLASS_ICONS={
   hunter:'Characters and Creatures/hunter.png',
   rogue:'Characters and Creatures/rogue.png',
   priest:'Characters and Creatures/priest.png',
-  dk:'Trade/MajorDeathKnight.png',
+  dk:'Wowhead/spell_deathknight_classicon.png',
   shaman:'Characters and Creatures/shaman.png',
   mage:'Characters and Creatures/mage.png',
   warlock:'Characters and Creatures/warlock.png',
@@ -410,10 +411,10 @@ const ABILITY_ICONS={
   // Паладін
   'Divine Steed':'Abilities/Charger.png',
   'Hammer of Justice':'Spells/FistOfJustice.png',
-  'Holy Shock':'Spells/HolyBolt.png',
-  'Flash of Light':'Spells/Heal.png',
-  'Holy Light':'Spells/Heal.png',
-  'Holy Prism':'Spells/SearingLight.png',
+  'Holy Shock':'Spells/SearingLight.png',
+  'Flash of Light':'Spells/FlashHeal.png',
+  'Holy Light':'Spells/HolyBolt.png',
+  'Holy Prism':'Spells/DivineProvidence.png',
   'Hammer of the Righteous':'Abilities/HammeroftheRighteous.png',
   "Avenger's Shield":'Spells/AvengersShield.png',
   'Consecration':'Spells/SealOfFire.png',
@@ -436,12 +437,12 @@ const ABILITY_ICONS={
   // Розбійник
   'Shadowstep':'Abilities/Shadowstep.png',
   'Kidney Shot':'Abilities/KidneyShot.png',
-  'Mutilate':'Abilities/Rupture.png',
-  'Envenom':'Abilities/PotentVenom.png',
+  'Mutilate':'Abilities/ShadowStrikes.png',
+  'Envenom':'Abilities/Disembowel.png',
   'Vendetta':'Spells/Vendetta.png',
-  'Sinister Strike':'Abilities/CriticalStrike.png',
-  'Pistol Shot':'Miscellaneous/Ammo_Bullet_03.png',
-  'Adrenaline Rush':'Abilities/Sprint.png',
+  'Sinister Strike':'Spells/RitualOfSacrifice.png',
+  'Deadly Throw':'Wowhead/inv_throwingknife_06.png',
+  'Adrenaline Rush':'Spells/ShadowWordDominate.png',
   'Backstab':'Abilities/BackStab.png',
   'Eviscerate':'Abilities/Eviscerate.png',
   'Shadow Dance':'Abilities/ShadowDance.png',
@@ -457,15 +458,15 @@ const ABILITY_ICONS={
   'Greater Heal':'Spells/GreaterHeal.png',
   'Holy Word: Chastise':'Spells/Chastise.png',
   'Mind Spike':'Spells/PainSpike.png',
-  'Mind Blast':'Spells/Brainwash.png',
-  'Shadow Word: Pain':'Spells/Shadesofdarkness.png',
+  'Mind Blast':'Spells/UnholyFrenzy.png',
+  'Shadow Word: Pain':'Spells/ShadowWordPain.png',
   // Лицар смерті
   'Death Grip':'Spells/Strangulate.png',
   'Chains of Ice':'Spells/ChainsOfIce.png',
   "Death's Advance":'Spells/UnholyPresence.png',
-  'Heart Strike':'Abilities/BloodBath.png',
-  'Death Strike':'Spells/DeathStrike.png',
-  'Vampiric Blood':'Spells/BloodLust.png',
+  'Heart Strike':'Wowhead/inv_weapon_shortblade_40.png',
+  'Death Strike':'Wowhead/spell_deathknight_butcher2.png',
+  'Vampiric Blood':'Spells/LifeDrain.png',
   'Frost Strike':'Spells/EmpowerRuneBlade2.png',
   'Obliterate':'Spells/FrozenRuneWeapon.png',
   'Pillar of Frost':'Spells/Glacier.png',
@@ -489,18 +490,18 @@ const ABILITY_ICONS={
   'Arcane Power':'Spells/ArcanePotency.png',
   'Fire Blast':'Spells/Fireball.png',
   'Pyroblast':'Spells/Fireball02.png',
-  'Combustion':'Spells/Immolation.png',
-  'Frostbolt':'Spells/Frostbolt.png',
-  'Glacial Spike':'Spells/IceShard.png',
+  'Presence of Mind':'Spells/EnchantArmor.png',
+  'Ice Lance':'Spells/FrostBlast.png',
+  'Frostbolt':'Spells/FrostBolt02.png',
   'Frost Nova':'Spells/FrostNova.png',
-  "Dragon's Breath":'Abilities/FireStarter.png',
-  'Ice Barrier':'Spells/FrostWard.png',
+  "Dragon's Breath":'Miscellaneous/Head_Dragon_01.png',
+  'Ice Barrier':'Wowhead/spell_ice_lament.png',
   // Чорнокнижник
   'Demonic Circle':'Spells/DemonicCircleTeleport.png',
-  'Fear':'Spells/PsychicHorrors.png',
-  'Shadow Bolt':'Spells/ShadowPower.png',
-  'Drain Life':'Spells/LifeDrain.png',
-  'Agony':'Spells/PainAndSuffering.png',
+  'Fear':'Wowhead/spell_shadow_possession.png',
+  'Shadow Bolt':'Wowhead/spell_shadow_shadowbolt.png',
+  'Drain Life':'Wowhead/spell_shadow_lifedrain02.png',
+  'Agony':'Wowhead/spell_shadow_curseofsargeras.png',
   'Demonbolt':'Spells/FelFlameBolt.png',
   "Hand of Gul'dan":'Spells/MeteorStorm.png',
   'Summon Felguard':'Spells/SummonFelGuard.png',
@@ -522,7 +523,7 @@ const ABILITY_ICONS={
   'Thunderstorm':'Spells/ThunderStorm.png',
   'Heroic Leap':'Abilities/HeroicLeap.png',
   'Harpoon':'Abilities/Trip.png',
-  'Grappling Hook':'Abilities/FleetFooted.png',
+  'Sprint':'Abilities/Sprint.png',
   'Feral Lunge':'Abilities/BlackDireWolf.png',
   'Moonfire':'Spells/MoonGlow.png',
   'Entangling Roots':'Spells/NatureTouchGrow.png',
@@ -531,8 +532,8 @@ const ABILITY_ICONS={
 };
 // іконки форм друїда: кнопка показує форму, у яку перетворишся
 // власні іконки вкладок спеку (інакше береться друга здібність — у друїдів це однаковий Regrowth)
-const SPEC_ICONS={'druid/Balance':'Abilities/Starfall.png','druid/Feral':'Abilities/Cat.png','druid/Restoration':'Abilities/TreeofLife.png'};
-const FORM_ICONS={cat:'Abilities/Cat.png',moonkin:'Abilities/EyeOfTheOwl.png',tree:'Abilities/TreeofLife.png',base:'Characters and Creatures/druid.png'};
+const SPEC_ICONS={'druid/Balance':'Abilities/Starfall.png','druid/Feral':'Wowhead/ability_druid_catform.png','druid/Restoration':'Abilities/TreeofLife.png'};
+const FORM_ICONS={cat:'Wowhead/ability_druid_catform.png',moonkin:'Wowhead/spell_nature_forceofnature.png',tree:'Abilities/TreeofLife.png',base:'Characters and Creatures/druid.png'};
 // привʼязуємо шляхи до даних класів і здібностей (ic — явна іконка, якщо назва повторюється)
 for(const c of CLASSES){
   c.img=ICON_ROOT+CLASS_ICONS[c.id];
@@ -641,7 +642,7 @@ const SPEC_SKINS={
     SK("Bloodfang Armor",'T2','#471c17','#884331',{cutout:'rogue_assassination_2'}),
     SK("Wrathful Gladiator's Vestments",'A8','#261416','#de9538',{cutout:'rogue_assassination_3'}),
   ],
-  'rogue/Outlaw':[
+  'rogue/Combat':[
     SK("Deathmantle",'T5','#3a3328','#9b845b',{cutout:'rogue_outlaw_1'}),
     SK("Slayer's Armor",'T6','#3f0e0f','#be8737',{cutout:'rogue_outlaw_2'}),
     SK("Garona's Battlegear",'T9','#6f422b','#e7bf64',{cutout:'rogue_outlaw_3',faction:'H'}),

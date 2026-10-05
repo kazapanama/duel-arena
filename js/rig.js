@@ -62,7 +62,8 @@ function solvePose(p,style,v34){
   const neck=T(0,-RIG.TORSO);
   const shB=v34?T(8,-RIG.TORSO+8):T(-4,-RIG.TORSO+7), shF=v34?T(-7,-RIG.TORSO+7):T(4,-RIG.TORSO+7);
   const hipB=v34?{x:pel.x+4,y:pel.y}:{x:pel.x-4,y:pel.y}, hipF=v34?{x:pel.x-3,y:pel.y}:{x:pel.x+4,y:pel.y};
-  const lb=ik2(hipB.x,hipB.y,p.bfx,p.bfy,RIG.THIGH,RIG.SHIN,1);
+  // у напівоберті дальнє стегно попереду — дальня ступня теж ближче, інакше чобіт стирчить з-під поли позаду
+  const lb=ik2(hipB.x,hipB.y,p.bfx+(v34?6:0),p.bfy,RIG.THIGH,RIG.SHIN,1);
   const lf=ik2(hipF.x,hipF.y,p.ffx,p.ffy,RIG.THIGH,RIG.SHIN,1);
   const fhx=p.fhx+p.px, fhy=p.fhy+p.py;
   let bhx=p.bhx+p.px, bhy=p.bhy+p.py;
@@ -335,8 +336,7 @@ function actionForAbility(f,a,i){
       return f.swing?'atkA':'atkB';
     case 'proj': case 'multi':
       if(st==='bow') return 'shoot';
-      if(a.name==='Pistol Shot') return 'pistol';
-      if(a.name==="Avenger's Shield"||a.name==='Wildfire Bomb') return 'throw';
+      if(a.name==="Avenger's Shield"||a.name==='Wildfire Bomb'||a.name==='Deadly Throw') return 'throw';
       if(MELEE_STYLES.has(st)) return 'point';
       return 'release';
     case 'drain': return MELEE_STYLES.has(st)?'point':'release';

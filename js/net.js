@@ -139,7 +139,7 @@ function netStartMirror(){
 const r1=v=>Math.round(v*10)/10, r3=v=>Math.round(v*1000)/1000;
 // числові поля бійця, що потрібні малюванню й HUD (порядок однаковий на обох кінцях)
 const NF=['x','y','facing','hp','maxHp','shield','guard','gcd','formCd','hitT','shiftT','wingsT','wingsDur','stealthT','dispersT','rootT','rootDur','fearT','stunT','roundWins','knockT',
-  'meter','combo','comboT','growT','ascT','dotLeft','hotLeft'];
+  'meter','combo','comboT','growT','ascT','dotLeft','hotLeft','pomT'];
 const poseOf=pose=>{ const po={}; for(const k in pose){ const v=pose[k]; po[k]=typeof v==='number'?r3(v):v; } return po; };
 function snapFighter(f){
   const po=poseOf(f.anim.pose);

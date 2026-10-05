@@ -9,7 +9,7 @@
 const PROJ_SCHOOL={
   'Fire Blast':'fire','Pyroblast':'fire','Incinerate':'fire','Conflagrate':'fire',
   'Holy Fire':'holyfire','Lava Burst':'lava','Wildfire Bomb':'bomb',
-  'Frostbolt':'frost','Glacial Spike':'icespike',
+  'Ice Lance':'icespike','Frostbolt':'frost',
   'Arcane Blast':'arcane','Arcane Barrage':'arcane','Starsurge':'star',
   'Shadow Bolt':'shadow','Mind Spike':'shadow','Mind Blast':'shadow',
   'Death Coil':'unholy','Demonbolt':'fel',"Hand of Gul'dan":'fel','Chaos Bolt':'chaos',
@@ -62,7 +62,7 @@ function toLow(x,y){ const T=ctx.getTransform(); const p=T.transformPoint(new DO
 
 function drawProjectile(p,time){
   const {X,Y,s}=toLow(p.x,p.y), dir=Math.sign(p.vx)||1;
-  const sch=p.kind==='arrow'?'arrow':(p.kind==='bullet'?'bullet':(p.school||'orb'));
+  const sch=p.kind==='arrow'?'arrow':(p.kind==='knife'?'knife':(p.school||'orb'));
   const R=Math.max(2,Math.round((p.size||10)*s*0.75));
   const g=ctx; g.save(); g.setTransform(1,0,0,1,0,0); g.imageSmoothingEnabled=false;
   const P=PROJ_PAL[sch]||palOf(p.color||'#ffffff');
@@ -75,10 +75,18 @@ function drawProjectile(p,time){
       g.fillStyle=p.color||'#ffffff'; for(let i=0;i<3;i++){ g.fillRect(X-dir*(L-i*2),Y-2-i%2,1,2); g.fillRect(X-dir*(L-i*2),Y+2,1,2+i%2); }
       break;
     }
-    case 'bullet':
-      g.fillStyle='#ffdf8a'; g.globalAlpha=0.6; g.fillRect(dir>0?X-R*6:X,Y,R*6,1); g.globalAlpha=1;
-      g.fillStyle='#ffffff'; g.fillRect(X-2,Y-1,4,2);
+    case 'knife':{ // метальний ніж Deadly Throw: крутиться в польоті (4 фази), за ним слід
+      const L=Math.max(6,Math.round(R*2.4)), ph=Math.floor(time*28)%4;
+      const [ux,uy]=[[1,0],[1,1],[0,1],[1,-1]][ph];
+      g.fillStyle='#e8eef8'; g.globalAlpha=0.35; g.fillRect(dir>0?X-R*6:X,Y-1,R*6,2); g.globalAlpha=1;
+      const dot=(k,c,w)=>{ g.fillStyle=c; g.fillRect(X+dir*ux*k-(w>>1),Y+uy*k-(w>>1),w,w); };
+      for(let k=-L-1;k<=L+1;k++) dot(k,'#141018',4);                      // темний контур
+      for(let k=-L;k<=L;k++){ const blade=k>-L/3;                         // руків'я — третина від заднього кінця
+        dot(k,blade?'#c8d2e0':'#6b4428',2);
+        if(blade&&k>=L-1) dot(k,'#ffffff',2); }                           // блиск вістря
+      dot(Math.round(-L/3),'#e0b04a',3);                                  // гарда
       break;
+    }
     case 'frost': case 'icespike':{ // крижаний уламок-ромб, сніжинки за ним
       const L=Math.round(R*(sch==='icespike'?4.2:3)), F=Math.round(L*0.35);
       pxGlow(g,X,Y,R*2.6,P[2],0.3);

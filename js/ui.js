@@ -15,6 +15,7 @@ for(const im of document.images) if(im.complete&&!im.naturalWidth&&im.getAttribu
 const store=(k,d)=>{ try{ return JSON.parse(localStorage.getItem(k)||'null')??d; }catch(e){ return d; } };
 const save=(k,v)=>{ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} };
 const SKIN_PREF=store('aa_skins',{});
+if(SKIN_PREF['rogue/Outlaw']&&!SKIN_PREF['rogue/Combat']) SKIN_PREF['rogue/Combat']=SKIN_PREF['rogue/Outlaw']; // спек перейменовано
 const PREFS=store('aa_prefs',{aiSkill:1,muted:false});
 state.aiSkill=PREFS.aiSkill??1; muted=!!PREFS.muted;
 function skinKey(cls,spec){ return cls.id+'/'+spec.name; }

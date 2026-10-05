@@ -56,7 +56,7 @@ const SPEC_LOOK={
   'hunter/Marksmanship':{style:'bow',main:{t:'bow',gem:1}},
   'hunter/Survival':{style:'spear',main:{t:'spear'}},
   'rogue/Assassination':{style:'dual',main:{t:'dagger',edge:1},off:{t:'dagger',edge:1}},
-  'rogue/Outlaw':{style:'dual',main:{t:'sword1h'},off:{t:'pistol'},helm:{t:'bandana',col:'sec'}},
+  'rogue/Combat':{style:'dual',main:{t:'sword1h'},off:{t:'pistol'},helm:{t:'bandana',col:'sec'}},
   'rogue/Subtlety':{style:'dual',main:{t:'dagger',curve:1},off:{t:'dagger',curve:1}},
   'priest/Discipline':{style:'staff',main:{t:'staff',head:'rune'}},
   'priest/Holy':{style:'staff',main:{t:'staff',head:'sun'},helm:{t:'circlet',halo:1}},
