@@ -50,6 +50,33 @@ CELLS (never move, merge or skip them)
 
 """ + fj.COMMON
 
+# форма Metamorphosis: читабельний силует для бійця ~100 арт-пікселів — без наплічників, фіолетова (не чорна) шкіра,
+# крила — окремою деталлю в клітинці плаща (гра вішає їх за спиною, js/cutout.js cutWings)
+DEMON = """Make a pixel-art CHARACTER PARTS SHEET of the warlock's METAMORPHOSIS DEMON FORM from World of Warcraft for a 2D fighting game. The parts will be cut out automatically and attached to an animation skeleton, so the layout and the scale rules below matter more than anything else.
+
+ATTACHED IMAGES
+- Image 1 = LAYOUT AND SCALE TEMPLATE. This is the canvas to fill: keep its exact grid, magenta background, black grid lines and the same cells in the same places. The grey dashed shapes only show WHERE each part goes, HOW BIG it is and HOW it is oriented: replace every grey shape with the finished part and leave no grey lines.
+- Image 2 = the demon form in World of Warcraft: copy its anatomy and colors.
+
+THE DEMON
+A tall, lean, athletic demon (not bulky, not hunched): deep violet-purple skin - clearly PURPLE, not black - with lighter lavender highlights on the muscles so the body shape reads clearly, glowing bright magenta-violet veins and rune marks on the chest and arms, a narrow fanged demonic face with glowing violet eyes, two long curved horns of pale bone swept back, a small glowing violet rune sigil floating above the head, long arms with big black claws tipped with violet glow, digitigrade legs ending in black cloven hooves with violet glow, a short ragged dark loincloth. NO shoulder armor, NO spikes on the shoulders. 3/4 view facing RIGHT, chest turned toward the viewer, like a classic 16-bit fighting-game sprite; every part in this same view. Bold readable silhouette: thin dark outline, 3-4 clear tones per color.
+
+CELLS (never move, merge or skip them)
+   row 1: [tall left cell, rows 1-2] FULL DEMON | HEAD | TORSO | LOWER BODY
+   row 2: SHOULDER | ARM | LEG
+   row 3: [left] PALETTE | MAIN WEAPON | SECOND WEAPON | CAPE
+- FULL DEMON: standing in a combat stance with its big bat wings spread behind it, feet near the bottom of the cell. Only a reference for proportions.
+- HEAD only (with horns and the floating rune), 3/4 view facing right.
+- TORSO only: lean muscular chest and waist with the glowing veins; no head, no arms, no wings.
+- LOWER BODY only: the short ragged loincloth, seen from the front, hanging from the waist.
+- SHOULDER cell: leave it EMPTY magenta (the demon has no shoulder armor).
+- ARM: ONE arm, perfectly STRAIGHT and VERTICAL: bare purple shoulder at the top, elbow in the middle (at the grey tick), a big clawed hand at the bottom.
+- LEG: ONE leg, perfectly STRAIGHT and VERTICAL: hip at the top, knee in the middle (at the grey tick), a cloven hoof at the bottom pointing RIGHT.
+- Leave both WEAPON cells empty magenta: the demon fights with its claws.
+- CAPE cell: draw the PAIR OF BAT WINGS instead of a cape - both wings joined at the root, spread wide upward and outward like on the full demon, seen from behind, black-violet leathery membranes with glowing violet edges and dark bony fingers; the whole pair inside the cell. Palette cell: one row of flat square color swatches.
+
+""" + fj.COMMON
+
 PETS = [
     ('pet_wolf', 'cat', '_refs/pets/101389.jpg', WOLF.format(WHAT="hunter's WOLF PET",
         LOOK='a grey-brown timber wolf: dark grey fur on the back, sandy brown flanks, a pale cream belly and muzzle, amber glowing eyes, a scar over one eye')),
@@ -67,6 +94,8 @@ PETS = [
         LOOK='a colossal golem of dark green-black meteorite rock held together by glowing bright fel-green fire: huge jagged boulder shoulders, a small hunched head sunk between the shoulders with a glowing green skull face, cracks across the whole body leaking green flames, enormous rock fists, thick stumpy rock legs. Very bulky and heavy',
         LOWER='the rocky lower body and hips with green fire leaking from the cracks', SHOULDER='a huge jagged boulder shoulder with green flames', HAND='an enormous rock fist',
         FOOT='a heavy rock foot', WEAPON='Leave both weapon cells empty magenta: the infernal fights with its fists.')),
+    # не пет, а форма Metamorphosis (Demonology): деталі збираються в модель js/pets.js demonFormModel
+    ('form_demon', 'human', '_refs/forms/demon/88715.jpg', DEMON.replace('magenta', 'green').replace('#FF00FF', '#00FF00')),
 ]
 
 def main():
@@ -75,10 +104,13 @@ def main():
         open(os.path.join(HERE, 'prompts', pid + '.txt'), 'w', encoding='utf-8').write(prompt)
         rp = os.path.join(HERE, 'refs', pid + '.png'); fj.prep(os.path.join(ROOT, ref), rp)
         out.append({'id': pid, 'kind': kind, 'set': pid, 'label': 'PET', 'skin': pid,
-                    'template': 'tools/setsheets/cat_layout_template.png' if kind == 'cat' else 'tools/setsheets/layout_template.png',
+                    'template': 'tools/setsheets/cat_layout_template.png' if kind == 'cat' else
+                                ('tools/setsheets/layout_template_green.png' if pid == 'form_demon' else 'tools/setsheets/layout_template.png'),
+                    'bg': 'green' if pid == 'form_demon' else 'magenta',   # фіолетовий демон — на зеленому фоні
                     'ref': f'tools/setsheets/refs/{pid}.png', 'prompt': f'tools/setsheets/prompts/{pid}.txt',
                     'weapons': ['two-handed great axe', None] if pid == 'pet_felguard' else [None, None], 'faction': None,
-                    'pack': 'golem' if pid == 'pet_infernal' else None})   # інфернал — масивна збірка (pack_cutout.pack_bulk)
+                    'pack': 'golem' if pid == 'pet_infernal' else None,   # інфернал — масивна збірка (pack_cutout.pack_bulk)
+                    'wings': pid == 'form_demon'})                        # клітинка плаща — крила (cape.png → wings.png)
     json.dump(out, open(os.path.join(HERE, 'pet_jobs.json'), 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
     print(len(out), 'петів')
 

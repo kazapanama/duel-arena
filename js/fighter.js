@@ -151,6 +151,7 @@ class Fighter{
     this.mirrorT=0; this.mirrorCd=0; this.mirrorN=0;   // Mirror Image
     this.tranqT=0; this.tranqAcc=0;    // Tranquility
     this.sleepT=0; this.sleepDot=null; // Wyvern Sting: сон, удар будить, далі отрута
+    this._metaOn=null;   // Metamorphosis не переживає раунд: setForm нижче поверне свою модель
     if(this.forms){ // новий раунд — знову гуманоїд, свіжі аніматори й КД
       for(const F of Object.values(this.forms)){ F.anim=F.mkAnim(); F.cds.fill(0); }
       this.formCd=0; this.shiftT=0;
@@ -839,7 +840,7 @@ class Fighter{
         game.after(0.12,()=>{ if(this.ko) return; const h=hand(); game.spawnProj(this,ULT_PROJ.haunt,h.x,h.y,this.facing,dm()); });
         break;
       case 'warlock/Demonology': // Metamorphosis: форма демона
-        this.metaT=10; this.metaAcc=0; this.growT=10; this.growDur=10; this.anim.play('roar');
+        this.metaT=10; this.metaAcc=0; this.growT=10; this.growDur=10; this.setMeta(true); this.anim.play('roar');
         game.burst(this.x,this.y-this.h/2,'#9dff70',30); game.ring(this.x,this.y-this.h/2,150,'#7cff6b'); game.portal(this.x,this.y,'#7cff6b');
         break;
       case 'warlock/Destruction':{ // Inferno: інфернал падає з неба, оглушує, лишається битися
@@ -1155,6 +1156,7 @@ class Fighter{
     }
     if(this.metaT>0){ // Metamorphosis: Immolation Aura палить поруч
       this.metaT=Math.max(0,this.metaT-dt); this.metaAcc-=dt;
+      if(this.metaT<=0){ this.setMeta(false); game.burst(this.x,this.y-this.h/2,'#c060ff',24); game.smoke(this.x,this.y-this.h/2); }
       if(this.metaAcc<=0&&fight){ this.metaAcc=0.5;
         if(foe.alive&&Math.abs(foe.x-this.x)<130+foe.w/2&&Math.abs(foe.y-this.y)<120) foe.takeDamage(10*this.dmgMult(),this,game,{dotTick:true,silent:true});
         game.splashPet(this,this.x,130,10*this.dmgMult()); }
@@ -1393,30 +1395,28 @@ class Fighter{
     sp.pose=this.anim.pose; sp.facing=this.facing; sp.x=this.x; sp.y=this.y; sp.time=time;
     sp.flash=this.shiftT>0?this.shiftT/0.35:(this.hitT>0.1?0.85:(this.hitT>0?0.35:0));
     sp.model=this.model;
-    // крила Avenging Wrath: розкриваються за 0.35 с, згасають в останні 0.4 с; Metamorphosis — крила демона
-    const meta=this.metaT>0;
-    if(meta!==!!this._metaSave) this.setMetaLook(meta);
+    this.setMeta(this.metaT>0);   // Metamorphosis: на час ульти — модель демона (і в гостя мережевої гри)
+    sp.model=this.model;
+    // крила Avenging Wrath: розкриваються за 0.35 с, згасають в останні 0.4 с; у демона — постійні кажанові
     const aw=this.wingsT>0?Math.min(1,(this.wingsDur-this.wingsT)/0.35)*Math.min(1,this.wingsT/0.4):0;
-    const mw=meta?Math.min(1,(10-this.metaT)/0.4,this.metaT/0.4):0;
-    this.model.wings=Math.max(aw,mw,this.model.permWings||0);
+    this.model.wings=Math.max(aw,this.model.permWings||0);
     const pf=this.anim.pose.fade;
     sp.fade=this.stealthT>0?Math.min(pf,0.4):(this.dispersT>0?Math.min(pf,0.5):(this.untargT>0?Math.min(pf,0.6):pf));
     // контур-підсвітка: стани ультимейтів, далі бафи
     sp.outline=this.dispersT>0?[168,120,255]:this.invulnT>0?[255,236,150]:this.freezeT>0?[170,230,255]:this.mcT>0?[190,140,255]
-      :meta?[124,255,107]:this.berserkT>0?[255,70,40]:this.dwT>0?[255,50,40]:this.stormT>0?[255,210,80]:this.lustT>0?[255,120,60]
+      :this.metaT>0?[192,96,255]:this.berserkT>0?[255,70,40]:this.dwT>0?[255,50,40]:this.stormT>0?[255,210,80]:this.lustT>0?[255,120,60]
       :this.guardT>0?[235,245,255]:this.wingsT>0?[255,226,120]:this.buffs.dmg.t>0?[255,110,40]
       :(this.buffs.dr.t>0||this.shield>0?[90,170,255]:(this.buffs.spd.t>0||this.hasteT>0?[120,230,255]:this.ultReady()?this.ultOutline(time):null));
     sp.alpha=1;
     return sp;
   }
-  // Metamorphosis: крила стають кажановими, кольору демона (палітра моделі міняється — таблицю кольорів перебудувати)
-  setMetaLook(on){
-    const m=this.model, p=m.pal;
-    if(on){ this._metaSave={kind:m.wingKind,wing:p.wing,wingD:p.wingD,wingL:p.wingL,light:m.wingLight};
-      m.wingKind='bat'; p.wing='#4a2436'; p.wingD='#26101c'; p.wingL='#7a3a52'; m.wingLight='#7cff6b'; }
-    else{ const s=this._metaSave; this._metaSave=null;
-      m.wingKind=s.kind; p.wing=s.wing; p.wingD=s.wingD; p.wingL=s.wingL; m.wingLight=s.light; }
-    m._lut=null;
+  // Metamorphosis: модель і аніматор демона (бʼється пазурами) на час ульти, потім — назад свої
+  setMeta(on){
+    if(on===!!this._metaOn) return;
+    if(on){ this._metaOn={model:this.model,anim:this.anim};
+      this.model=this._demon||(this._demon=demonFormModel()); this.anim=new AnimCtl(this.model.style,this.model.stance); }
+    else{ const s=this._metaOn; this._metaOn=null; this.model=s.model; this.anim=s.anim; this.anim.stop(); }
+    this.spr.model=this.model;
   }
 
   ultReady(){ return this.meter>=ULT_MAX&&!this.ko&&!this.preview; }

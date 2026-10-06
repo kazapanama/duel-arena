@@ -94,6 +94,7 @@ function paintCutout(P){
   if(BULK_LAYOUT[D.kind]) return paintBulkCutout(P);   // сова, дерево, інфернал
   if(D.whole&&I.full) return paintWhole(P,D.whole,I.full);   // деталі вже зменшені пакувальником — білінійного досить, а вище коштує ~2 мс на бійця
   const dim=on=>{ CUT_DIM=on; };   // дальні кінцівки — у тіні
+  if(I.wings&&D.wings) cutWings(P,D,I);
   if(I.cape&&D.cape) cutCape(P,D,I);
   // одноручна зброя в дальній руці (дві зброї) має бути перед тілом — таку руку малюємо поверх тулуба;
   // щит дальньої руки теж перед тілом, але саму руку за ним ховаємо за тулубом
@@ -179,6 +180,13 @@ function cutShoulder(P,D,I,side){
   c.save(); c.translate(sh.x+(d?5:-6),sh.y+(d?-3:-1)); c.rotate(S.lean);   // ближній — трохи назад, щоб висока плита не закривала шолом
   if(d) c.scale(-1,1);
   c.scale(k,k); c.translate(-Sh.c[0],-Sh.c[1]); cutDraw(c,I.shoulder);
+  c.restore();
+}
+// крила за спиною (форма Metamorphosis): корінь між лопатками, повільний помах
+function cutWings(P,D,I){
+  const {c,S,time}=P, W=D.wings, a=S.T(-4,-RIG.TORSO+10), fl=Math.sin(time*3.2);
+  c.save(); c.translate(a.x,a.y); c.rotate(S.lean*0.5);
+  c.scale(W.k*(1+fl*0.05),W.k*(1-fl*0.06)); c.translate(-W.c[0],-W.c[1]); cutDraw(c,I.wings);
   c.restore();
 }
 function cutCape(P,D,I){

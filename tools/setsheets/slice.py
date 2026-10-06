@@ -12,19 +12,37 @@ OLD_CELLS = {  # перший аркуш Gemini: назва → (x0, y0, x1, y1)
     'weapon':   (709, 565, 991, 848), 'weapon2': (421, 565, 708, 848), 'cape': (992, 565, 1264, 848),
 }
 
+# колір фону аркуша: 'magenta' (#FF00FF, звичайні сети) або 'green' (#00FF00 — для фіолетових істот, напр. демона
+# Metamorphosis: на пурпурі їхні кольори зрізаються разом із фоном). Ставить assemble.py із поля bg завдання
+KEY = 'magenta'
+
 def magenta_score(a):
+    """Наскільки піксель схожий на фон (>90 — фон, 25..90 — ореол на краю деталі)."""
     r, g, b = a[..., 0], a[..., 1], a[..., 2]
-    return np.minimum(r, b) - g          # пурпур: R і B високі, G низький
+    if KEY == 'green':
+        return g - np.maximum(r, b) - 0.5 * np.abs(r - b)
+    # пурпур фону: R і B високі й майже рівні, G низький. Фіолетові деталі (сяйво, руни) мають B помітно
+    # вище за R — без штрафу за |R−B| вони вирізались як фон, а решта фіолетового знебарвлювалась до сірого
+    return np.minimum(r, b) - g - 1.5 * np.abs(r - b)
+
+def unfringe(a, mask, lift=20):
+    """Прибрати відтінок фону з пікселів ореолу (mask)."""
+    if KEY == 'green':
+        a[mask, 1] = np.minimum(a[mask, 1], np.maximum(a[mask, 0], a[mask, 2]) + lift)
+    else:
+        a[mask, 0] = np.minimum(a[mask, 0], a[mask, 1] + lift)
+        a[mask, 2] = np.minimum(a[mask, 2], a[mask, 1] + lift)
 
 def cut(img, box, inset=5):
     x0, y0, x1, y1 = box
     a = np.asarray(img.crop((x0 + inset, y0 + inset, x1 - inset, y1 - inset)).convert('RGB')).astype(np.int32)
     m = magenta_score(a)
     alpha = np.where(m > 90, 0, 255).astype(np.uint8)            # чистий фон
-    fringe = (m > 25) & (alpha > 0)                               # ореол JPEG на краях
+    from scipy import ndimage
+    near_bg = ndimage.binary_dilation(m > 90, iterations=2)      # лише край деталі біля фону: сяйво всередині не чіпати
+    fringe = (m > 25) & (alpha > 0) & near_bg                     # ореол JPEG на краях
     a2 = a.copy()
-    a2[fringe, 0] = np.minimum(a[fringe, 0], a[fringe, 1] + 20)  # прибрати пурпуровий відтінок
-    a2[fringe, 2] = np.minimum(a[fringe, 2], a[fringe, 1] + 20)
+    unfringe(a2, fringe)                                          # прибрати відтінок фону
     alpha[(m > 60)] = 0
     # лишаємо головну деталь і шматки, що прилягають до неї (роги, пір'я, кутасті краї); дрібне сміття JPEG
     # і уламки сусідніх деталей, що залізли в клітинку (ріг наплічника біля шолома), — відкидаємо
@@ -138,7 +156,7 @@ def auto_parts(img, picks, dst):
         rgb = a[y0:y1, x0:x1].copy()
         mm = m[y0:y1, x0:x1]
         fr = (mm > 20)
-        rgb[fr, 0] = np.minimum(rgb[fr, 0], rgb[fr, 1] + 20); rgb[fr, 2] = np.minimum(rgb[fr, 2], rgb[fr, 1] + 20)
+        unfringe(rgb, fr)
         alpha = (mask[y0:y1, x0:x1] * 255).astype(np.uint8)
         Image.fromarray(np.dstack([rgb.clip(0, 255).astype(np.uint8), alpha])).save(os.path.join(dst, name + '.png'))
         print(name, (x1 - x0, y1 - y0), 'bbox', (x0, y0, x1, y1))

@@ -6,6 +6,7 @@
   "label": "PET",
   "skin": "pet_wolf",
   "template": "tools/setsheets/cat_layout_template.png",
+  "bg": "magenta",
   "ref": "tools/setsheets/refs/pet_wolf.png",
   "prompt": "tools/setsheets/prompts/pet_wolf.txt",
   "weapons": [
@@ -13,7 +14,8 @@
    null
   ],
   "faction": null,
-  "pack": null
+  "pack": null,
+  "wings": false
  },
  {
   "id": "pet_spiritwolf",
@@ -22,6 +24,7 @@
   "label": "PET",
   "skin": "pet_spiritwolf",
   "template": "tools/setsheets/cat_layout_template.png",
+  "bg": "magenta",
   "ref": "tools/setsheets/refs/pet_spiritwolf.png",
   "prompt": "tools/setsheets/prompts/pet_spiritwolf.txt",
   "weapons": [
@@ -29,7 +32,8 @@
    null
   ],
   "faction": null,
-  "pack": null
+  "pack": null,
+  "wings": false
  },
  {
   "id": "pet_ghoul",
@@ -38,6 +42,7 @@
   "label": "PET",
   "skin": "pet_ghoul",
   "template": "tools/setsheets/layout_template.png",
+  "bg": "magenta",
   "ref": "tools/setsheets/refs/pet_ghoul.png",
   "prompt": "tools/setsheets/prompts/pet_ghoul.txt",
   "weapons": [
@@ -45,7 +50,8 @@
    null
   ],
   "faction": null,
-  "pack": null
+  "pack": null,
+  "wings": false
  },
  {
   "id": "pet_felguard",
@@ -54,6 +60,7 @@
   "label": "PET",
   "skin": "pet_felguard",
   "template": "tools/setsheets/layout_template.png",
+  "bg": "magenta",
   "ref": "tools/setsheets/refs/pet_felguard.png",
   "prompt": "tools/setsheets/prompts/pet_felguard.txt",
   "weapons": [
@@ -61,7 +68,8 @@
    null
   ],
   "faction": null,
-  "pack": null
+  "pack": null,
+  "wings": false
  },
  {
   "id": "pet_infernal",
@@ -70,6 +78,7 @@
   "label": "PET",
   "skin": "pet_infernal",
   "template": "tools/setsheets/layout_template.png",
+  "bg": "magenta",
   "ref": "tools/setsheets/refs/pet_infernal.png",
   "prompt": "tools/setsheets/prompts/pet_infernal.txt",
   "weapons": [
@@ -77,6 +86,25 @@
    null
   ],
   "faction": null,
-  "pack": "golem"
+  "pack": "golem",
+  "wings": false
+ },
+ {
+  "id": "form_demon",
+  "kind": "human",
+  "set": "form_demon",
+  "label": "PET",
+  "skin": "form_demon",
+  "template": "tools/setsheets/layout_template_green.png",
+  "bg": "green",
+  "ref": "tools/setsheets/refs/form_demon.png",
+  "prompt": "tools/setsheets/prompts/form_demon.txt",
+  "weapons": [
+   null,
+   null
+  ],
+  "faction": null,
+  "pack": null,
+  "wings": true
  }
 ]

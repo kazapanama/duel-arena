@@ -3,7 +3,7 @@
    python tools/setsheets/pack_cutout.py <набір> [--weapons axe1h,sword1h]   →  img/cutout/<набір>.js
    Типи зброї: як у js/paint.js (staff, axe2h, axe1h, sword1h, sword2h, mace1h, hammer1h, hammer2h, spear, dagger, bow,
    pistol, shield). Рука й нога на аркуші прямі й вертикальні, зброя — по діагоналі знизу-зліва (руків'я) вгору-вправо."""
-import sys, os, io, json, base64
+import sys, os, io, json, base64, colorsys
 import numpy as np
 from PIL import Image, ImageFilter, ImageEnhance
 
@@ -11,6 +11,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 ART = 1.4        # арт-пікселів на світову одиницю для бійців із растрових деталей (у бою; процедурні — 0.7)
 MARGIN = 1.3     # запас роздільності над ігровою: браузер ще трохи зменшує
 PALETTE = 64     # кольорів у палітрі набору (квантизація піксельного конвеєра)
+ACCENTS = 10     # + стільки кольорів із яскравих насичених пікселів (сяйво, руни)
 # зброя в системі кисті (y угору — мінус): [руків'я, вістря] уздовж осі, як малює procedural drawWeapon
 WEAPON_AXIS = {'staff': (44, -62), 'spear': (44, -72), 'axe2h': (18, -66), 'hammer2h': (18, -58), 'sword2h': (15, -60),
                'axe1h': (8, -36), 'sword1h': (9, -39), 'mace1h': (8, -35), 'hammer1h': (8, -35), 'dagger': (6, -23)}
@@ -113,6 +114,9 @@ def auto_def(src, parts, weapons):
     if 'cape' in have:
         m, _ = _load(src, 'cape'); ys = np.nonzero(m.any(1))[0]; y0, y1 = ys[0], ys[-1]
         k = 48 / (y1 - y0); D['cape'] = {'top': [R(_cx(m, y0 + 3)), R(y0)], 'k': round(k, 4), 'sx': 0.7}; K['cape'] = k
+    if 'wings' in have:   # пара крил за спиною (форма Metamorphosis): корінь — посередині, трохи вище середини
+        m, _ = _load(src, 'wings'); ys, xs = np.nonzero(m); h = ys.max() - ys.min()
+        D['wings'] = {'c': [R((xs.min() + xs.max()) / 2), R(ys.min() + 0.42 * h)], 'k': round(84 / h, 4)}; K['wings'] = 84 / h
     if 'shoulder' in have:
         m, _ = _load(src, 'shoulder'); ys, xs = np.nonzero(m); w = xs.max() - xs.min()
         # кріпимо за нижню третину: наплічник сидить на плечі й здіймається над ним
@@ -155,9 +159,14 @@ def encode(im0, k):
     rgb = im.convert('RGB').resize((w, h), Image.LANCZOS).filter(ImageFilter.UnsharpMask(radius=1, percent=90, threshold=1))
     rgb = ImageEnhance.Color(rgb).enhance(1.08)
     a = im.split()[3].resize((w, h), Image.LANCZOS)
-    arr = np.asarray(rgb).astype(np.int32); lim = arr[..., 1] + 12
-    arr[..., 0] = np.where(np.minimum(arr[..., 0], arr[..., 2]) > lim, np.minimum(arr[..., 0], lim), arr[..., 0])
-    arr[..., 2] = np.where(arr[..., 2] > lim + 10, lim + 10, arr[..., 2])
+    arr = np.asarray(rgb).astype(np.int32)
+    if KEY == 'green':   # прибрати зелений ореол: G не вище за max(R,B) з запасом
+        lim = np.maximum(arr[..., 0], arr[..., 2]) + 12
+        arr[..., 1] = np.where(arr[..., 1] > lim, lim, arr[..., 1])
+    else:                # прибрати пурпуровий ореол
+        lim = arr[..., 1] + 12
+        arr[..., 0] = np.where(np.minimum(arr[..., 0], arr[..., 2]) > lim, np.minimum(arr[..., 0], lim), arr[..., 0])
+        arr[..., 2] = np.where(arr[..., 2] > lim + 10, lim + 10, arr[..., 2])
     small = Image.fromarray(arr.clip(0, 255).astype(np.uint8)).convert('RGBA'); small.putalpha(a)
     ring = a.point(lambda v: 255 if v > 110 else 0).filter(ImageFilter.MaxFilter(3))
     base = Image.new('RGBA', small.size, (11, 8, 8, 0)); base.putalpha(ring)
@@ -170,7 +179,23 @@ def palette(src, parts):
     px = np.concatenate([np.asarray(i.convert('RGB'))[np.asarray(i.split()[3]) > 128] for i in ims])
     q = Image.fromarray(px.reshape(1, -1, 3)).quantize(PALETTE, method=Image.Quantize.MEDIANCUT)
     pal = q.getpalette()[:PALETTE * 3]
-    return ['#%02x%02x%02x' % tuple(pal[i:i + 3]) for i in range(0, len(pal), 3) if min(pal[i], pal[i + 2]) <= pal[i + 1] + 12]
+    cols = [tuple(pal[i:i + 3]) for i in range(0, len(pal), 3)]
+    # яскраві насичені пікселі (сяйво, руни, кігті) — рідкі, медіанний розріз їх зʼїдає: окремі кольори для них
+    mx, mn = px.max(1).astype(int), px.min(1).astype(int)
+    acc = px[(mx > 120) & ((mx - mn) > 0.4 * mx)]
+    if len(acc) > 40:
+        qa = Image.fromarray(acc.reshape(1, -1, 3)).quantize(ACCENTS, method=Image.Quantize.MEDIANCUT).getpalette()[:ACCENTS * 3]
+        cols += [tuple(qa[i:i + 3]) for i in range(0, len(qa), 3)]
+    return list(dict.fromkeys('#%02x%02x%02x' % c for c in cols if not bg_fringe(c)))
+
+KEY = 'magenta'   # колір фону аркуша ('magenta' | 'green'), ставить assemble.py — див. slice.KEY
+
+def bg_fringe(c):
+    """Колір фону аркуша чи його ореол на краях деталей: пурпур — відтінок ~300°, зелений — ~120°, насичений.
+    Фіолетові кольори самих деталей (відтінок ~260–285°) лишаються в палітрі."""
+    h, s, v = colorsys.rgb_to_hsv(*(x / 255 for x in c))
+    lo, hi = (0.27, 0.40) if KEY == 'green' else (0.79, 0.88)
+    return lo < h < hi and s > 0.45 and v > 0.25
 
 # поправки пропорцій для форм друїда на гуманоїдному ригу: голова з рогами чи кроною — більша (піввисота голови),
 # низ — короткий, а не мантія до щиколоток (у мункіна короткі товсті лапи), плечі — менші, щоб не закривали голову

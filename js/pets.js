@@ -57,6 +57,18 @@ function petModel(kind){
   }
   return PET_MODEL[kind]=m;
 }
+// Metamorphosis (Demonology): боєць на час ульти стає фіолетовим крилатим демоном (деталі img/cutout/form_demon.js)
+const DEMON_FORM={style:'claw',L:{prim:'#2a1838',sec:'#160c20',trim:'#8a4ad0',acc:'#c060ff',skin:'#3a2448',race:'demon',
+  helm:{t:'none'},sh:null,cape:null,tabard:null,main:{t:'claws'},off:{t:'claws'},lower:'pants',bulk:1.15,fx:'shadow',
+  wingCol:'#3a1c4a',wingKind:'bat'}};   // крила — деталь із набору (js/cutout.js cutWings)
+function demonFormModel(){
+  const D=DEMON_FORM, cls={id:'pet',color:D.L.acc}, spec={name:'demonform'};
+  const skin={name:'#demonform',tier:1,body:D.L.prim,trim:D.L.trim,head:D.L.skin,eyes:D.L.acc,cutout:'form_demon'};
+  SET_LOOK[skin.name]=D.L;
+  const m=resolveModel(cls,spec,skin);
+  m.style=D.style; m.front=m.main; m.back=m.off; m.glowEye=true;
+  return m;
+}
 function petAnim(kind){ return WOLF_LOOK[kind]?new CatAnimCtl():new AnimCtl(PET_LOOK[kind].style,PET_LOOK[kind].L.stance); }
 
 // малюємо в низькороздільний шар світу (ctx — LOW), як бійця
