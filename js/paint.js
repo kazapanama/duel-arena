@@ -88,6 +88,7 @@ function pHorn(c,x0,y0,cx,cy,x1,y1,w,col){
 function paintModel(c,m,p,time,lights){
   if(m.kind==='cat') return paintCat(c,m,p,time,lights);
   const ck=typeof cutoutKey==='function'?cutoutKey(m):null;   // набір растрових деталей (?cutout=gpt|gemini) або null
+  if(handsSwapped(m.style,!!ck)) p=swapHands(p);
   const S=solvePose(p,m.style,!!ck);
   const P={c,m,p,S,time,lights,pal:m.pal,ck};
   OL=m.pal.outline;
@@ -97,7 +98,10 @@ function paintModel(c,m,p,time,lights){
   if(p.flip!==1){ const f=p.flip; c.scale((f<0?-1:1)*Math.max(0.4,Math.abs(f)),1); }
   if(m.kind==='moonkin'){ c.scale(1.12,1.12); if(ck) paintCutout(P); else paintMoonkin(P); c.restore(); return; }
   if(m.kind==='tree'){ c.scale(1.14,1.14); if(ck) paintCutout(P); else paintTree(P); c.restore(); return; }
-  if(ck){ paintCutout(P); c.restore(); return; }   // бієць із растрових деталей
+  if(ck){ // бієць із растрових деталей; крила (Avenging Wrath, permWings) — процедурні, за спиною
+    if(m.wings>0){ drawWing(P,true); drawWing(P,false); }
+    paintCutout(P); c.restore(); return;
+  }
   if(m.aura) drawAuraBack(P);
   if(m.wings>0) drawWing(P,true);
   if(m.cape) drawCape(P);

@@ -189,7 +189,9 @@ const cellEmpty=()=>{ const d=cellCtx.getImageData(0,0,CELL_W,CELL_H).data; for(
 const BONES=[['pel','neck','#f6f2e8'],['neck','head','#f6f2e8'],['hipB','kneeB','#5aa8ff'],['kneeB','footB','#5aa8ff'],['hipF','kneeF','#9fd0ff'],['kneeF','footF','#9fd0ff'],
   ['shB','elB','#ff9440'],['elB','handB','#ff9440'],['shF','elF','#ffd23a'],['elF','handF','#ffd23a'],['hipB','hipF','#f6f2e8'],['shB','shF','#f6f2e8']];
 function drawBones(g,pose,style,cx,gy,k,m){
-  const S=solvePose(pose,style,!!(m&&typeof cutoutKey==='function'&&cutoutKey(m)));
+  const v34=!!(m&&typeof cutoutKey==='function'&&cutoutKey(m));
+  if(handsSwapped(style,v34)) pose=swapHands(pose);
+  const S=solvePose(pose,style,v34);
   g.save(); g.setTransform(k,0,0,k,cx,gy); g.translate(pose.ox,pose.oy);
   g.lineCap='round';
   for(const [a,b,col] of BONES){

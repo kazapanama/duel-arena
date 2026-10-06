@@ -95,7 +95,8 @@ function paintCutout(P){
   if(D.whole&&I.full) return paintWhole(P,D.whole,I.full);   // деталі вже зменшені пакувальником — білінійного досить, а вище коштує ~2 мс на бійця
   const dim=on=>{ CUT_DIM=on; };   // дальні кінцівки — у тіні
   if(I.cape&&D.cape) cutCape(P,D,I);
-  // одноручна зброя в дальній руці (щит+зброя, дві зброї) має бути перед тілом — таку руку малюємо поверх тулуба
+  // одноручна зброя в дальній руці (дві зброї) має бути перед тілом — таку руку малюємо поверх тулуба;
+  // щит дальньої руки теж перед тілом, але саму руку за ним ховаємо за тулубом
   const wb=handWeapon(D,I,'b'), farFront=!!(wb&&wb.def.t!=='shield'&&wb.def.t!=='pistol'&&wb.def.t!=='bow');
   dim(true); if(!farFront) cutArm(P,D,I,'b'); cutShoulder(P,D,I,'b'); cutLeg(P,D,I,'b'); dim(false);
   cutLeg(P,D,I,'f');
@@ -116,25 +117,30 @@ function paintCutout(P){
     c.restore();
   }
   if(farFront){ dim(true); cutArm(P,D,I,'b'); dim(false); }
-  cutArm(P,D,I,'f'); cutShoulder(P,D,I,'f');
+  if(wb&&wb.def.t==='shield'){ // зброя перед тілом: наплічник — під зброєю й передпліччям, над плечовою кісткою
+    cutShield(P,wb); cutArm(P,D,I,'f',()=>cutShoulder(P,D,I,'f'));
+  } else { cutArm(P,D,I,'f'); cutShoulder(P,D,I,'f'); }
 }
-// що в якій руці: щит — на ближній руці перед тілом (як у стійці shield), інакше основна зброя — у ближній, друга — у дальній
+// що в якій руці: основна зброя — у ближній (правій), друга зброя чи щит — у дальній (лівій; rig.js swapHands)
 function handWeapon(D,I,side){
   const w1=D.weapon&&I.weapon?{img:I.weapon,def:D.weapon}:null, w2=D.weapon2&&I.weapon2?{img:I.weapon2,def:D.weapon2}:null;
-  if(w2&&w2.def.t==='shield') return side==='f'?w2:w1;
   return side==='f'?w1:w2;
 }
-function cutArm(P,D,I,side){
+function cutArm(P,D,I,side,mid){
   const {c,S,p}=P, A=D.arm, d=side==='b';
   const sh=d?S.shB:S.shF, el=d?S.elB:S.elF, hd=d?S.handB:S.handF;
   const ang=d?p.wb:p.wf, w=handWeapon(D,I,side);
   if(A&&I.arm) cutPiece(c,I.arm,A.sh,A.el,sh,el,A.k,[-999,-999,999,A.cut+6]);
+  if(mid) mid();
   if(w&&w.def.t!=='shield') drawCutWeapon(P,w,hd,ang);
   if(A&&I.arm) cutPiece(c,I.arm,A.el,A.hand,el,hd,A.k,[-999,A.cut-6,999,999]);   // передпліччя з кулаком — поверх руків'я
-  if(w&&w.def.t==='shield'){ // щит на кисті, трохи нахилений за кутом руки (як drawShield)
-    const W=w.def, k=44/W.h;
-    c.save(); c.translate(hd.x+2,hd.y-1); c.rotate(ang*0.25); c.scale(k,k); c.translate(-W.c[0],-W.c[1]); cutDraw(c,w.img); c.restore();
-  }
+}
+// щит на передпліччі дальньої руки (ремені — між ліктем і кистю), перед тулубом; стоїть майже прямо, трохи хилиться за кутом руки
+const SHIELD_H=52;
+function cutShield(P,w){
+  const {c,S,p}=P, W=w.def, k=SHIELD_H/W.h, el=S.elB, hd=S.handB;
+  c.save(); c.translate(el.x+(hd.x-el.x)*0.7+3,el.y+(hd.y-el.y)*0.7-4); c.rotate(clamp(p.wb,-0.6,0.9)*0.3);
+  c.scale(k,k); c.translate(-W.c[0],-W.c[1]); cutDraw(c,w.img); c.restore();
 }
 // зброя в системі кисті: руків'я й вістря — у ті ж точки, що й у процедурної зброї (pack_cutout.py WEAPON_AXIS)
 function drawCutWeapon(P,w,hd,ang){
