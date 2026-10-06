@@ -193,6 +193,8 @@ function actionSpec(style,name){
     o.flip=Math.cos(t*Math.PI*2*3.2);
     o.fhx=34; o.fhy=-66; o.wf=1.6; o.bhx=26; o.bhy=-64; o.wb=1.7; o.cape=1;
     return o; }};
+  A.storm={...A.spin,loop:true};   // Bladestorm: той самий оберт, поки триває буря
+  A.trap={dur:0.4,keys:[[0,{py:(S.py||0)+12,lean:0.35,fhx:18,fhy:-30,bhx:8,bhy:-30}],[0.25,{py:(S.py||0)+12,lean:0.35,fhx:20,fhy:-24,bhx:10,bhy:-26}],[0.4,{}]]};   // присів — ставить пастку
   A.slam={dur:0.5,keys:[[0,{py:(S.py||0)+4}],[0.15,{py:-18,bfy:-10,ffy:-14,fhx:4,fhy:-106,wf:-0.3,bhx:-4,bhy:-102,wb:-0.3,lean:-0.14}],[0.27,{py:14,fhx:30,fhy:-38,wf:2.6,bhx:22,bhy:-38,wb:2.6,lean:0.45,ffx:20,bfx:-18}],[0.5,{}]]};
   /* --- стани --- */
   A.tossed={dur:0.9,keys:[[0,{lean:-0.5,head:-0.5,rot:-0.35,py:-2,fhx:-2,fhy:-86,bhx:-22,bhy:-88,bfx:-2,bfy:-16,ffx:16,ffy:-8,cape:1}],[0.45,{lean:-0.35,head:-0.3,rot:-0.55,fhx:6,fhy:-92,bhx:-24,bhy:-78,bfx:-6,bfy:-12,ffx:12,ffy:-4,cape:1}],[0.9,{}]]};
@@ -339,12 +341,13 @@ function actionForAbility(f,a,i){
   switch(a.type){
     case 'melee':
       if(a.name==='Shield Slam') return 'bash';
+      if(a.name==='Divine Storm') return 'spin';
       if(i===1) return 'heavy';
       f.swing=((f.swing|0)+1)%2;
       return f.swing?'atkA':'atkB';
     case 'proj': case 'multi':
       if(st==='bow') return 'shoot';
-      if(a.name==="Avenger's Shield"||a.name==='Wildfire Bomb'||a.name==='Deadly Throw') return 'throw';
+      if(a.name==="Avenger's Shield"||a.name==='Deadly Throw') return 'throw';
       if(MELEE_STYLES.has(st)) return 'point';
       return 'release';
     case 'drain': return MELEE_STYLES.has(st)?'point':'release';
@@ -352,9 +355,10 @@ function actionForAbility(f,a,i){
     case 'shield': return 'ward';
     case 'buff': return a.disperse?'heal':(a.feather?'ward':'roar');
     case 'aoe':
-      if(a.name==='Bladestorm') return 'spin';
       if(a.name==='Thunder Clap') return 'slam';
+      if(a.fear) return 'roar';   // Intimidating Shout, Psychic Scream
       return 'nova';
+    case 'trap': return 'trap';
     case 'zone': return a.at==='self'?'slamGround':'summon';
     case 'knock': return a.front?'release':'nova';
     case 'leap': return 'slam';
@@ -362,7 +366,7 @@ function actionForAbility(f,a,i){
     case 'tele': return 'blink';
     case 'pull': return 'grip';
     case 'stealth': return 'vanish';
-    case 'curse': return 'point';
+    case 'curse': return st==='bow'?'shoot':'point';
     case 'pet': return 'summon';
   }
   return null;

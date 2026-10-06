@@ -142,7 +142,7 @@ TOUCH.frame=function(){
   }
   TOUCH.blk.classList.toggle('lit',!!f.blocking);
   // ульта: кнопка заповнюється разом із супершкалою
-  const U=ULTS[f.cls.id], fr=clamp(f.meter/ULT_MAX,0,1);
+  const U=ultOf(f), fr=clamp(f.meter/ULT_MAX,0,1);
   setIcon(TOUCH.ult,{img:U.img,icon:U.icon});
   TOUCH.ult.style.setProperty('--cd',(1-fr).toFixed(3));
   TOUCH.ult.classList.toggle('ready',fr>=1);

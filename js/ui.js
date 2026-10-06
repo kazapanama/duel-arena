@@ -331,7 +331,7 @@ function selBack(){
 }
 // розмітка рядків списку здібностей і вкладок спеків (спільна для екрана й прогріву selPrewarm)
 const abilRowHtml=(a,i,keys)=>`<i class="slot s${i}">${keys?keys[i]:''}</i>${iconHtml(a.img,a.icon)}<div><b>${a.name}</b><span>${descr(a)}</span></div>`;
-const ultRowHtml=(cls,keys,side)=>{ const U=ULTS[cls.id];
+const ultRowHtml=(cls,spec,keys,side)=>{ const U=ULTS[cls.id+'/'+spec.name];
   return `<i class="slot su">${keys?(keys===KEYS_PAD?'RT':(side===0?'O':'6')):'★'}</i>${iconHtml(U.img,U.icon)}<div><b>${U.ua} <small>ультимейт</small></b><span>${U.d}</span></div>`; };
 const formRowHtml=(spec,keys)=>`<i class="slot s4">${keys?keys[4]:''}</i>${iconHtml(spec.form.img,spec.form.em)}<div><b>${spec.form.name}</b><span>${spec.form.abilities.map(a=>a.name).join(', ')}, ${spec.form.classAb.name}. ${spec.form.note}</span></div>`;
 const specTabHtml=sp=>`${iconHtml(specIconOf(sp),sp.em)}<div><b>${sp.name}</b><span>${sp.role}</span></div>`;
@@ -370,7 +370,7 @@ function selPrewarm(){
 function warmTexts(cls,spec,si){
   const keys=['J','K','L','U','I'], out=[], ab=spec.form?'pf abil five six':'pf abil five';   // як у renderSelect (розмір шрифту залежить від five/six)
   [...spec.abilities,spec.classAb||cls.classAb].forEach((a,i)=>out.push(['.abil','arow',abilRowHtml(a,i,keys),ab]));
-  out.push(['.abil','arow ult',ultRowHtml(cls,keys,0),ab]);
+  out.push(['.abil','arow ult',ultRowHtml(cls,spec,keys,0),ab]);
   if(spec.form) out.push(['.abil','arow form',formRowHtml(spec,keys),ab]);
   if(si===0) out.push(['.specs','pf stab',cls.specs.map(specTabHtml).join('')]);
   out.push(['.sc-plate',cls.name.length>9?'sc-class long':'sc-class',cls.name]);
@@ -458,7 +458,7 @@ function renderSelect(){
     al.appendChild(row);
   });
   { const row=document.createElement('div'); row.className='arow ult';
-    row.innerHTML=ultRowHtml(cls,keys,SEL.side);
+    row.innerHTML=ultRowHtml(cls,spec,keys,SEL.side);
     row.addEventListener('pointerenter',()=>{ const f=curSide().f; f.anim.play('roar'); });
     al.appendChild(row); }
   if(spec.form){

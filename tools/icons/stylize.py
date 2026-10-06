@@ -7,7 +7,8 @@
    python tools/icons/stylize.py                       # згенерувати всі незроблені (усі шляхи з js/data.js)
    python tools/icons/stylize.py --only Spells/Heal.png,Wowhead/x.png --force   # перегенерувати вибрані
    python tools/icons/stylize.py --review              # контактний лист оригінал/нова → tools/icons/out/_review.png
-Нова здібність: прописати оригінал у ABILITY_ICONS (js/data.js), покласти файл у пак і запустити без параметрів."""
+Нова здібність: прописати оригінал у ABILITY_ICONS (js/data.js), покласти файл у пак і запустити без параметрів.
+img/icons/_raw.txt — іконки, що поки лежать у грі оригіналами з паку (не стилізовані): вони теж вважаються незробленими."""
 import os, re, sys, argparse, hashlib
 from concurrent.futures import ThreadPoolExecutor
 from PIL import Image, ImageDraw
@@ -16,6 +17,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(HERE))
 PACK = os.path.join(ROOT, 'WoW Icon Pack')
 DST = os.path.join(ROOT, 'img', 'icons')
+RAW = os.path.join(DST, '_raw.txt')
 OUT = os.path.join(HERE, 'out')
 sys.path.insert(0, os.path.join(ROOT, 'tools', 'setsheets'))
 import gen  # noqa: E402
@@ -64,6 +66,9 @@ def review(icons):
         d.text((x, y + 2 * S + 8), os.path.splitext(os.path.basename(p))[0][:16], fill=(220, 220, 220))
     out = os.path.join(OUT, '_review.png'); im.save(out); print(out)
 
+def raw_icons():
+    return set(l.strip() for l in open(RAW, encoding='utf-8') if l.strip()) if os.path.exists(RAW) else set()
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--only', help='шляхи іконок через кому (як у js/data.js)')
@@ -81,7 +86,8 @@ def main():
     if args.only: icons = [p.strip() for p in args.only.split(',')]
     miss = [p for p in icons if not os.path.exists(os.path.join(PACK, p))]
     if miss: sys.exit(f'Немає оригіналів у паку: {miss}')
-    todo = [p for p in icons if args.force or not os.path.exists(os.path.join(DST, p))]
+    raw = raw_icons()
+    todo = [p for p in icons if args.force or p in raw or not os.path.exists(os.path.join(DST, p))]
     batches = [todo[i:i + N * N] for i in range(0, len(todo), N * N)]
     print(f'Іконок: {len(todo)} · сіток: {len(batches)} · ≈ ${0.071 * len(batches):.2f}')
     if args.dry or not batches: return
@@ -93,10 +99,13 @@ def main():
         build_grid(b, grid)
         if args.force or not os.path.exists(res):
             if not gen.call(args, key, [grid, os.path.join(HERE, 'style_ref.png')], PROMPT, res, f'icons_{tag}'): return 0
-        slice_grid(res, b); return 1
+        slice_grid(res, b); return b
     with ThreadPoolExecutor(max_workers=max(1, args.workers)) as ex:
-        ok = sum(ex.map(run, enumerate(batches)))
-    print(f'Готово сіток: {ok}/{len(batches)} → {os.path.relpath(DST, ROOT)}')
+        done = [b for b in ex.map(run, enumerate(batches)) if b]
+    left = raw - {p for b in done for p in b}
+    if raw != left:
+        open(RAW, 'w', encoding='utf-8').write(''.join(p + '\n' for p in sorted(left)))
+    print(f'Готово сіток: {len(done)}/{len(batches)} → {os.path.relpath(DST, ROOT)}')
 
 if __name__ == '__main__':
     main()

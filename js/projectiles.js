@@ -7,13 +7,13 @@
    згладжування, як у спрайтів бійців.
    ============================================================ */
 const PROJ_SCHOOL={
-  'Fire Blast':'fire','Pyroblast':'fire','Incinerate':'fire','Conflagrate':'fire',
-  'Holy Fire':'holyfire','Lava Burst':'lava','Wildfire Bomb':'bomb',
+  'Fire Blast':'fire','Pyroblast':'fire','Incinerate':'fire','Conflagrate':'fire','Immolate':'fire','Soul Fire':'fire',
+  'Holy Fire':'holyfire','Lava Burst':'lava',
   'Ice Lance':'icespike','Frostbolt':'frost',
-  'Arcane Blast':'arcane','Arcane Barrage':'arcane','Starsurge':'star',
-  'Shadow Bolt':'shadow','Mind Spike':'shadow','Mind Blast':'shadow',
-  'Death Coil':'unholy','Demonbolt':'fel',"Hand of Gul'dan":'fel','Chaos Bolt':'chaos',
-  'Smite':'holy','Holy Shock':'holy','Holy Word: Chastise':'holy','Penance':'holy',
+  'Arcane Blast':'arcane','Arcane Barrage':'arcane','Starfire':'star',
+  'Shadow Bolt':'shadow','Mind Blast':'shadow','Haunt':'soul',
+  'Death Coil':'unholy','Chaos Bolt':'chaos',
+  'Smite':'holy','Holy Shock':'holy','Penance':'holy',
   'Lightning Bolt':'lightning','Wrath':'nature',"Avenger's Shield":'shield','Kill Command':'beast',
 };
 // палітри від найсвітлішого (ядро) до найтемнішого (край хвоста)
@@ -69,6 +69,10 @@ function drawProjectile(p,time){
   switch(sch){
     case 'arrow':{ // древко, наконечник, оперення кольору стрільця
       const L=Math.round(R*4.4);
+      if((p.size||10)>=16){ // Kill Shot: золоте сяйво й довгий світний слід
+        pxGlow(g,X,Y,R*3.4,p.color||'#ffe27a',0.55);
+        g.fillStyle='#fff4b0'; g.globalAlpha=0.6; g.fillRect(dir>0?X-L-R*9:X+L,Y-1,R*9,3); g.globalAlpha=1;
+      }
       g.fillStyle='#d8e8ff'; g.globalAlpha=0.35; g.fillRect(X-dir*(L+R*5),Y,dir*R*5,1); g.globalAlpha=1;
       g.fillStyle='#6b4a2a'; g.fillRect(dir>0?X-L:X,Y,L,2);
       g.fillStyle='#e8eef8'; for(let i=0;i<4;i++) g.fillRect(X+dir*(i)-(dir<0?1:0),Y-(3-i),1,(3-i)*2+2);
@@ -129,6 +133,17 @@ function drawProjectile(p,time){
       }
       break;
     }
+    case 'soul':{ // Haunt: блідий череп-дух із хвилястим хвостом
+      pxGlow(g,X,Y,R*3,'#9fe0ff',0.45);
+      for(let i=1;i<=7;i++){ const k=i/7; g.fillStyle=i<4?'#d8f4ff':'#7ab8d8'; g.globalAlpha=1-k*0.8;
+        g.fillRect(Math.round(X-dir*R*1.4*i*0.7),Math.round(Y+Math.sin(time*16-i*0.9)*R*0.5*k),Math.max(1,Math.round(R*(1-k*0.7))),Math.max(1,Math.round(R*(1-k*0.7)))); }
+      g.globalAlpha=1;
+      pxDisc(g,X,Y,R,'#e8f8ff'); pxDisc(g,X,Y+Math.round(R*0.35),Math.max(1,Math.round(R*0.7)),'#c8ecff');
+      g.fillStyle='#1a2a3a'; const e=Math.max(1,Math.round(R*0.35));
+      g.fillRect(X+dir*Math.round(R*0.15)-e,Y-Math.round(R*0.25),e,e); g.fillRect(X+dir*Math.round(R*0.55)-e,Y-Math.round(R*0.25),e,e);
+      g.fillRect(X+dir*Math.round(R*0.3)-1,Y+Math.round(R*0.45),Math.max(2,Math.round(R*0.5)),1);
+      break;
+    }
     case 'bomb':{ // бомба з ґнотом
       pxDisc(g,X,Y,R,'#1e1a1a'); pxDisc(g,X-1,Y-1,Math.max(1,R-2),'#3a3434'); g.fillStyle='#8a8484'; g.fillRect(X-Math.round(R*0.5),Y-Math.round(R*0.6),2,1);
       g.fillStyle='#6b4a2a'; g.fillRect(X,Y-R-3,1,3);
@@ -184,6 +199,13 @@ function drawFaller(f,time){
     pxGlow(g,X,Y,R*3.5,'#ff7733',0.55);
     pxComet(g,X,Y,R,ux,uy,PROJ_PAL.fire,time,10,0.25);
     pxDisc(g,X,Y,Math.round(R*0.75),'#4a1a0a'); g.fillStyle='#ffb03a'; g.fillRect(X-Math.round(R*0.4),Y,Math.round(R*0.8),1); g.fillRect(X,Y-Math.round(R*0.4),1,Math.round(R*0.8));
+  } else if(f.kind==='star'){ // Starfall: зірка з довгим хвостом
+    const R=Math.max(3,Math.round(9*s));
+    pxGlow(g,X,Y,R*4,'#b8c8ff',0.6);
+    pxComet(g,X,Y,R,ux,uy,PROJ_PAL.star,time,9,0.2);
+    for(let k=0;k<4;k++){ const a=time*9+k*Math.PI/2;
+      for(let i=0;i<=R*2;i++){ g.fillStyle=i<R*0.7?'#ffffff':'#b8c8ff'; g.fillRect(Math.round(X+Math.cos(a)*i),Math.round(Y+Math.sin(a)*i),1,1); } }
+    pxDisc(g,X,Y,Math.max(1,Math.round(R*0.5)),'#ffffff');
   } else { // інфернал: брила з фел-полум'ям
     const R=Math.max(5,Math.round(18*s));
     pxGlow(g,X,Y,R*3.5,'#7cff6b',0.55);

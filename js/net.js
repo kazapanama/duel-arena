@@ -143,7 +143,10 @@ function netStartMirror(){
 const r1=v=>Math.round(v*10)/10, r3=v=>Math.round(v*1000)/1000;
 // числові поля бійця, що потрібні малюванню й HUD (порядок однаковий на обох кінцях)
 const NF=['x','y','facing','hp','maxHp','shield','guard','gcd','formCd','hitT','shiftT','wingsT','wingsDur','stealthT','dispersT','rootT','rootDur','fearT','stunT','roundWins','knockT',
-  'meter','combo','comboT','growT','ascT','dotLeft','hotLeft','pomT'];
+  'meter','combo','comboT','growT','dotLeft','hotLeft','pomT',
+  // стани ультимейтів (малювання: купол, брила, жаба, копії, клинок, крила демона…)
+  'growDur','ccImmT','stormT','invulnT','untargT','healRedT','silenceT','mcT','hexT','freezeT','freezeDur','bombT','hauntT',
+  'dwT','metaT','berserkT','lustT','bwT','hasteT','guardT','drwT','drwSwing','mirrorT','tranqT','sleepT'];
 const poseOf=pose=>{ const po={}; for(const k in pose){ const v=pose[k]; po[k]=typeof v==='number'?r3(v):v; } return po; };
 function snapFighter(f){
   const po=poseOf(f.anim.pose);
@@ -151,7 +154,7 @@ function snapFighter(f){
   return {n:NF.map(k=>r3(+f[k]||0)), fm:f.form, bl:f.blocking?1:0, ko:f.ko?1:0, rk:f.rootKind,
     cd:f.cds.map(r3), bf:[r3(f.buffs.dmg.t),r3(f.buffs.spd.t),r3(f.buffs.dr.t)],
     cs:c?[c.i,r3(c.t),r3(c.total),c.chan?1:0]:0, cc:f.model.castCol||'', po,
-    pt:p?{k:p.kind,x:r1(p.x),f:p.facing,t:r3(p.t),T:p.T,h:r3(p.hitT),po:poseOf(p.anim.pose)}:0};
+    pt:p?{k:p.kind,x:r1(p.x),f:p.facing,t:r3(p.t),T:p.T,h:r3(p.hitT),r:r3(p.rage||0),hp:Math.round(p.hp||0),mh:p.maxHp||0,po:poseOf(p.anim.pose)}:0};
 }
 function netSnap(g){
   return {t:'s', tm:r3(g.time), sh:r1(g.shake), cam:[r3(g.cam.scale),r1(g.cam.x),r1(g.cam.offX),r1(g.cam.offY)],
@@ -170,6 +173,8 @@ function netSnap(g){
     fa:g.fallers.map(f=>[f.kind,r1(f.x),r1(f.y),r1(f.x0),r1(f.y0),r1(f.x1)]),
     er:g.erupts.map(e=>[r1(e.x),r3(e.t),e.T]),
     po:g.portals.map(q=>[r1(q.x),r1(q.y),r3(q.t),q.T,q.color]),
+    tp:g.traps.map(q=>[r1(q.x),r3(q.arm),q.r]),
+    zp:g.zaps.map(z=>[r1(z.x1),r1(z.y1),r1(z.x2),r1(z.y2),r3(z.t),z.T,z.color,z.seed]),
     uf:g.ultFx?[r3(g.ultFx.t),g.ultFx.T,g.ultFx.side,g.ultFx.name,g.ultFx.color,g.ultFx.em]:0,
     sfx:NET.sfxQ.splice(0)};
 }
@@ -183,7 +188,7 @@ function applyFighter(f,d){
   if(d.pt){ // пет: модель і кеш спрайта переживають кадри, оновлюються лише числа
     const q=d.pt; let p=f.pet;
     if(!p||p.kind!==q.k) p=f.pet={kind:q.k,y:GROUND,anim:{pose:{}}};
-    p.x=q.x; p.facing=q.f; p.t=q.t; p.T=q.T; p.hitT=q.h; Object.assign(p.anim.pose,q.po);
+    p.x=q.x; p.facing=q.f; p.t=q.t; p.T=q.T; p.hitT=q.h; p.rage=q.r||0; p.hp=q.hp; p.maxHp=q.mh; Object.assign(p.anim.pose,q.po);
   } else f.pet=null;
   f.model.castCol=d.cc||f.accent;
   Object.assign(f.anim.pose,d.po);
@@ -207,6 +212,8 @@ function applySnap(g,s){
   g.fallers=s.fa.map(a=>({kind:a[0],x:a[1],y:a[2],x0:a[3],y0:a[4],x1:a[5]}));
   g.erupts=s.er.map(a=>({x:a[0],t:a[1],T:a[2]}));
   g.portals=s.po.map(a=>({x:a[0],y:a[1],t:a[2],T:a[3],color:a[4]}));
+  g.traps=(s.tp||[]).map(a=>({x:a[0],arm:a[1],r:a[2],t:1}));
+  g.zaps=(s.zp||[]).map(a=>({x1:a[0],y1:a[1],x2:a[2],y2:a[3],t:a[4],T:a[5],color:a[6],seed:a[7]}));
   g.ultFx=s.uf?{t:s.uf[0],T:s.uf[1],side:s.uf[2],name:s.uf[3],color:s.uf[4],em:s.uf[5]}:null;
   // спільна пауза: показуємо/ховаємо меню паузи слідом за хостом
   if(!!s.pa!==state.paused&&UI.cur!=='overlay') setPaused(!!s.pa);

@@ -6,12 +6,12 @@
    ghoul / demon / infernal (paint.js). Поведінка — Fighter.updatePet.
    ============================================================ */
 const PET_DEFS={
-  // spd — біг, reach — дистанція удару, hitAt — кадр удару після замаху, h — зріст (для іскор), scale — розмір спрайта
-  wolf:      {col:'#e0b070',spd:330,reach:70, hitAt:0.14,h:70, claw:1,scale:0.95},
-  spiritwolf:{col:'#8fd0ff',spd:360,reach:70, hitAt:0.14,h:70, claw:1,scale:0.95,ghost:1,outline:[150,210,255]},
-  ghoul:     {col:'#7cff6b',spd:260,reach:75, hitAt:0.16,h:95, claw:1,scale:0.85},
-  felguard:  {col:'#9dff70',spd:240,reach:95, hitAt:0.22,h:120,scale:1.0},
-  infernal:  {col:'#7cff6b',spd:150,reach:100,hitAt:0.26,h:140,scale:1.18},
+  // spd — біг, reach — дистанція удару, hitAt — кадр удару після замаху, h — зріст (для іскор), scale — розмір спрайта, hp — здоровʼя
+  wolf:      {col:'#e0b070',spd:330,reach:70, hitAt:0.14,h:70, claw:1,scale:0.95,hp:160},
+  spiritwolf:{col:'#8fd0ff',spd:360,reach:70, hitAt:0.14,h:70, claw:1,scale:0.95,ghost:1,outline:[150,210,255],hp:160},
+  ghoul:     {col:'#7cff6b',spd:260,reach:75, hitAt:0.16,h:95, claw:1,scale:0.85,hp:220},
+  felguard:  {col:'#9dff70',spd:240,reach:95, hitAt:0.22,h:120,scale:1.0,hp:210},
+  infernal:  {col:'#7cff6b',spd:150,reach:100,hitAt:0.26,h:140,scale:1.18,hp:300},
 };
 
 /* вовки: забарвлення для рига кота */
@@ -65,12 +65,21 @@ function drawPet(p,time){
   const sp=p._spr||(p._spr={});
   const life=Math.min(1,(p.T-p.t)/0.3,p.t/0.4);   // поява й зникнення — дизером
   sp.model=m; sp.pose=p.anim.pose; sp.facing=p.facing; sp.x=0; sp.y=0; sp.time=time;
-  sp.flash=p.hitT>0?0.6:0; sp.alpha=1; sp.outline=D.outline||null;
+  sp.flash=p.hitT>0?0.6:0; sp.alpha=1; sp.outline=p.rage>0?[255,80,50]:(D.outline||null);   // Bestial Wrath — червоний контур
   sp.fade=Math.min(p.anim.pose.fade??1,(D.ghost?0.62:1)*Math.max(0.05,life));
   ctx.save();
   ctx.fillStyle='rgba(0,0,0,.32)';
-  ctx.beginPath(); ctx.ellipse(p.x,GROUND+5,26*D.scale,6,0,0,7); ctx.fill();
-  ctx.translate(p.x,p.y); ctx.scale(D.scale,D.scale);
+  const sc=D.scale*(p.rage>0?1.3:1);   // у люті пет більший
+  ctx.beginPath(); ctx.ellipse(p.x,GROUND+5,26*sc,6,0,0,7); ctx.fill();
+  ctx.translate(p.x,p.y); ctx.scale(sc,sc);
   drawSprite(sp);
   ctx.restore();
+  if(p.maxHp){ // смуга здоровʼя над петом — його можна вбити
+    const w=40, x=Math.round(p.x-w/2), y=Math.round(GROUND-D.h*sc-16), f=clamp(p.hp/p.maxHp,0,1);
+    ctx.save(); ctx.globalAlpha=0.85*Math.max(0.05,life);
+    ctx.fillStyle='#0c0a10'; ctx.fillRect(x-1,y-1,w+2,6);
+    ctx.fillStyle='#3a1010'; ctx.fillRect(x,y,w,4);
+    ctx.fillStyle=f>0.35?'#5fd35f':'#e05545'; ctx.fillRect(x,y,Math.round(w*f),4);
+    ctx.restore();
+  }
 }

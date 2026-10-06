@@ -119,7 +119,8 @@ function drawSprite(obj,out){
   }
   g.restore();
   // out — у координатах поточного ctx (для HD-спрайта перераховуємо назад)
-  if(out){ const k=hd?SPR_HD.k:1; out.X=X/k; out.Y=Y/k; out.ox=ox/k; out.oy=oy/k; out.s=s/k; }
+  if(out){ const k=hd?SPR_HD.k:1; out.X=X/k; out.Y=Y/k; out.ox=ox/k; out.oy=oy/k; out.s=s/k;
+    out.cv=cv; out.dst=dst; out.dX=X; out.dY=Y; out.ds=s; }   // готовий спрайт і його місце в цілі — для копій (Mirror Image)
 }
 
 function pixelate(c,w,h,obj){

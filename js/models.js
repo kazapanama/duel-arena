@@ -54,7 +54,7 @@ const SPEC_LOOK={
   'paladin/Retribution':{style:'2h',main:{t:'hammer2h',rune:1},race:'draenei',legs:'hoof',tail:1,bulk:1.08}, // Ret — дреней
   'hunter/Beast Mastery':{style:'bow',main:{t:'bow'}},
   'hunter/Marksmanship':{style:'bow',main:{t:'bow',gem:1}},
-  'hunter/Survival':{style:'spear',main:{t:'spear'}},
+  'hunter/Survival':{style:'bow',main:{t:'bow'}},   // у 3.3.5 Survival — дальній бій
   'rogue/Assassination':{style:'dual',main:{t:'dagger',edge:1},off:{t:'dagger',edge:1}},
   'rogue/Combat':{style:'dual',main:{t:'sword1h'},off:{t:'pistol'},helm:{t:'bandana',col:'sec'}},
   'rogue/Subtlety':{style:'dual',main:{t:'dagger',curve:1},off:{t:'dagger',curve:1}},
