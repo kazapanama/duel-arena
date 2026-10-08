@@ -70,10 +70,18 @@ def weapon_def(src, part, t):
 # підборіддя — у системі голови рига (0 — центр голови): 16 перекриває шию й верх тулуба, як процедурна голова (низ на 16.5)
 CHIN = 16
 
+# де підборіддя, якщо низ деталі — не воно (волосся чи борода звисають нижче): частка висоти деталі згори
+HELM_CHIN = {'paladin_retribution_3': 0.78}
+# масштаб голови відносно звичайного: непокрита голова (волосся, вуха) з шириною шолома виходить завеликою
+HELM_SCALE = {'warrior_fury_2': 0.8}
+
 def helm_def(src, face_w=25):
     """Шолом кріпимо за підборіддя (низ шолома — під центр голови рига), масштаб — за шириною обличчя
     (нижні 55% висоти, без рогів і гребенів): високі роги ростуть угору, а не зсувають і не зменшують голову."""
     m, rgb = _load(src, 'helm'); ys = np.nonzero(m.any(1))[0]; y0, y1 = ys[0], ys[-1]
+    name = os.path.basename(os.path.normpath(src)); chin = HELM_CHIN.get(name)
+    if chin: y1 = int(y0 + chin * (y1 - y0))
+    face_w *= HELM_SCALE.get(name, 1)
     rows = range(int(y0 + 0.45 * (y1 - y0)), int(y1) + 1)
     w = max(1, float(np.median([np.nonzero(m[y])[0].ptp() for y in rows if m[y].any()])))   # медіана: бічні роги внизу не зменшують голову
     xb = np.mean([_cx(m, y) for y in rows])                      # вісь обличчя
