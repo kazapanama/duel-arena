@@ -19,6 +19,7 @@ function simMatch(A,B,opt={}){
   }
   const muted0=muted; muted=true;
   const g=new Game(p1,p2);
+  g._ready=g.theme;   // без рендеру: картинки арени й деталей не чекаємо (Game.assetsReady)
   const origOverlay=window.showOverlay; window.showOverlay=()=>{};
   let t=0, roundT=0; const dt=1/60; const rounds=[];
   let floatsSeen=0;

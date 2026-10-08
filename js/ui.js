@@ -6,7 +6,6 @@
    ============================================================ */
 const $=id=>document.getElementById(id);
 const screens={arenaSel:$('arenaSel'),title:$('title'),settings:$('settings'),controls:$('controls'),netLobby:$('netLobby'),select:$('select'),versus:$('versus'),pauseMenu:$('pauseMenu'),overlay:$('overlay')};
-const randomOf=arr=>arr[Math.floor(Math.random()*arr.length)];
 // картинка, якої нема (набір іконок не в репозиторії), просто ховається — не лишає «битої» рамки
 addEventListener('error',e=>{ if(e.target instanceof HTMLImageElement) e.target.classList.add('broken'); },true);
 for(const im of document.images) if(im.complete&&!im.naturalWidth&&im.getAttribute('src')) im.classList.add('broken'); // ті, що впали до цього рядка
@@ -358,8 +357,13 @@ function selPrewarm(){
     const t0=performance.now();
     do {   // щонайменше одне завдання (без вільного часу — по тайм-ауту, до ~8 мс)
       const t=q.shift();
-      if(t.text) warmText(t.text);
-      else if(!warmModel(...t.model,t)&&(t._b||++t.tries<80)) q.splice(t._b?0:Math.min(2,q.length),0,t);   // таблиця добудовується — далі зразу; набір ще вантажиться — за кілька завдань (одночасно 2–3 набори)
+      if(t.text){ warmText(t.text); continue; }
+      const r=warmModel(...t.model,t);
+      if(r===null){   // черга завантажень зайнята — модель чекає, а поки прогріваємо тексти
+        q.unshift(t); const j=q.findIndex(x=>x.text); if(j<0) break;
+        warmText(q.splice(j,1)[0].text); continue;
+      }
+      if(!r&&(t._b||++t.tries<80)) q.splice(t._b?0:Math.min(2,q.length),0,t);   // таблиця добудовується — далі зразу; набір ще вантажиться — за кілька завдань
     } while(q.length&&(dl.didTimeout?performance.now()-t0<8:dl.timeRemaining()>3));
     if(q.length) warmIdle(step);
     else if(WARM.host){ WARM.host.remove(); WARM.host=null; }
@@ -394,8 +398,13 @@ function warmText([sel,cn,html,boxCls]){
 }
 // модель скіну: набір деталей завантажено, затемнені копії дальніх кінцівок готові, таблиця кольорів — у кеші.
 // Таблицю будуємо зрізами (sprite.js lutBuilder), щоб жодне завдання не з'їдало кадр. false — ще не готово (повторити)
+// Набори прогріву вантажаться не більше двох одночасно й не тоді, коли бій чекає своїх (VS, Game.assetsReady):
+// раніше титулка замовляла всі ~90 наборів (~9 МБ) разом, і картинка арени з деталями бійців стояли в черзі за ними.
+// null — не зараз (набір не замовлено, черга зайнята)
 function warmModel(cls,spec,skin,t){
   const m=t._m||(t._m=resolveModel(cls,spec,skin));
+  if(m.cutout&&!CUTOUT_LOAD[m.cutout]&&!(typeof CUTOUT_IMG!=='undefined'&&CUTOUT_IMG[m.cutout])&&!CUTOUT_OFF
+    &&(UI.cur==='versus'||(state.game&&state.game._ready!==state.game.theme)||cutoutInflight()>=2)) return null;
   if(m.cutout&&!cutoutKey(m)) return CUTOUT_LOAD[m.cutout]==='err';
   if(!t._b){
     if(m.cutout) for(const im of Object.values(cutoutImgs(m.cutout))) dimOf(im);
@@ -526,6 +535,7 @@ function renderArenaSel(){
   [...$('arenaGrid').children].forEach((t,i)=>t.classList.toggle('on',i===AS.i));
   $('arenaName').textContent=AS.i?THEMES[AS.i-1].name:'Випадкова арена';
   const t=$('arenaGrid').children[AS.i]; if(t&&t.scrollIntoView) t.scrollIntoView({block:'nearest'});
+  clearTimeout(AS.pre); if(AS.i){ const th=THEMES[AS.i-1]; AS.pre=setTimeout(()=>arenaImg(th),250); }   // картинка арени, на якій затрималися, — завчасно
 }
 function arenaMove(d){ const n=THEMES.length+1; AS.i=(AS.i+d+n)%n; renderArenaSel(); sfx('tick'); }
 function arenaGo(){
@@ -555,11 +565,18 @@ function openVersus(){
   $('vsWhoL').textContent=NET.on?(NET.side===0?'Ти':'Суперник'):'Гравець 1';
   $('vsWhoR').textContent=state.mode==='ai'?'Бот':(NET.on?(NET.side===1?'Ти':'Суперник'):'Гравець 2');
   VS.t=0;
+  preloadFight();
   // перезапуск CSS-анімацій
   el.classList.add('hidden'); void el.offsetWidth;
   show('versus');
   sting('vs');   // акорд припадає на падіння «VS» (0.7 с)
   clearTimeout(VS.timer); VS.timer=setTimeout(()=>{ if(UI.cur==='versus') startFight(); },2700); // гостю startFight нічого не робить — бій почне хост
+}
+// поки йде VS (2.7 с) — вантажимо картинку арени й деталі обох бійців, щоб бій почався одразу (Game.assetsReady)
+function preloadFight(){
+  if(!state.arena&&!state.nextArena) state.nextArena=THEMES[Math.floor(Math.random()*THEMES.length)];   // випадкову обираємо вже тут
+  arenaImg(state.arena||state.nextArena);
+  cutoutSetsReady(VS.fs.flatMap(f=>f.cutoutSets()));
 }
 function frameVersus(dt){
   VS.t+=dt;

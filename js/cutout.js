@@ -3,8 +3,8 @@
    БІЙЦІ З РАСТРОВИХ ДЕТАЛЕЙ
    Кожен скін (skin.cutout у SPEC_SKINS) — набір деталей, нарізаних з аркуша
    GPT (tools/setsheets: gen.py → assemble.py) і запакованих у img/cutout/<id>.js.
-   Набір вантажиться, коли скін уперше потрібен; доки не готовий — малюється
-   процедурна модель. Кожна деталь кріпиться до кісток рига двома точками
+   Набір вантажиться, коли скін уперше потрібен; доки не готовий, бійця не видно
+   (cutoutPending): процедурна модель — лише запасна, якщо набір не завантажився. Кожна деталь кріпиться до кісток рига двома точками
    «пікселі PNG → кістка» (CUTOUT_AUTO), тож усі анімації працюють без змін.
    Риг для таких бійців — у напівоберті 3/4 (так намальовані деталі).
    ?cutout=off — показати процедурну модель (для порівняння).
@@ -49,12 +49,29 @@ function cutoutImgs(name){
       cv.getContext('2d',{willReadFrequently:true}).drawImage(im,0,0); cv._k=sc; set[k]=cv;   // willReadFrequently — полотно в пам'яті, без GPU
       if(--left===0){ CUTOUT_DONE[name]=true; if(typeof onCutoutReady==='function') onCutoutReady(name); }   // галерея перемальовується
     };
+    im.onerror=()=>{ CUTOUT_LOAD[name]='err'; console.warn('битий набір деталей',name,k); };
     im.src=src[k]; set[k]=im; }
   return CUTOUT_IMGS[name]=set;
 }
 const cutDef=name=>(typeof CUTOUT_AUTO!=='undefined'&&CUTOUT_AUTO[name])||null;
 function cutoutReady(name){
   return !!(cutoutImgs(name)&&CUTOUT_DONE[name]&&cutDef(name));
+}
+// набір ще вантажиться (не помилка й не ?cutout=off): такої моделі не малюємо зовсім — інакше на мить
+// з'являється процедурна, а потім її підміняють деталі
+function cutoutPending(m){
+  const k=m&&m.cutout;
+  if(!k||CUTOUT_OFF||typeof k!=='string'||cutoutKey(m)) return false;
+  return CUTOUT_LOAD[k]!=='err'&&!CUTOUT_DONE[k];
+}
+// скільки наборів зараз вантажиться (прогрів меню тримає не більше двох, ui.js warmModel)
+const cutoutInflight=()=>{ let n=0; for(const k in CUTOUT_LOAD) if(CUTOUT_LOAD[k]!=='err'&&!CUTOUT_DONE[k]) n++; return n; };
+// набори за назвою готові (або впали — тоді буде запасна процедурна модель); заодно просить завантажити відсутні
+function cutoutSetsReady(names){
+  if(CUTOUT_OFF) return true;
+  let ok=true;
+  for(const k of names){ if(cutoutRequest(k)) cutoutImgs(k); if(CUTOUT_LOAD[k]!=='err'&&!CUTOUT_DONE[k]) ok=false; }
+  return ok;
 }
 // набір деталей моделі, якщо він уже готовий (і заодно — кольори деталей у палітру квантизації)
 function cutoutKey(m){

@@ -11,12 +11,38 @@ class Game{
     this.hitstop=0; this.slowmo=0; // завмирання при влучанні, сповільнення на KO
     this.round=1; this.roundTimer=90;
     this.phase='intro'; this.phaseT=3.6; this.banner='';
-    this.theme=(typeof state!=='undefined'&&state.arena)||THEMES[Math.floor(Math.random()*THEMES.length)];   // обрана на екрані арени або випадкова
-    if(typeof arenaImg==='function') arenaImg(this.theme);   // почати завантаження картинки
+    // обрана на екрані арени, випадкова, яку вже почав вантажити екран VS (state.nextArena), або нова випадкова
+    const st=typeof state!=='undefined'?state:{};
+    this.theme=st.arena||st.nextArena||THEMES[Math.floor(Math.random()*THEMES.length)];
+    st.nextArena=null;
+    this.born=performance.now();
+    this.assetsReady();   // замовити картинку й набори одразу
     this.winner=null;
     this.cam={scale:1.2,x:WORLD_W/2,offX:0,offY:0,punch:0};
     this.updateCam(0);
-    sfx('round');
+  }
+  /* Картинка арени й набори деталей обох бійців готові? Доки ні, бій не починається, а на екрані — «Завантаження»:
+     раніше на мить показувалися процедурні арена й моделі, а потім їх підміняли картинки.
+     Через 12 с починаємо з тим, що є (для того, що не довантажилось, — запасні процедурні) */
+  assetsReady(){
+    if(this._ready===this.theme) return true;
+    const sets=cutoutSetsReady(this.f.flatMap(f=>f.cutoutSets()));   // обидва виклики — завжди: вони ж і замовляють завантаження
+    const ok=!arenaPending(this.theme)&&sets;
+    if(ok||performance.now()-this.born>12000) this._ready=this.theme;
+    return this._ready===this.theme;
+  }
+  drawLoading(){
+    const c=ctx, t=(performance.now()-this.born)/1000;
+    c.save(); c.setTransform(VIEW_K,0,0,VIEW_K,0,0);
+    c.fillStyle='#000'; c.fillRect(0,0,W,H);
+    if(t>0.25){   // коротке очікування — просто чорний кадр, без мигання напису
+      c.globalAlpha=Math.min(1,(t-0.25)*3);
+      c.font='26px "Tiny5",sans-serif'; c.textAlign='center'; c.fillStyle='#c9d4e8';
+      c.fillText(this.theme.name,W/2,H/2-10);
+      c.font='18px "Tiny5",sans-serif'; c.fillStyle='#7f8aa0';
+      c.fillText('Завантаження'+'.'.repeat(1+Math.floor(t*3)%3),W/2,H/2+22);
+    }
+    c.restore();
   }
 
   /* Камера тримає обох бійців у кадрі, віддаляючись за потреби */
@@ -123,6 +149,8 @@ class Game{
   }
 
   update(dt){
+    if(!this.assetsReady()) return;
+    if(!this._rang){ this._rang=true; sfx('round'); }   // гонг раунду — коли все завантажилось і почався відлік
     this.shake=Math.max(0,this.shake-dt*30);
     this.koFlash=Math.max(0,(this.koFlash||0)-dt);
     if(this.ultFx){ this.ultFx.t-=dt; if(this.ultFx.t<=0) this.ultFx=null; }   // банер ультимейта йде й під час кінопаузи
@@ -241,6 +269,7 @@ class Game{
   toScreen(x,y){ return {x:this.cam.offX+this._shx+x*this.cam.scale, y:this.cam.offY+this._shy+y*this.cam.scale}; }
 
   draw(){
+    if(!this.assetsReady()) return this.drawLoading();
     const main=ctx;
     HDL.ctx.setTransform(1,0,0,1,0,0); HDL.ctx.clearRect(0,0,W,H);
     SPR_HD.ctx=HDL.ctx; SPR_HD.k=PIX;   // бійці з растрових деталей — у повній роздільності

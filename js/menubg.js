@@ -168,8 +168,12 @@ function mbgBolt(){
   while(y<PT.floor-4){ x+=(Math.random()-0.5)*22; y+=4+Math.random()*8; x=clamp(x,PT.gateL+2,PT.gateR-2); pts.push([x,y]); }
   return {pts,t:0.12+Math.random()*0.12,branch:Math.random()<0.5};
 }
-// ключовий арт меню (tools/arenas/arenas.py → img/arenas/menu.webp); поки вантажиться — процедурний Темний Портал
+// ключовий арт меню (tools/arenas/arenas.py → img/arenas/menu.webp). Поки вантажиться — чорний кадр, потім арт
+// проявляється; процедурний Темний Портал — лише якщо картинка не завантажилась (раніше він показувався щоразу й підмінявся артом)
 const MENU_ART=new Image(); MENU_ART.src='img/arenas/menu.webp';
+const MENU_ST={ok:false,err:false,a:0};
+(MENU_ART.decode?MENU_ART.decode():new Promise((ok,no)=>{ MENU_ART.onload=ok; MENU_ART.onerror=no; }))
+  .then(()=>{ MENU_ST.ok=true; },()=>{ MENU_ST.err=true; });
 // вир порталу на арті — частки зображення (центр і розмір арки): поверх нього крутиться фел-вихор
 const ART_PORTAL={cx:0.669,cy:0.54,w:0.16,h:0.365};
 function drawMenuArt(dt){
@@ -182,6 +186,8 @@ function drawMenuArt(dt){
   const px=ox+ART_PORTAL.cx*dw, py=oy+ART_PORTAL.cy*dh, pw=ART_PORTAL.w*dw, ph=ART_PORTAL.h*dh;
   const c=ctx;
   c.save(); c.setTransform(VIEW_K,0,0,VIEW_K,0,0); c.imageSmoothingEnabled=true; c.imageSmoothingQuality='high';
+  MENU_ST.a=Math.min(1,MENU_ST.a+dt*3);   // проява з чорного за ~0.3 с
+  if(MENU_ST.a<1){ c.fillStyle='#000'; c.fillRect(0,0,W,H); c.globalAlpha=MENU_ST.a; }
   c.drawImage(MENU_ART,ox,oy,dw,dh);
   c.globalCompositeOperation='lighter';
   // фел-вихор: спіральні рукави часток, що обертаються й затягуються в центр
@@ -222,7 +228,8 @@ function drawMenuArt(dt){
   c.restore();
 }
 function drawMenuBG(dt){
-  if(MENU_ART.complete&&MENU_ART.naturalWidth) return drawMenuArt(dt);
+  if(MENU_ST.ok) return drawMenuArt(dt);
+  if(!MENU_ST.err){ ctx.save(); ctx.setTransform(1,0,0,1,0,0); ctx.fillStyle='#000'; ctx.fillRect(0,0,cv.width,cv.height); ctx.restore(); return; }
   if(!MBG.stat) mbgBuildStatic();
   MBG.t+=dt;
   const surge=MBG.surge=Math.max(0,(MBG.surge||0)-dt*0.9); // «вибух» порталу при вході в меню

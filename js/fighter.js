@@ -75,6 +75,11 @@ class Fighter{
       this.forms.alt={abilities:[...this.formDef.abilities,this.formDef.classAb],cds:[0,0,0,0],model:fm,h:this.formDef.h,
         mkAnim:()=>fm.kind==='cat'?new CatAnimCtl():new AnimCtl(fm.style,fm.stance)};
     }
+    // Metamorphosis (Demonology): на час ульти — модель демона й свій набір здібностей (spec.meta), як окрема форма
+    if(spec.meta){
+      const dm=demonFormModel();
+      this.forms.meta={abilities:spec.meta,cds:[0,0,0,0],model:dm,h:110,mkAnim:()=>new AnimCtl(dm.style,dm.stance)};
+    }
     for(const F of Object.values(this.forms)){ F.anim=F.mkAnim(); F.pref=Fighter.rangeFor(F.abilities); }
     this.form='base'; this.formCd=0; this.shiftT=0;
     this.spr={model:baseModel,pose:null,facing:this.facing,x:0,y:0,time:0};
@@ -144,14 +149,13 @@ class Fighter{
     this.freezeT=0; this.freezeDur=0; this.freezeBrk=false; this.shatter=null;   // брила льоду (Deep Freeze, Freezing Trap)
     this.bombT=0; this.bombSrc=null;   // Living Bomb на цьому бійці
     this.hauntT=0; this.hauntSrc=null; // Haunt: DoT по цьому бійцю сильніші
-    this.dwT=0; this.metaT=0; this.metaAcc=0; this.berserkT=0; this.lustT=0; this.bwT=0;
+    this.dwT=0; this.metaT=0; this.immoT=0; this.immoAcc=0; this.berserkT=0; this.lustT=0; this.bwT=0;
     this.hasteT=0; this.hasteMult=1;   // Rapid Fire
     this.guardT=0;                 // Guardian Spirit
     this.drwT=0;                   // Dancing Rune Weapon
     this.mirrorT=0; this.mirrorCd=0; this.mirrorN=0;   // Mirror Image
     this.tranqT=0; this.tranqAcc=0;    // Tranquility
     this.sleepT=0; this.sleepDot=null; // Wyvern Sting: сон, удар будить, далі отрута
-    this._metaOn=null;   // Metamorphosis не переживає раунд: setForm нижче поверне свою модель
     if(this.forms){ // новий раунд — знову гуманоїд, свіжі аніматори й КД
       for(const F of Object.values(this.forms)){ F.anim=F.mkAnim(); F.cds.fill(0); }
       this.formCd=0; this.shiftT=0;
@@ -459,7 +463,8 @@ class Fighter{
         if(a.feather){ this.featherT=a.dur; }
         if(a.instantCast){ this.pomT=a.dur; game.burst(this.x,this.y-this.h*0.7,'#9fd0ff',16); }
         if(a.haste){ this.hasteT=a.dur; this.hasteMult=a.haste; }
-        game.burst(this.x,this.y-this.h/2,a.disperse?'#a878ff':(a.feather?'#ffffff':(a.dmgTakenMult?'#9fd7ff':'#ffb03a')),16);
+        if(a.immo){ this.immo=a.immo; this.immoT=this.immoDur=a.dur; this.immoAcc=0; game.ring(this.x,this.y-this.h/2,a.immo.r,'#ff7a2a'); game.burst(this.x,GROUND-20,'#ffb03a',24); }
+        if(!a.immo) game.burst(this.x,this.y-this.h/2,a.disperse?'#a878ff':(a.feather?'#ffffff':(a.dmgTakenMult?'#9fd7ff':'#ffb03a')),16);
         break;
       case 'aoe':{
         game.ring(this.x,this.y-this.h/2,a.radius,this.color);
@@ -840,7 +845,7 @@ class Fighter{
         game.after(0.12,()=>{ if(this.ko) return; const h=hand(); game.spawnProj(this,ULT_PROJ.haunt,h.x,h.y,this.facing,dm()); });
         break;
       case 'warlock/Demonology': // Metamorphosis: форма демона
-        this.metaT=10; this.metaAcc=0; this.growT=10; this.growDur=10; this.setMeta(true); this.anim.play('roar');
+        this.metaT=10; this.growT=10; this.growDur=10; this.setMeta(true); this.anim.play('roar');
         game.burst(this.x,this.y-this.h/2,'#9dff70',30); game.ring(this.x,this.y-this.h/2,150,'#7cff6b'); game.portal(this.x,this.y,'#7cff6b');
         break;
       case 'warlock/Destruction':{ // Inferno: інфернал падає з неба, оглушує, лишається битися
@@ -1154,13 +1159,21 @@ class Fighter{
       if(this.hauntT<=0){ const s=this.hauntSrc; this.hauntSrc=null;
         if(s&&!s.ko){ game.beam(this.x,this.y-this.h*0.8,s.x,s.y-s.h*0.6,'#c8f0ff'); s.healSelf(100,game); } }
     }
-    if(this.metaT>0){ // Metamorphosis: Immolation Aura палить поруч
-      this.metaT=Math.max(0,this.metaT-dt); this.metaAcc-=dt;
+    if(this.metaT>0){ // Metamorphosis: форма демона зі своїми здібностями (forms.meta)
+      this.metaT=Math.max(0,this.metaT-dt);
       if(this.metaT<=0){ this.setMeta(false); game.burst(this.x,this.y-this.h/2,'#c060ff',24); game.smoke(this.x,this.y-this.h/2); }
-      if(this.metaAcc<=0&&fight){ this.metaAcc=0.5;
-        if(foe.alive&&Math.abs(foe.x-this.x)<130+foe.w/2&&Math.abs(foe.y-this.y)<120) foe.takeDamage(10*this.dmgMult(),this,game,{dotTick:true,silent:true});
-        game.splashPet(this,this.x,130,10*this.dmgMult()); }
-      if(Math.random()<dt*26&&game.particles) game.particles.push({x:this.x+rnd(-60,60),y:this.y-rnd(0,40),vx:rnd(-20,20),vy:-rnd(60,140),t:rnd(0.3,0.6),color:Math.random()<0.6?'#7cff6b':'#e0ffb0',size:rnd(2,5),g:-60});
+      if(Math.random()<dt*8&&game.particles) game.particles.push({x:this.x+rnd(-40,40),y:this.y-rnd(20,110),vx:rnd(-15,15),vy:-rnd(30,70),t:rnd(0.3,0.6),color:Math.random()<0.6?'#c060ff':'#7cff6b',size:rnd(2,4),g:-40});
+    }
+    if(this.immoT>0){ // Immolation Aura (форма демона): вогонь довкола палить ворога й пета щопівсекунди
+      const I=this.immo||{dps:25,r:135};
+      this.immoT=Math.max(0,this.immoT-dt); this.immoAcc-=dt;
+      if(this.immoAcc<=0&&fight){ this.immoAcc=0.5;
+        const d=I.dps*0.5*this.dmgMult();
+        if(foe.alive&&Math.abs(foe.x-this.x)<I.r+foe.w/2&&Math.abs(foe.y-this.y)<120) foe.takeDamage(d,this,game,{dotTick:true,silent:true});
+        game.splashPet(this,this.x,I.r,d); }
+      if(game.particles) for(let k=Math.floor(dt*60+Math.random());k>0;k--){   // язики полум'я по колу аури
+        const ox=rnd(-1,1)*I.r;
+        game.particles.push({x:this.x+ox,y:GROUND-rnd(0,10),vx:rnd(-12,12),vy:-rnd(70,170)*(1-Math.abs(ox)/I.r*0.5),t:rnd(0.25,0.55),color:['#fff0b0','#ffb03a','#ff6a1a','#ff3a1a'][(Math.random()*4)|0],size:rnd(3,6),g:-90}); }
     }
     if(this.freezeT>0){ // брила льоду; Deep Freeze наприкінці розколюється
       this.freezeT=Math.max(0,this.freezeT-dt);
@@ -1295,7 +1308,7 @@ class Fighter{
     if(mk&&Math.random()<[0.35,0.7,0.95][sk]){ mv=Math.sign(this.x-mk.x)||-dir; if(this.x<200) mv=1; else if(this.x>WORLD_W-200) mv=-1; this.aiBlockT=0; }
     if(this.dispersT>0) mv=dist<220&&(this.x<300||this.x>WORLD_W-300)?dir:-dir; // біля стіни — крізь ворога на простір
     // від бурі клинків, аури демона й невразливого ворога — геть
-    if((foe.stormT>0||foe.metaT>0||foeImm)&&dist<240&&Math.random()<[0.3,0.65,0.9][sk]){ mv=-dir; if(this.x<200||this.x>WORLD_W-200) mv=0; }
+    if((foe.stormT>0||foe.immoT>0||foeImm)&&dist<240&&Math.random()<[0.3,0.65,0.9][sk]){ mv=-dir; if(this.x<200||this.x>WORLD_W-200) mv=0; }
     // зведена пастка ворога попереду — перестрибнути
     if(mv===dir&&this.onGround&&game.traps.some(t=>t.owner===foe&&t.arm<=0&&(t.x-this.x)*dir>0&&Math.abs(t.x-this.x)<90)&&Math.random()<[0.2,0.5,0.8][sk]) this.aiJump=true;
     this.aiMove=mv;
@@ -1334,6 +1347,7 @@ class Fighter{
         case 'buff':
           if(a.disperse) s=(hpF<0.55?80:0)+(dist<130&&(this.x<280||this.x>WORLD_W-280)?70:0); // притиснули до стіни — пройти крізь
           else if(a.feather) s=!melee&&dist<200?75:(melee&&dist>320?50:0);
+          else if(a.immo) s=dist<a.immo.r+60?85:(dist<300?30:0);   // Immolation Aura — коли ворог поруч
           else if(a.instantCast) s=this.pomT<=0&&this.abilities.some((b,j)=>b.cast&&this.cds[j]<=0)?70:0; // заряд — лише під готовий каст
           else s=a.dmgTakenMult?(hpF<0.6?70:0):(dist<want+120?55:0);
           break;
@@ -1346,7 +1360,8 @@ class Fighter{
           break;
         case 'aoe': s=dist<(a.radius||150)*0.85?(foeOpen?90:70):0; if(a.fear&&foe.fearT>0) s=0; break;
         case 'proj': case 'multi':
-          if(a.cast) s=this.pomT>0?95:(foeOpen?90:(dist>260?55:15));
+          if(a.cast&&a.cast<0.5) s=foeOpen?95:(dist<160?70:60);   // короткий каст (Soul Fire демона) упритул не зіб'ють
+          else if(a.cast) s=this.pomT>0?95:(foeOpen?90:(dist>260?55:15));
           else if(a.chan) s=dist<170&&!foeOpen?8:(foeOpen||foe.rootT>0?85:60); // канал упритул — зіб'ють
           else s=dist>130?(foeBlocking?30:65):20;
           break;
@@ -1410,12 +1425,25 @@ class Fighter{
     sp.alpha=1;
     return sp;
   }
-  // Metamorphosis: модель і аніматор демона (бʼється пазурами) на час ульти, потім — назад свої
+  // набори растрових деталей, що можуть знадобитися в бою: скін, форма друїда, пети (здібності й ульти), демон
+  cutoutSets(){
+    const out=new Set(), key=this.cls.id+'/'+this.spec.name;
+    for(const F of Object.values(this.forms)){
+      if(F.model.cutout) out.add(F.model.cutout);
+      for(const a of F.abilities) if(a&&a.type==='pet') out.add(PET_CUTOUT[a.pkind||'wolf']);
+    }
+    if(key==='hunter/Beast Mastery') out.add(PET_CUTOUT.wolf);
+    if(key==='warlock/Destruction') out.add(PET_CUTOUT.infernal);
+    out.delete(undefined); out.delete(null);
+    return [...out];
+  }
+  // Metamorphosis: на час ульти — форма демона (forms.meta: модель, аніматор, здібності), потім — назад свої
   setMeta(on){
-    if(on===!!this._metaOn) return;
-    if(on){ this._metaOn={model:this.model,anim:this.anim};
-      this.model=this._demon||(this._demon=demonFormModel()); this.anim=new AnimCtl(this.model.style,this.model.stance); }
-    else{ const s=this._metaOn; this._metaOn=null; this.model=s.model; this.anim=s.anim; this.anim.stop(); }
+    if(!this.forms.meta||on===(this.form==='meta')) return;
+    this.casting=null; this.windup=null;   // каст/замах старого набору не має спрацювати здібністю нового
+    if(on){ this.forms.meta.cds.fill(0); this.setForm('meta'); }
+    else{ this.immoT=0; this.setForm('base'); }
+    this.anim.stop();
     this.spr.model=this.model;
   }
 
@@ -1510,6 +1538,7 @@ class Fighter{
   // стани ультимейтів за бійцем (світові координати): ангел-охоронець, стовп Спокою, вихор бурі
   drawStatesBack(g){
     const x=this.x, y=this.y, t=g.time;
+    if(this.immoT>0){ ctx.save(); ctx.translate(x,y); this.drawImmo(g,false); ctx.restore(); }
     if(this.guardT>0){ // Guardian Spirit: світлі крила й німб за спиною
       const k=Math.min(1,(10-this.guardT)/0.4,this.guardT/0.5), fl=Math.sin(t*3)*0.08;
       ctx.save(); ctx.translate(x-this.facing*4,y-112); ctx.globalCompositeOperation='lighter';
@@ -1537,9 +1566,34 @@ class Fighter{
   }
   // поверх спрайта — у шарі ефектів (game.js splitPost), інакше спрайт із деталей у шарі вищої роздільності їх перекриває
   drawPost(g){ ctx.save(); ctx.translate(this.x,this.y); this.drawStatesFront(g); ctx.restore(); }
+  // Immolation Aura: кільце вогню довкола ніг — задня половина за бійцем (front=false), передня поверх нього
+  drawImmo(g,front){
+    const t=g.time, r=(this.immo||{r:135}).r, dur=this.immoDur||6;
+    const k=Math.min(1,(dur-this.immoT)/0.25,this.immoT/0.4), R=r*(0.6+0.4*Math.min(1,(dur-this.immoT)/0.25));
+    ctx.save(); ctx.globalCompositeOperation='lighter';
+    if(!front){   // жар на землі
+      const gr=ctx.createRadialGradient(0,0,4,0,0,R);
+      gr.addColorStop(0,`rgba(255,150,40,${0.35*k})`); gr.addColorStop(0.7,`rgba(255,80,20,${0.22*k})`); gr.addColorStop(1,'rgba(255,40,0,0)');
+      ctx.fillStyle=gr; ctx.save(); ctx.scale(1,0.2); ctx.beginPath(); ctx.arc(0,0,R,0,7); ctx.fill(); ctx.restore();
+    }
+    const N=28;
+    for(let i=0;i<N;i++){
+      const a=i/N*Math.PI*2+t*1.6, sy=Math.sin(a);
+      if((sy>=0)!==front) continue;                       // передні язики — ближче до глядача, нижче на екрані
+      const fx=Math.cos(a)*R, fy=sy*R*0.2;
+      const h=(22+14*Math.sin(t*13+i*1.7)+8*Math.sin(t*7.3+i*0.9))*k*(front?1:0.8);
+      if(h<3) continue;
+      const w=Math.max(4,h*0.42);
+      ctx.globalAlpha=0.75*k; ctx.fillStyle='#ff4a14'; ctx.fillRect(fx-w/2,fy-h,w,h);
+      ctx.fillStyle='#ffa030'; ctx.fillRect(fx-w*0.32,fy-h*0.78,w*0.64,h*0.78);
+      ctx.fillStyle='#fff0b0'; ctx.fillRect(fx-w*0.15,fy-h*0.42,w*0.3,h*0.42);
+    }
+    ctx.restore();
+  }
   // стани поверх бійця (локальні координати: 0 — між ступнями)
   drawStatesFront(g){
     const t=g.time;
+    if(this.immoT>0) this.drawImmo(g,true);
     if(this.invulnT>0){ // Divine Shield: золотий купол
       const p=0.5+0.5*Math.sin(t*6), r=70+p*3;
       ctx.save(); ctx.globalCompositeOperation='lighter';
@@ -1682,12 +1736,6 @@ class Fighter{
   }
 }
 
-function shade(hex,amt){
-  const n=parseInt(hex.slice(1),16);
-  let r=(n>>16)+amt, g=((n>>8)&255)+amt, b=(n&255)+amt;
-  r=clamp(r,0,255); g=clamp(g,0,255); b=clamp(b,0,255);
-  return `rgb(${r},${g},${b})`;
-}
 function roundRect(x,y,w,h,r){
   ctx.beginPath();
   ctx.moveTo(x+r,y);

@@ -225,6 +225,13 @@ const CLASSES = [
      mk.proj('Immolate','🔥',1.4,46,{dot:{dps:8,dur:3},pcolor:'#ff9440'}),
      mk.proj('Soul Fire','☄️',6,190,{cast:1.0,speed:640,pcolor:'#ff7a2a',psize:14}),
      mk.pet('Summon Felguard','👹',14,10,{pkind:'felguard',pdmg:19,pcd:1.2}),
+   ],
+     // Metamorphosis (ультимейт): на 10 с — набір форми демона з 3.3.5, бій упритул (Fighter.forms.meta)
+     meta:[
+     mk.melee('Shadow Cleave','🌑',1.1,52,{range:120}),
+     mk.proj('Soul Fire','☄️',6,150,{cast:0.3,speed:760,pcolor:'#ff7a2a',psize:14}),   // каст 1 с → 0.3 с
+     mk.buff('Immolation Aura','🔥',12,6,{immo:{dps:25,r:135}}),
+     mk.dash('Demon Charge','💨',8,{toEnemy:true,dmg:40,stun:0.6}),
    ]},
    { name:'Destruction', em:'🔥', role:'Бій',
      classAb: mk.aoe('Shadowfury','🌑',12,40,160,{stun:1.0}),
@@ -342,7 +349,7 @@ const ULTS={
   'warlock/Affliction':{name:'Haunt',ua:'Мара',icon:'👻',ic:'Wowhead/ability_warlock_haunt.png',
     d:'Дух летить у ворога: 130 шкоди; 8с твої DoT на ньому бʼють на 60% сильніше. Коли дух повернеться — +100 HP'},
   'warlock/Demonology':{name:'Metamorphosis',ua:'Метаморфоза',icon:'😈',ic:'Wowhead/spell_shadow_demonform.png',
-    d:'10с форма демона: більшаєш, крила, +20% шкоди, −30% отримуваної; Immolation Aura палить усе поруч 20/с'},
+    d:'10с форма демона: більшаєш, крила, +20% шкоди, −30% отримуваної. Інші здібності: Shadow Cleave, Soul Fire за 0.3с, Immolation Aura (25/с довкола), Demon Charge (оглушення 0.6с)'},
   'warlock/Destruction':{name:'Inferno',ua:'Інферно',icon:'🔥',ic:'Spells/SummonInfernal.png',
     d:'Інфернал падає на позначене місце: 150 шкоди, оглушення 1.2с, потім 8с бʼється поруч'},
   'druid/Balance':{name:'Starfall',ua:'Зорепад',icon:'🌠',ic:'Abilities/Starfall.png',
@@ -554,6 +561,9 @@ const ABILITY_ICONS={
   'Shadow Bolt':'Wowhead/spell_shadow_shadowbolt.png',
   'Drain Life':'Wowhead/spell_shadow_lifedrain02.png',
   'Summon Felguard':'Spells/SummonFelGuard.png',
+  'Shadow Cleave':'Wowhead/ability_warlock_avoidance.png',   // форма демона (Metamorphosis)
+  'Immolation Aura':'Wowhead/spell_fire_incinerate.png',
+  'Demon Charge':'Wowhead/ability_warstomp.png',
   'Chaos Bolt':'Abilities/ChaosBolt.png',
   'Incinerate':'Spells/FlameBolt.png',
   'Conflagrate':'Spells/Fire.png',
@@ -583,7 +593,7 @@ const FORM_ICONS={cat:'Wowhead/ability_druid_catform.png',moonkin:'Wowhead/spell
 // привʼязуємо шляхи до даних класів і здібностей (ic — явна іконка, якщо назва повторюється)
 for(const c of CLASSES){
   c.img=ICON_ROOT+CLASS_ICONS[c.id];
-  const all=[c.classAb,...c.specs.flatMap(s=>[...s.abilities,...(s.classAb?[s.classAb]:[]),...(s.form?[...s.form.abilities,s.form.classAb]:[])])];
+  const all=[c.classAb,...c.specs.flatMap(s=>[...s.abilities,...(s.classAb?[s.classAb]:[]),...(s.form?[...s.form.abilities,s.form.classAb]:[]),...(s.meta||[])])];
   for(const a of all){
     const p=a.ic||ABILITY_ICONS[a.name];
     if(p) a.img=ICON_ROOT+p;
@@ -601,7 +611,7 @@ function dropIcons(){
     c.img='';
     for(const s of c.specs){
       s.img='';
-      for(const a of [...s.abilities,...(s.classAb?[s.classAb]:[]),...(s.form?[...s.form.abilities,s.form.classAb]:[])]) a.img='';
+      for(const a of [...s.abilities,...(s.classAb?[s.classAb]:[]),...(s.form?[...s.form.abilities,s.form.classAb]:[]),...(s.meta||[])]) a.img='';
       if(s.form){ s.form.img=''; s.form.baseImg=''; }
     }
     c.classAb.img='';

@@ -76,7 +76,7 @@ function netOnMsg(m){
       break;
     case 'peer-left': netDropPeer(); show('netLobby'); netWaiting('Суперник вийшов.'); sfx('tick'); break;
     case 'sel': netApplySel(m); break;
-    case 'vs': if(NET.guest){ NET.vsPending=true; state.picks=m.p.map(netPick); setTimeout(()=>{ if(NET.on) openVersus(); },650); } break;
+    case 'vs': if(NET.guest){ NET.vsPending=true; state.picks=m.p.map(netPick); state.arena=THEMES[m.a]||null; setTimeout(()=>{ if(NET.on) openVersus(); },650); } break;
     case 'fight': if(NET.guest) netStartMirror(); break;
     case 's': if(NET.guest){ NET.snap=m; for(const k of m.sfx) sfx(k); } break;   // звуки — одразу, навіть якщо кадр знімка пропустимо
     case 'end': if(NET.guest&&state.game) showOverlay(state.game.f[m.w]); break;
@@ -121,7 +121,8 @@ function netAnnounceVersus(){
   NET.vsPending=true;
   const P=SEL.sides.map(s=>[s.ci,s.si,s.ki]);
   state.picks=P.map(netPick);
-  NET.send({t:'vs',p:P});
+  if(!state.arena) state.nextArena=THEMES[Math.floor(Math.random()*THEMES.length)];   // випадкову — вже тут: гість почне вантажити ту саму картинку
+  NET.send({t:'vs',p:P,a:THEMES.indexOf(state.arena||state.nextArena)});
   openVersus();
 }
 
@@ -146,7 +147,7 @@ const NF=['x','y','facing','hp','maxHp','shield','guard','gcd','formCd','hitT','
   'meter','combo','comboT','growT','dotLeft','hotLeft','pomT',
   // стани ультимейтів (малювання: купол, брила, жаба, копії, клинок, крила демона…)
   'growDur','ccImmT','stormT','invulnT','untargT','healRedT','silenceT','mcT','hexT','freezeT','freezeDur','bombT','hauntT',
-  'dwT','metaT','berserkT','lustT','bwT','hasteT','guardT','drwT','drwSwing','mirrorT','tranqT','sleepT'];
+  'dwT','metaT','immoT','berserkT','lustT','bwT','hasteT','guardT','drwT','drwSwing','mirrorT','tranqT','sleepT'];
 const poseOf=pose=>{ const po={}; for(const k in pose){ const v=pose[k]; po[k]=typeof v==='number'?r3(v):v; } return po; };
 function snapFighter(f){
   const po=poseOf(f.anim.pose);

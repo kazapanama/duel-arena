@@ -111,11 +111,15 @@ function bgBuild(kind){
 
 /* ---------- арени-картинки ---------- */
 const PROC_KINDS=new Set(['shadow','durotar','northrend']);
+// готова лише розкодована картинка: інакше перший drawImage розкодовує її посеред кадру
 function arenaImg(th){
   if(!th||!th.img) return null;
-  if(!th._im){ th._im=new Image(); th._im.src=th.img; }
-  return th._im.complete&&th._im.naturalWidth?th._im:null;
+  if(!th._im){ const im=th._im=new Image(); im.fetchPriority='high'; im.src=th.img;
+    (im.decode?im.decode():new Promise((ok,no)=>{ im.onload=ok; im.onerror=no; })).then(()=>{ th._ok=true; },()=>{ th._err=true; console.warn('немає картинки арени',th.img); }); }
+  return th._ok?th._im:null;
 }
+// картинка ще вантажиться (якщо впала — буде запасний процедурний фон)
+const arenaPending=th=>!!(th&&th.img&&!arenaImg(th)&&!th._err);
 // картинка — частина світу: рухається й масштабується разом із камерою, як земля під бійцями
 // (інакше при наближенні камери бійці «ростуть» і «їздять» відносно нерухомого фону). Ширина — трохи більша
 // за арену (WORLD_W), лінія землі картинки (th.ground — частка висоти) — на рівні GROUND.
@@ -149,7 +153,9 @@ function drawArenaFx(game){
 /* ---------- щокадрове малювання ---------- */
 function drawArenaBG(game,shx,shy){
   if(game._bgImg) return drawArenaFx(game);
-  const th=game.theme, kind=PROC_KINDS.has(th.kind)?th.kind:'shadow';   // поки картинка вантажиться — процедурний фон
+  const th=game.theme;
+  if(arenaPending(th)){ ctx.save(); ctx.setTransform(1,0,0,1,0,0); ctx.fillStyle='#000'; ctx.fillRect(0,0,LOW.cv.width,LOW.cv.height); ctx.restore(); return; }   // не підміняти процедурним фоном
+  const kind=PROC_KINDS.has(th.kind)?th.kind:'shadow';   // картинки немає — процедурний фон
   const L=BG[kind]||(BG[kind]=bgBuild(kind));
   const g=ctx, t=game.time, cam=game.cam;
   g.save(); g.setTransform(1,0,0,1,0,0); g.imageSmoothingEnabled=false;

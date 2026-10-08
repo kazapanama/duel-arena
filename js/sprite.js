@@ -83,6 +83,7 @@ function sprScratch(w,h){
 /* obj: {model, pose, facing, x, y, flash, outline:[r,g,b]?, alpha, time}
    Малює в поточний ctx з його трансформацією (світ → пікселі цілі). */
 function drawSprite(obj,out){
+  if(typeof cutoutPending==='function'&&cutoutPending(obj.model)){ if(out) out.cv=null; return; }   // деталі ще вантажаться — не підміняти процедурною моделлю
   const hd=SPR_HD.ctx&&obj.model&&typeof cutoutKey==='function'&&cutoutKey(obj.model);
   const dst=hd?SPR_HD.ctx:ctx;
   const T=hd?new DOMMatrix().scale(SPR_HD.k).multiply(ctx.getTransform()):ctx.getTransform();
