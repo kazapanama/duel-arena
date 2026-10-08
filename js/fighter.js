@@ -39,6 +39,10 @@ const ULT_AI={
   'druid/Feral':(f,o,d)=>d<350,
   'druid/Restoration':(f,o,d,hp)=>hp<0.55,
 };
+/* Сила дії й удару: 0 — звичайна (X, B, A), 1 — сильна (Y, будь-який каст чи канал), 2 — ультимейт (a.tier).
+   Удар перебиває дію суперника (замах, каст, ульту), лише якщо він не слабший за неї; слабший — тільки шкода
+   (без стагеру й відкидання; каст лише відсувається). Контроль (оглушення, страх, сон, підкидання) діє як і раніше. */
+function abilityTier(a,i){ return a.tier??((i===1||a.cast||a.chan)?1:0); }
 // тривалість замаху: легкі удари 0.12 с, важкі 0.26 с, миттєві бафи/ривки — без замаху
 function startupOf(a,i){
   if(a.cast) return 0;
@@ -156,6 +160,7 @@ class Fighter{
     this.mirrorT=0; this.mirrorCd=0; this.mirrorN=0;   // Mirror Image
     this.tranqT=0; this.tranqAcc=0;    // Tranquility
     this.sleepT=0; this.sleepDot=null; // Wyvern Sting: сон, удар будить, далі отрута
+    this.ultActT=0;                // замах ульти (actTier)
     if(this.forms){ // новий раунд — знову гуманоїд, свіжі аніматори й КД
       for(const F of Object.values(this.forms)){ F.anim=F.mkAnim(); F.cds.fill(0); }
       this.formCd=0; this.shiftT=0;
@@ -163,6 +168,16 @@ class Fighter{
     }
   }
   get alive(){ return !this.ko; }
+  // сила поточної дії (abilityTier): -1 — нічого не робить, 0/1 — замах чи каст здібності, 2 — ульта
+  actTier(){
+    if(this.ultActT>0||this.stormT>0||this.tranqT>0) return 2;
+    let t=-1;
+    if(this.casting) t=Math.max(t,this.casting.tier??1);
+    if(this.windup) t=Math.max(t,this.windup.tier??0);
+    const L=this.leap&&this.leap.a;
+    if(L) t=Math.max(t,L.tier??abilityTier(L,this.abilities.indexOf(L)));
+    return t;
+  }
   get onGround(){ return this.y>=GROUND-0.5; }
   dmgMult(){ return (this.buffs.dmg.t>0?this.buffs.dmg.mult:1)*(this.dwT>0?1.25:1)*(this.metaT>0?1.2:1)*(this.lustT>0?1.1:1)*(this.bwT>0?1.1:1); }
   spdMult(){ const fp=this.formPassive; return (this.buffs.spd.t>0?this.buffs.spd.mult:1)*(this.slowT>0?this.slowMult:1)*(fp&&fp.spd||1)
@@ -228,6 +243,8 @@ class Fighter{
       if(abs>0) game.float(this.x,this.y-this.h-26,`🛡${Math.round(abs)}`,'#9fd7ff',15);
     }
     dmg=Math.round(dmg);
+    // дія сильніша за удар (abilityTier) — удар її не збиває: лише шкода, каст відсувається
+    const armor=!tick&&!blocked&&this.actTier()>(opts.tier??0);
     if(dmg>0&&this.fearT>0){ this.fearDmg+=dmg;
       if(this.fearDmg>=this.fearBrk){ this.fearT=0; game.float(this.x,this.y-this.h-34,'Страх минув','#c9a8ff',14); } }
     if(dmg>0&&!tick&&this.sleepT>0) this.wake(game);   // Wyvern Sting: удар будить
@@ -254,22 +271,22 @@ class Fighter{
       else{
         game.dmgFloat(this,dmg,blocked?'#8fa4c0':(heavy?'#ff5a3a':'#ffdca0'),heavy&&!blocked);
         const dirOut=src?(Math.sign(this.x-src.x)||-this.facing):-this.facing;
-        if(!blocked){
-          // стагер: удар збиває замах, штовхає каст назад, важкий — перериває каст
+        if(armor){
+          if(this.casting){ if(this.casting.chan) this.chanPushback(0.3); else this.casting.t=Math.min(this.casting.total,this.casting.t+0.35); }
+          if(game.time-(this._armT??-9)>0.7){ this._armT=game.time; game.float(this.x,this.y-this.h-34,'Не збито!','#ffe27a',13); }
+        } else if(!blocked){
+          // стагер: удар не слабший за дію — збиває замах, ульту й каст
           this.staggerT=Math.max(this.staggerT,heavy?0.38:0.2);
-          this.windup=null;
-          if(this.casting){
-            if(heavy){ this.casting=null; game.float(this.x,this.y-this.h-34,'Перервано!','#ff8a7a',14); }
-            else if(this.casting.chan) this.chanPushback(0.3);
-            else this.casting.t=Math.min(this.casting.total,this.casting.t+0.35);
-          }
+          this.windup=null; this.ultActT=0;
+          if(this.tranqT>0){ this.tranqT=0; game.float(this.x,this.y-this.h-34,'Перервано!','#ff8a7a',14); }   // канал Спокою — лише удар ульти
+          if(this.casting){ this.casting=null; game.float(this.x,this.y-this.h-34,'Перервано!','#ff8a7a',14); }
           this.kbV=dirOut*(heavy?320:130);
           if(heavy&&this.onGround) this.vy=Math.min(this.vy,-170);
           if(this.anim&&!this.casting) this.anim.play('hurt');
           if(heavy){ game.shake=Math.max(game.shake,9); game.cam.punch=Math.max(game.cam.punch,0.05); }
         }
-        game.hitstop=Math.max(game.hitstop,blocked?0.035:(heavy?0.1:0.05));
-        game.spark(this.x-dirOut*18,this.y-this.h*0.58,-dirOut,blocked?'#9fd7ff':'#ffcf6a',heavy&&!blocked);
+        game.hitstop=Math.max(game.hitstop,blocked?0.035:(armor?0.04:(heavy?0.1:0.05)));
+        game.spark(this.x-dirOut*18,this.y-this.h*0.58,-dirOut,blocked?'#9fd7ff':(armor?'#ffe27a':'#ffcf6a'),heavy&&!blocked&&!armor);
       }
       if(!opts.silent) sfx(heavy&&!blocked?'big':'hit');
     }
@@ -294,7 +311,7 @@ class Fighter{
       else this.dots.push({dps:opts.dot.dps,t:opts.dot.dur,acc:0,tick:0,name:opts.dotName});
     }
     if(opts.toss&&cc) this.tossUp(opts.toss.dir,opts.toss.v,opts.toss.vy,opts.toss.wall,src);
-    if(opts.knockback && !blocked && cc){
+    if(opts.knockback && !blocked && !armor && cc){
       this.kbV=Math.sign(this.x-(src?src.x:this.x-1))*opts.knockback*4;
       this.vy=Math.min(this.vy,-200);
     }
@@ -360,7 +377,7 @@ class Fighter{
     if(a.cast&&this.pomT>0){ // Presence of Mind: заряд витрачено — закляття без касту
       this.pomT=0; game.float(this.x,this.y-this.h-30,'Миттєво!','#c9e6ff',14);
     } else if(a.cast){ // кастований спел: КД піде після завершення касту
-      this.casting={i,t:a.cast,total:a.cast};
+      this.casting={i,t:a.cast,total:a.cast,tier:abilityTier(a,i)};
       this.anim.stop();
       sfx('cast');
       return true;
@@ -368,14 +385,14 @@ class Fighter{
     this.cds[i]=a.cd;
     if(a.chan){ // канал: КД одразу, ефект тиками, поки стоїш
       const n=a.chan.ticks||a.count||1;
-      this.casting={i,t:a.chan.dur,total:a.chan.dur,chan:true,n:0,ticks:n,every:a.chan.dur/n,beamT:0};
+      this.casting={i,t:a.chan.dur,total:a.chan.dur,chan:true,n:0,ticks:n,every:a.chan.dur/n,beamT:0,tier:abilityTier(a,i)};
       this.anim.stop(); this.model.castCol=a.pcolor||this.accent; sfx('cast');
       return true;
     }
     let su=startupOf(a,i);
     if(cancel){ su=Math.min(su,0.12); this.cancelT=0; game.float(this.x,this.y-this.h-30,'СКАСУВАННЯ','#ffd23a',13); }
     this.playAbilityAnim(a,i);
-    if(su>0){ this.windup={i,t:su,total:su}; this.attackT=su+0.08;
+    if(su>0){ this.windup={i,t:su,total:su,tier:abilityTier(a,i)}; this.attackT=su+0.08;
       if(this.wingsT>0&&game.tell) game.tell(this.x+this.facing*30,this.y-this.h*0.78,su); }
     else this.resolveAbility(i,game);
     return true;
@@ -407,7 +424,7 @@ class Fighter{
   }
   // ефект здібності (кадр удару)
   resolveAbility(i,game){
-    const a=this.abilities[i];
+    const a=this.abilities[i], T=abilityTier(a,i);
     const foe=game.other(this);
     if(a.type!=='melee') sfx('cast');
     const dir=this.facing;
@@ -426,8 +443,8 @@ class Fighter{
         const dx=foe.x-this.x, dy=(foe.y-foe.h/2)-(this.y-this.h/2);
         if(Math.abs(dx)<(a.range||95)+foe.w/2 && Math.abs(dy)<90 && Math.sign(dx||dir)===dir){
           const brk=this.berserkT>0;   // Berserk: удари не блокуються й лишають кровотечу
-          const dealt=foe.takeDamage(a.dmg*mult,this,game,{stun:a.stun,slow:a.slow,dot:a.dot,dotName:a.name,knockback:a.knockback,heavy:i===1,unblockable:brk});
-          if(brk) foe.takeDamage(0,this,game,{dot:{dps:16,dur:3},dotName:'Rake',silent:true,unblockable:true});
+          const dealt=foe.takeDamage(a.dmg*mult,this,game,{tier:T,stun:a.stun,slow:a.slow,dot:a.dot,dotName:a.name,knockback:a.knockback,heavy:i===1,unblockable:brk});
+          if(brk) foe.takeDamage(0,this,game,{tier:T,dot:{dps:16,dur:3},dotName:'Rake',silent:true,unblockable:true});
           if(i===0&&dealt>0&&!foe.lastBlocked) this.cancelT=CANCEL_WIN;
           if(a.selfHeal) this.healSelf(a.selfHeal,game,true);
           if(a.healFrac) this.healSelf(dealt*a.healFrac,game,true);
@@ -470,7 +487,7 @@ class Fighter{
         game.ring(this.x,this.y-this.h/2,a.radius,this.color);
         const d=Math.hypot(foe.x-this.x,(foe.y-foe.h/2)-(this.y-this.h/2));
         if(d<a.radius+foe.w/2){
-          foe.takeDamage(a.dmg*dmgM,this,game,{stun:a.stun,slow:a.slow,root:a.root,dot:a.dot,dotName:a.name,heavy:true,fear:a.fear});
+          foe.takeDamage(a.dmg*dmgM,this,game,{tier:T,stun:a.stun,slow:a.slow,root:a.root,dot:a.dot,dotName:a.name,heavy:true,fear:a.fear});
         }
         if(a.selfHeal) this.healSelf(a.selfHeal,game,true);
         game.splashPet(this,this.x,a.radius,a.dmg*dmgM);
@@ -495,7 +512,7 @@ class Fighter{
           this.x=clamp(stop,80,WORLD_W-80);
           if(Math.abs(foe.x-this.x)<130 && (a.dmg||a.slow)){
             if(a.slow) game.beam(this.x,this.y-this.h*0.6,foe.x,foe.y-foe.h*0.6,'#c8b890');
-            foe.takeDamage((a.dmg||0)*dmgM,this,game,{stun:a.stun,slow:a.slow});
+            foe.takeDamage((a.dmg||0)*dmgM,this,game,{tier:T,stun:a.stun,slow:a.slow});
           }
         } else {
           const dd=a.move?(this.inputDir||dir):(a.back?-dir:dir); // Disengage — від ворога; Sprint — куди біжиш
@@ -522,7 +539,7 @@ class Fighter{
       case 'pull':{
         game.beam(this.x,this.y-this.h*0.6,foe.x,foe.y-foe.h*0.6,'#b06aff');
         foe.x=clamp(this.x+dir*95,80,WORLD_W-80);
-        foe.takeDamage((a.dmg||0)*dmgM,this,game,{stun:a.stun});
+        foe.takeDamage((a.dmg||0)*dmgM,this,game,{tier:T,stun:a.stun});
         break;
       }
       case 'knock':{
@@ -535,7 +552,7 @@ class Fighter{
           game.shake=Math.max(game.shake,5);
           const dx=(foe.x-this.x)*dir;
           if(dx>-20&&dx<a.range+foe.w/2&&Math.abs(foe.y-this.y)<150)
-            foe.takeDamage(a.dmg*dmgM,this,game,{unblockable:true,slow:a.slow,knockback:a.push,stun:a.stun}); // поштовх без падіння
+            foe.takeDamage(a.dmg*dmgM,this,game,{tier:T,unblockable:true,slow:a.slow,knockback:a.push,stun:a.stun}); // поштовх без падіння
           game.splashPet(this,this.x+dir*a.range*0.5,a.range*0.5,a.dmg*dmgM);
           break;
         }
@@ -546,7 +563,7 @@ class Fighter{
         const d=Math.abs(foe.x-this.x);
         if(d<a.radius+foe.w/2 && Math.abs(foe.y-this.y)<140){
           const out=Math.sign(foe.x-this.x)||dir;
-          foe.takeDamage(a.dmg*dmgM,this,game,{unblockable:true,toss:{dir:out,v:a.toss.v,vy:a.toss.vy,wall:a.wall}});
+          foe.takeDamage(a.dmg*dmgM,this,game,{tier:T,unblockable:true,toss:{dir:out,v:a.toss.v,vy:a.toss.vy,wall:a.wall}});
         }
         game.splashPet(this,this.x,a.radius,a.dmg*dmgM);
         break;
@@ -567,7 +584,7 @@ class Fighter{
       case 'curse':{
         if(Math.abs(foe.x-this.x)>(a.range||SPELL_RANGE)){ game.float(this.x,this.y-this.h-30,'Задалеко','#9aa4b5',13); break; } // утік, поки кастували
         game.beam(this.x,this.y-this.h*0.6,foe.x,foe.y-foe.h*0.6,a.sleep?'#9dff70':(a.stun?'#ffe27a':(a.slow&&!a.dot?'#aee8ff':'#a878ff')));
-        foe.takeDamage((a.dmg||0)*dmgM,this,game,{dot:a.dot,dotName:a.name,slow:a.slow,root:a.root,fear:a.fear,stun:a.stun,sleep:a.sleep,unblockable:!!(a.fear||a.sleep),silent:!a.dmg});
+        foe.takeDamage((a.dmg||0)*dmgM,this,game,{tier:T,dot:a.dot,dotName:a.name,slow:a.slow,root:a.root,fear:a.fear,stun:a.stun,sleep:a.sleep,unblockable:!!(a.fear||a.sleep),silent:!a.dmg});
         if(!a.dmg && a.dot) game.float(foe.x,foe.y-foe.h-10,a.icon,'#c9a8ff',20);
         break;
       }
@@ -614,6 +631,7 @@ class Fighter{
     if(game.phase!=='fight') return false;
     const U=ultOf(this);
     this.meter=0; this.gcd=Math.max(this.gcd,0.4); this.blocking=false; this.stealthT=0;
+    this.ultActT=0.6;   // замах ульти: слабші удари її не збивають (actTier)
     game.ultFx={t:1.15,T:1.15,side:this.idx,name:U.ua,color:this.cls.color,em:U.icon};
     game.hitstop=Math.max(game.hitstop,0.55); game.cam.punch=Math.max(game.cam.punch,0.1);
     sfx('ult');
@@ -622,11 +640,11 @@ class Fighter{
   }
   runUlt(U,game){
     const foe=game.other(this), dir=this.facing, dm=()=>this.dmgMult();
-    const hit=(x,r,dmg,o={})=>{ if(foe.alive&&Math.abs(foe.x-x)<r+foe.w/2&&foe.y>GROUND-200) foe.takeDamage(dmg*dm(),this,game,{heavy:true,...o}); game.splashPet(this,x,r,dmg*dm()); };
+    const hit=(x,r,dmg,o={})=>{ if(foe.alive&&Math.abs(foe.x-x)<r+foe.w/2&&foe.y>GROUND-200) foe.takeDamage(dmg*dm(),this,game,{tier:2,heavy:true,...o}); game.splashPet(this,x,r,dmg*dm()); };
     const leapTo=(tx,L,vy=-760)=>{
       const air=2*-vy/1500;
       this.vy=vy; this.y=Math.min(this.y,GROUND-2);
-      this.leap={vx:(clamp(tx,80,WORLD_W-80)-this.x)/air,a:L};
+      this.leap={vx:(clamp(tx,80,WORLD_W-80)-this.x)/air,a:Object.assign(L,{tier:2})};
     };
     const hand=()=>({x:this.x+this.facing*30,y:this.y-this.h*0.62});
     const freeCC=()=>{ this.stunT=0; this.slowT=0; this.rootT=0; this.fearT=0; };
@@ -656,7 +674,7 @@ class Fighter{
             const pt=foe.pet; if(pt&&!pt.waveHit&&Math.abs((pt.x-x0)*d-fr)<40){ pt.waveHit=true; foe.hurtPet(150*dm(),game,this); }
             const fx=(foe.x-x0)*d;
             if(!done&&!this.ko&&foe.alive&&fx>fr-60-foe.w/2&&fx<fr+foe.w/2+10&&foe.y>GROUND-70){
-              done=true; foe.takeDamage(150*dm(),this,game,{heavy:true,unblockable:true,stun:2.0});
+              done=true; foe.takeDamage(150*dm(),this,game,{tier:2,heavy:true,unblockable:true,stun:2.0});
             }
           });
         });
@@ -706,7 +724,7 @@ class Fighter{
           if(this.ko||!foe.alive) return;
           game.slash(this.x+this.facing*40,this.y-this.h*0.55,this.facing,'#7cff6b','heavy');
           if(Math.abs(foe.x-this.x)>170) return;
-          foe.takeDamage(150*dm(),this,game,{heavy:true,unblockable:true,dot:{dps:25,dur:6},dotName:'Deadly Poison'});
+          foe.takeDamage(150*dm(),this,game,{tier:2,heavy:true,unblockable:true,dot:{dps:25,dur:6},dotName:'Deadly Poison'});
           if(reach()){ foe.healRedT=8; game.float(foe.x,foe.y-foe.h-40,'КРИТ!','#9dff70',20); }
           game.burst(foe.x,foe.y-foe.h*0.55,'#7cff6b',22);
         });
@@ -721,7 +739,7 @@ class Fighter{
           this.x=x; this.y=GROUND; this.vy=0; this.facing=Math.sign(foe.x-x)||-side;
           this.anim.play(n%2?'atkA':'atkB');
           game.slash(this.x+this.facing*40,this.y-this.h*0.55,this.facing,'#ffdf8a',n===4?'heavy':'atkA');
-          if(foe.alive&&Math.abs(foe.x-this.x)<160) foe.takeDamage(42*dm(),this,game,{unblockable:true,heavy:n===4});
+          if(foe.alive&&Math.abs(foe.x-this.x)<160) foe.takeDamage(42*dm(),this,game,{tier:2,unblockable:true,heavy:n===4});
         });
         break;
       case 'rogue/Subtlety': // Vanish → Ambush і Cheap Shot з-за спини
@@ -735,7 +753,7 @@ class Fighter{
           game.after(0.08,()=>{
             if(this.ko||!foe.alive) return;
             game.slash(this.x+this.facing*40,this.y-this.h*0.55,this.facing,'#b48cff','heavy');
-            if(Math.abs(foe.x-this.x)<170) foe.takeDamage(180*dm(),this,game,{heavy:true,unblockable:true,stun:1.4});
+            if(Math.abs(foe.x-this.x)<170) foe.takeDamage(180*dm(),this,game,{tier:2,heavy:true,unblockable:true,stun:1.4});
           });
         });
         break;
@@ -747,7 +765,7 @@ class Fighter{
           this.cleanse(); this.healSelf(80,game);
           if(foe.alive&&foe.untargT<=0&&Math.abs(foe.x-this.x)<R+foe.w/2){
             foe.dispelBuffs(); foe.silenceT=3; foe.casting=null;   // знімає навіть Divine Shield
-            foe.takeDamage(110*dm(),this,game,{heavy:true,unblockable:true});
+            foe.takeDamage(110*dm(),this,game,{tier:2,heavy:true,unblockable:true});
             game.burst(foe.x,foe.y-foe.h*0.6,'#e8f4ff',22); game.float(foe.x,foe.y-foe.h-40,'Розвіяно!','#cfe4ff',17);
           }
         });
@@ -761,7 +779,7 @@ class Fighter{
         this.anim.play('point');
         game.beam(this.x+dir*30,this.y-this.h*0.62,foe.x,foe.y-foe.h*0.85,'#b48cff');
         if(reach()){
-          foe.takeDamage(90*dm(),this,game,{unblockable:true});
+          foe.takeDamage(90*dm(),this,game,{tier:2,unblockable:true});
           if(!foe.ccImmune()){ foe.mcT=3; foe.mcDir=Math.sign(foe.x-this.x)||dir; foe.casting=null; foe.windup=null; foe.blocking=false; foe.fearT=0;
             game.float(foe.x,foe.y-foe.h-40,'Під контролем!','#c9a8ff',17); }
         }
@@ -771,7 +789,7 @@ class Fighter{
         game.portal(this.x-dir*30,this.y,'#ff4a4a');
         game.after(0.15,()=>{ if(this.ko||!foe.alive) return;   // клинок одразу бʼє
           game.slash(this.x+this.facing*40,this.y-this.h*0.66,this.facing,'#ff6a6a','heavy');
-          if(Math.abs(foe.x-this.x)<200) foe.takeDamage(70*dm(),this,game,{heavy:true}); });
+          if(Math.abs(foe.x-this.x)<200) foe.takeDamage(70*dm(),this,game,{tier:2,heavy:true}); });
         break;
       case 'dk/Frost':{ // Howling Blast: крижаний вибух під ворогом
         this.anim.play('release'); const x=foe.x;
@@ -781,7 +799,7 @@ class Fighter{
           for(let k=0;k<26;k++){ const a=rnd(0,7), s=rnd(140,420); game.particles.push({x:x+rnd(-20,20),y:GROUND-50+rnd(-30,30),vx:Math.cos(a)*s,vy:Math.sin(a)*s-120,t:rnd(0.35,0.7),color:k%3?'#d8f4ff':'#7de0ff',size:rnd(3,6),g:200}); }
           game.shake=Math.max(game.shake,11); sfx('big');
           if(foe.alive&&Math.abs(foe.x-x)<150+foe.w/2){ const out=Math.sign(foe.x-this.x)||dir;
-            foe.takeDamage(150*dm(),this,game,{heavy:true,unblockable:true,toss:{dir:out,v:200,vy:-600},dot:{dps:15,dur:6},dotName:'Frost Fever',slow:{mult:0.5,dur:4}}); }
+            foe.takeDamage(150*dm(),this,game,{tier:2,heavy:true,unblockable:true,toss:{dir:out,v:200,vy:-600},dot:{dps:15,dur:6},dotName:'Frost Fever',slow:{mult:0.5,dur:4}}); }
           game.splashPet(this,x,150,150*dm());
         });
         break;
@@ -802,7 +820,7 @@ class Fighter{
           const h=hand(), last=n===4;
           game.zap(h.x,h.y,foe.x,foe.y-foe.h*0.55,last?'#ffffff':'#8fd0ff');
           game.burst(foe.x,foe.y-foe.h*0.55,'#bfe6ff',8);
-          if(Math.abs(foe.x-this.x)<SPELL_RANGE) foe.takeDamage((last?80:44)*dm(),this,game,{unblockable:true,stun:0.3,heavy:last,knockback:last?80:0});
+          if(Math.abs(foe.x-this.x)<SPELL_RANGE) foe.takeDamage((last?80:44)*dm(),this,game,{tier:2,unblockable:true,stun:0.3,heavy:last,knockback:last?80:0});
           if(last) game.shake=Math.max(game.shake,8);
         });
         break;
@@ -827,7 +845,7 @@ class Fighter{
         this.anim.play('point');
         game.beam(this.x+dir*30,this.y-this.h*0.62,foe.x,foe.y-foe.h*0.6,'#ff9440');
         if(reach()){ foe.bombT=3; foe.bombSrc=this;
-          foe.takeDamage(0,this,game,{dot:{dps:14,dur:3},dotName:'Living Bomb',silent:true,unblockable:true});
+          foe.takeDamage(0,this,game,{tier:2,dot:{dps:14,dur:3},dotName:'Living Bomb',silent:true,unblockable:true});
           game.float(foe.x,foe.y-foe.h-30,'Жива бомба!','#ffb03a',17); }
         break;
       case 'mage/Frost': // Deep Freeze: брила льоду, потім розкол
@@ -835,7 +853,7 @@ class Fighter{
         game.beam(this.x+dir*30,this.y-this.h*0.62,foe.x,foe.y-foe.h*0.5,'#aee8ff');
         if(reach()){
           game.burst(foe.x,foe.y-foe.h*0.5,'#d8f4ff',22);
-          if(foe.ccImmune()) foe.takeDamage(150*dm(),this,game,{heavy:true,unblockable:true});   // на незламного — одразу шкода
+          if(foe.ccImmune()) foe.takeDamage(150*dm(),this,game,{tier:2,heavy:true,unblockable:true});   // на незламного — одразу шкода
           else { foe.freezeT=2.5; foe.freezeDur=2.5; foe.freezeBrk=false; foe.stunT=Math.max(foe.stunT,2.5);
             foe.casting=null; foe.windup=null; foe.blocking=false; foe.shatter={src:this,dmg:150}; }
         }
@@ -888,7 +906,7 @@ class Fighter{
     const foe=game.other(this), d=this.facing, bx=this.x-d*14;
     game.slash(bx+d*44,this.y-this.h*0.66,d,'#ff6a6a',this.abilities.indexOf(a)===1?'heavy':'atkB');
     if(foe.alive&&Math.abs(foe.x-bx)<(a.range||95)+70+foe.w/2&&Math.abs(foe.y-this.y)<100&&Math.sign(foe.x-bx||d)===d)
-      foe.takeDamage(a.dmg*0.8*this.dmgMult(),this,game,{dot:a.dot,dotName:a.dot?a.name:undefined});
+      foe.takeDamage(a.dmg*0.8*this.dmgMult(),this,game,{tier:abilityTier(a,this.abilities.indexOf(a)),dot:a.dot,dotName:a.dot?a.name:undefined});
     this.drwSwing=0.3;
   }
 
@@ -913,7 +931,7 @@ class Fighter{
     this.wingsT=Math.max(0,this.wingsT-dt);
     this.dispersT=Math.max(0,this.dispersT-dt); this.featherT=Math.max(0,this.featherT-dt); this.pomT=Math.max(0,this.pomT-dt);
     this.parryT=Math.max(0,this.parryT-dt); this.parryCd=Math.max(0,this.parryCd-dt);
-    this.cancelT=Math.max(0,this.cancelT-dt); this.growT=Math.max(0,this.growT-dt);
+    this.cancelT=Math.max(0,this.cancelT-dt); this.growT=Math.max(0,this.growT-dt); this.ultActT=Math.max(0,this.ultActT-dt);
     if(this.comboT>0){ this.comboT-=dt; if(this.comboT<=0) this.combo=0; }
     if(!this.blocking){ this.guardDelay-=dt; if(this.guardDelay<=0) this.guard=Math.min(GUARD_MAX,this.guard+35*dt); }
     for(const k in this.buffs) this.buffs[k].t=Math.max(0,this.buffs[k].t-dt);
@@ -1078,7 +1096,7 @@ class Fighter{
         game.dust(this.x,GROUND); game.ring(this.x,GROUND-20,L.radius,L.ring||'#ffb03a'); game.shake=Math.max(game.shake,L.big?14:9);
         if(L.big){ game.ring(this.x,GROUND-20,L.radius*0.6,'#ffffff'); game.cam.punch=Math.max(game.cam.punch,0.06); sfx('big'); }
         if(Math.abs(foe.x-this.x)<L.radius+foe.w/2&&Math.abs(foe.y-this.y)<120)
-          foe.takeDamage(L.dmg*this.dmgMult(),this,game,{slow:L.slow,stun:L.stun,unblockable:L.unblock,heavy:true});
+          foe.takeDamage(L.dmg*this.dmgMult(),this,game,{tier:abilityTier(L,this.abilities.indexOf(L)),slow:L.slow,stun:L.stun,unblockable:L.unblock,heavy:true});
         game.splashPet(this,this.x,L.radius,L.dmg*this.dmgMult());
       }
     }
@@ -1123,7 +1141,7 @@ class Fighter{
         if(!this.anim.act||this.anim.act.name!=='storm') this.anim.play('storm');
         if(this.stormAcc<=0&&fight){ this.stormAcc=0.45;
           game.slash(this.x+30,this.y-this.h*0.55,1,'#ffe27a','atkA'); game.slash(this.x-30,this.y-this.h*0.55,-1,'#ffe27a','atkB');
-          if(foe.alive&&Math.abs(foe.x-this.x)<130+foe.w/2&&Math.abs(foe.y-this.y)<110) foe.takeDamage(36*this.dmgMult(),this,game,{});
+          if(foe.alive&&Math.abs(foe.x-this.x)<130+foe.w/2&&Math.abs(foe.y-this.y)<110) foe.takeDamage(36*this.dmgMult(),this,game,{tier:2});
           game.splashPet(this,this.x,130,36*this.dmgMult());
         }
         if(Math.random()<dt*20&&game.particles) game.particles.push({x:this.x+rnd(-40,40),y:GROUND-rnd(0,8),vx:rnd(-120,120),vy:-rnd(30,90),t:rnd(0.2,0.4),color:'#b8a890',size:rnd(3,5),g:300});
@@ -1150,7 +1168,7 @@ class Fighter{
       if(this.bombT<=0){ const src=this.bombSrc, k=src?src.dmgMult():1; this.bombSrc=null;
         game.ring(this.x,this.y-this.h/2,170,'#ff9440'); game.ring(this.x,this.y-this.h/2,100,'#ffe27a'); game.burst(this.x,this.y-this.h/2,'#ff7733',34);
         game.shake=Math.max(game.shake,13); sfx('big');
-        this.takeDamage(150*k,src,game,{heavy:true,unblockable:true,toss:{dir:src?(Math.sign(this.x-src.x)||1):1,v:160,vy:-520}});
+        this.takeDamage(150*k,src,game,{tier:2,heavy:true,unblockable:true,toss:{dir:src?(Math.sign(this.x-src.x)||1):1,v:160,vy:-520}});
         if(src){ game.zones.push({x:this.x,r:110,dps:25*k,t:2,owner:src,color:'#ff7733',acc:0}); game.splashPet(src,this.x,170,150*k); }
       }
     }
@@ -1180,7 +1198,7 @@ class Fighter{
       if(this.freezeT<=0){ const sh=this.shatter; this.shatter=null;
         game.burst(this.x,this.y-this.h*0.5,'#d8f4ff',26);
         if(sh){ game.ring(this.x,this.y-this.h/2,120,'#aee8ff'); sfx('big');
-          this.takeDamage(sh.dmg*(sh.src?sh.src.dmgMult():1),sh.src,game,{heavy:true,unblockable:true}); }
+          this.takeDamage(sh.dmg*(sh.src?sh.src.dmgMult():1),sh.src,game,{tier:2,heavy:true,unblockable:true}); }
       }
     }
     if(game.particles&&!this.preview){ // сліди станів: отрута, жага крові, лють Death Wish

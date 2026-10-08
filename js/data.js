@@ -367,6 +367,7 @@ const ULT_PROJ={
   mirror:mk.proj('Arcane Blast','🔮',0,18,{speed:760,psize:9,pcolor:'#c9a8ff'}),
   haunt:mk.proj('Haunt','👻',0,130,{speed:620,psize:14,pcolor:'#c8f0ff',haunt:8}),
 };
+ULT_PROJ.killShot.tier=ULT_PROJ.explosive.tier=ULT_PROJ.haunt.tier=2;   // удари ульти (Fighter abilityTier); дзеркальні образи — як пети, звичайна сила
 
 
 /* Кольоровий акцент кожного спеку (зброя, аура, підсвітка) */

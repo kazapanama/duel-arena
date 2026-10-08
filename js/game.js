@@ -101,7 +101,7 @@ class Game{
       if(!foe.alive||this.phase!=='fight') return;
       const x=foe.x, y=foe.y-foe.h*0.5;
       this.ring(x,y,70,'#ff9440'); this.burst(x,y,'#ffb03a',14); this.shake=Math.max(this.shake,4);
-      foe.takeDamage(B.dmg*k,owner,this,{unblockable:true});
+      foe.takeDamage(B.dmg*k,owner,this,{unblockable:true});   // відкладені вибухи — звичайна сила, як тіки: самі по собі не перебивають сильне
     });
   }
   smoke(x,y){ for(let i=0;i<16;i++){ const a=rnd(0,7), s=rnd(20,90); this.particles.push({x:x+rnd(-14,14),y:y+rnd(-40,40),vx:Math.cos(a)*s,vy:Math.sin(a)*s-30,t:rnd(.3,.6),color:i%3?'#3a3448':'#6a5a8a',size:rnd(4,8),g:-40}); } }
@@ -110,7 +110,7 @@ class Game{
   spawnProj(owner,a,x,y,dir,dmgM){
     this.projectiles.push({
       x,y,vx:dir*a.speed*PROJ_SPEED,dmg:a.dmg*dmgM,dmgM,color:a.pcolor||owner.color,size:a.psize||10,
-      slot:owner.abilities.indexOf(a), school:PROJ_SCHOOL[a.name]||null,
+      slot:owner.abilities.indexOf(a), tier:abilityTier(a,owner.abilities.indexOf(a)), school:PROJ_SCHOOL[a.name]||null,
       owner,riders:{stun:a.stun,slow:a.slow,dot:a.dot,healFrac:a.healFrac,selfHeal:a.selfHeal,aoeOnHit:a.aoeOnHit,
         boom:a.boom,exec:a.exec,unblock:a.unblock,knockback:a.knockback,haunt:a.haunt},
       kind:owner.model.style==='bow'?'arrow':(a.name==='Deadly Throw'?'knife':'orb'),
@@ -195,7 +195,7 @@ class Game{
         p.dead=true;
         const R=p.riders;
         const dmg=p.dmg+(R.exec?(foe.maxHp-foe.hp)*R.exec*p.dmgM:0);   // Kill Shot: тим більше, що менше в цілі здоровʼя
-        const dealt=foe.takeDamage(dmg,p.owner,this,{stun:R.stun,slow:R.slow,dot:R.dot,unblockable:R.unblock,knockback:R.knockback});
+        const dealt=foe.takeDamage(dmg,p.owner,this,{tier:p.tier,stun:R.stun,slow:R.slow,dot:R.dot,unblockable:R.unblock,knockback:R.knockback});
         if(p.slot===0&&dealt>0&&!foe.lastBlocked) p.owner.cancelT=CANCEL_WIN;   // влучний легкий — вікно скасування
         if(R.healFrac) p.owner.healSelf(dealt*R.healFrac,this,true);
         if(R.selfHeal) p.owner.healSelf(R.selfHeal,this,true);
