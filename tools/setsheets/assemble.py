@@ -23,6 +23,9 @@ WTYPE = {'two-handed great axe': 'axe2h', 'two-handed axe': 'axe2h', 'one-handed
          'one-handed war-hammer': 'hammer1h', 'two-handed war-hammer': 'hammer2h', 'longbow': 'bow', 'spear': 'spear',
          'dagger': 'dagger', 'flintlock pistol': 'pistol', 'staff': 'staff'}
 
+# деталі, які генератор намалював дзеркально (обличчям від напрямку бійця) — віддзеркалюються після нарізки
+FLIP = {'paladin_retribution_2': ['helm']}
+
 def cut_sheet(jid, cat=False):
     img = Image.open(os.path.join(HERE, 'out', f'{jid}.png'))
     dst = os.path.join(ROOT, 'img', 'cutout', jid); os.makedirs(dst, exist_ok=True)
@@ -31,6 +34,8 @@ def cut_sheet(jid, cat=False):
         if name == 'palette': continue
         try: slicer.cut(img, box).save(os.path.join(dst, name + '.png'))
         except ValueError: pass                       # порожня клітинка: немає плаща чи другої зброї
+    for part in FLIP.get(jid, []):
+        f = os.path.join(dst, part + '.png'); Image.open(f).transpose(Image.FLIP_LEFT_RIGHT).save(f)
     # перемальовані деталі (gen.py --part → out/<id>_<деталь>.png) замінюють деталь з аркуша; генератор малює
     # їх крупніше, тож зводимо до висоти старої деталі (масштаби форм рахуються від тулуба — pack_cutout.BULK)
     for f in os.listdir(os.path.join(HERE, 'out')):

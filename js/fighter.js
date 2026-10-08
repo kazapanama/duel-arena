@@ -243,7 +243,7 @@ class Fighter{
       if(abs>0) game.float(this.x,this.y-this.h-26,`🛡${Math.round(abs)}`,'#9fd7ff',15);
     }
     dmg=Math.round(dmg);
-    // дія сильніша за удар (abilityTier) — удар її не збиває: лише шкода, каст відсувається
+    // дія сильніша за удар (abilityTier) — удар її не збиває: лише шкода (золота іскра), каст відсувається
     const armor=!tick&&!blocked&&this.actTier()>(opts.tier??0);
     if(dmg>0&&this.fearT>0){ this.fearDmg+=dmg;
       if(this.fearDmg>=this.fearBrk){ this.fearT=0; game.float(this.x,this.y-this.h-34,'Страх минув','#c9a8ff',14); } }
@@ -273,7 +273,6 @@ class Fighter{
         const dirOut=src?(Math.sign(this.x-src.x)||-this.facing):-this.facing;
         if(armor){
           if(this.casting){ if(this.casting.chan) this.chanPushback(0.3); else this.casting.t=Math.min(this.casting.total,this.casting.t+0.35); }
-          if(game.time-(this._armT??-9)>0.7){ this._armT=game.time; game.float(this.x,this.y-this.h-34,'Не збито!','#ffe27a',13); }
         } else if(!blocked){
           // стагер: удар не слабший за дію — збиває замах, ульту й каст
           this.staggerT=Math.max(this.staggerT,heavy?0.38:0.2);
