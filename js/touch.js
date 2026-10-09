@@ -126,7 +126,10 @@ function setIcon(btn,a){
   if(src){ im.classList.remove('broken'); im.src=encodeURI(src); im.hidden=false; btn.querySelector('.t-em').textContent=''; }
   else { im.hidden=true; btn.querySelector('.t-em').textContent=a.icon||'?'; }
 }
-// щокадру: показати/сховати шар, оновити іконки й відкат
+// щокадру: показати/сховати шар, оновити іконки й відкат. Пишемо в DOM лише зміни: навіть той самий textContent
+// перебудовує вузол, а нове значення --cd перемальовує кнопку з тінями й conic-gradient — на телефоні це щокадрова робота
+const setCd=(el,v)=>{ if(el._cd!==v){ el._cd=v; el.style.setProperty('--cd',v); } };
+const setTxt=(el,v)=>{ if(el.textContent!==v) el.textContent=v; };
 TOUCH.frame=function(){
   const g=state.game;
   const show=TOUCH.on&&state.screen==='fight'&&!!g&&!UI.cur;
@@ -136,15 +139,15 @@ TOUCH.frame=function(){
   for(let k=0;k<4;k++){
     const b=TOUCH.btns[k], a=f.abilities[k], cd=f.cds[k];
     setIcon(b,a);
-    b.style.setProperty('--cd',cd>0?(cd/a.cd).toFixed(3):0);
-    b.querySelector('.t-n').textContent=cd>0?(cd>=1?cd.toFixed(0):cd.toFixed(1)):'';
+    setCd(b,cd>0?(cd/a.cd).toFixed(3):'0');
+    setTxt(b._n||(b._n=b.querySelector('.t-n')),cd>0?(cd>=1?cd.toFixed(0):cd.toFixed(1)):'');
     b.classList.toggle('gcd',cd<=0&&f.gcd>0);
   }
   TOUCH.blk.classList.toggle('lit',!!f.blocking);
   // ульта: кнопка заповнюється разом із супершкалою
   const U=ultOf(f), fr=clamp(f.meter/ULT_MAX,0,1);
   setIcon(TOUCH.ult,{img:U.img,icon:U.icon});
-  TOUCH.ult.style.setProperty('--cd',(1-fr).toFixed(3));
+  setCd(TOUCH.ult,(1-fr).toFixed(3));
   TOUCH.ult.classList.toggle('ready',fr>=1);
   const fb=TOUCH.form;
   fb.classList.toggle('hidden',!f.formDef);

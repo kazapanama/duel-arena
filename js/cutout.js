@@ -24,15 +24,27 @@ function cutoutRequest(name){
   return false;
 }
 // деталь у пакунку зменшена (pack_cutout.py) — малюємо її в оригінальних піксельних координатах аркуша.
-// Дальні кінцівки — затемнена копія, зроблена один раз (canvas filter щокадру на програмному полотні коштує ~9 мс на бійця)
+// Дальні кінцівки — затемнена копія, зроблена один раз (canvas filter щокадру на програмному полотні коштує ~9 мс на бійця).
+// Копія — теж програмне полотно: звичайне Chrome тримає на GPU, і кожне його малювання в чернетку спрайта (вона в пам'яті)
+// чекало зчитування з відеокарти — на Android це головні ривки. Затемнення — заливкою source-atop, а не ctx.filter:
+// колір × 0.8 при тій самій альфі, як brightness(0.8), і працює в Safari, де canvas filter нема
 let CUT_DIM=false;
 function dimOf(img){
   if(img._dim) return img._dim;
   const cv=document.createElement('canvas'); cv.width=img.width; cv.height=img.height;
-  const g=cv.getContext('2d'); g.filter='brightness(0.8)'; g.drawImage(img,0,0);
+  const g=cv.getContext('2d',{willReadFrequently:true});
+  g.drawImage(img,0,0); g.globalCompositeOperation='source-atop'; g.fillStyle='rgba(0,0,0,0.2)'; g.fillRect(0,0,cv.width,cv.height);
   return img._dim=cv;
 }
-function cutDraw(c,img){ const [k,pad]=img._k||[1,0]; c.drawImage(CUT_DIM?dimOf(img):img,-pad,-pad,img.width*k,img.height*k); }
+/* clip — прямокутник [x0,y0,x1,y1] в координатах аркуша: вирізаємо його з самої картинки (drawImage з джерельним прямокутником).
+   Відсічення через c.clip() під поворотом Skia робить згладженою маскою на все полотно спрайта — це третина часу растеризації */
+function cutDraw(c,img,clip){
+  const [k,pad]=img._k||[1,0], src=CUT_DIM?dimOf(img):img;
+  if(!clip){ c.drawImage(src,-pad,-pad,img.width*k,img.height*k); return; }
+  const x0=Math.max(clip[0],-pad), y0=Math.max(clip[1],-pad), x1=Math.min(clip[2],img.width*k-pad), y1=Math.min(clip[3],img.height*k-pad);
+  if(x1<=x0||y1<=y0) return;
+  c.drawImage(src,(x0+pad)/k,(y0+pad)/k,(x1-x0)/k,(y1-y0)/k,x0,y0,x1-x0,y1-y0);
+}
 // після завантаження кожна картинка копіюється в полотно — уже розкодовані пікселі (усі набори разом ~21 МБ):
 // інакше браузер витісняє розкодовані PNG зі свого кешу й перерозкодовує їх під час растеризації спрайта,
 // і в кадрах після зміни бійця в меню вітрини малювалися в кілька разів довше
@@ -91,8 +103,7 @@ function cutPiece(c,img,sA,sB,A,B,k,clip){
   const dx=B.x-A.x, dy=B.y-A.y, L=Math.hypot(dx,dy)||1;
   c.save();
   c.translate(A.x,A.y); c.rotate(Math.atan2(dy,dx)); c.scale(L/sl,k==null?L/sl:k); c.rotate(-Math.atan2(sdy,sdx)); c.translate(-sA[0],-sA[1]);
-  if(clip){ c.beginPath(); c.rect(clip[0],clip[1],clip[2]-clip[0],clip[3]-clip[1]); c.clip(); }
-  cutDraw(c,img);
+  cutDraw(c,img,clip);
   c.restore();
 }
 // та сама мапа для точки (світло на світне ядро чи очі)
@@ -187,7 +198,7 @@ function cutLeg(P,D,I,side){
   const lifted=ft.y<-2, k=G.k;
   c.save(); c.translate(ft.x,ft.y); c.rotate(lifted?0.35:0); c.scale(k,k);
   c.translate(-G.sole[0],-G.sole[1]);
-  c.beginPath(); c.rect(-999,G.cut2-10,1999,999); c.clip(); cutDraw(c,I.leg);
+  cutDraw(c,I.leg,[-999,G.cut2-10,1000,G.cut2+989]);
   c.restore();
 }
 function cutShoulder(P,D,I,side){

@@ -33,6 +33,9 @@ function fitCanvas(){
   if(cv.width!==pw){ cv.width=pw; cv.height=Math.round(pw*H/W); }
   VIEW_K=cv.width/W;
 }
+/* Графіка: high — бійці з растрових деталей у шарі повної роздільності; fast — у низькому шарі, як процедурні
+   (арт-піксель удвічі крупніший, роботи на спрайт учетверо менше); auto — high, доки пристрій устигає (main.js gfxAuto) */
+const GFX={mode:'auto',autoFast:false,get fast(){ return this.mode==='fast'||(this.mode==='auto'&&this.autoFast); }};
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const rnd=(a,b)=>a+Math.random()*(b-a);
 

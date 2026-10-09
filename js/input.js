@@ -48,6 +48,12 @@ const padPrev=[{},{}];
 const padInputs=[null,null];
 const padConnected=[false,false];
 
+// фронти натискань (клавіші, кнопки падів) — лише для першого кроку симуляції в кадрі (main.js), щоб не спрацювали двічі
+function clearEdges(){
+  pressed.clear();
+  for(const p of padInputs) if(p){ p.ab.fill(false); p.form=false; p.ult=false; }
+}
+
 /* ---------- Геймпад у меню: фронти кнопок → UI.pad ---------- */
 const navPrevPads=[{},{}];
 function padNavPoll(list){

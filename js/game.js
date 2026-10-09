@@ -270,9 +270,9 @@ class Game{
 
   draw(){
     if(!this.assetsReady()) return this.drawLoading();
-    const main=ctx;
-    HDL.ctx.setTransform(1,0,0,1,0,0); HDL.ctx.clearRect(0,0,W,H);
-    SPR_HD.ctx=HDL.ctx; SPR_HD.k=PIX;   // бійці з растрових деталей — у повній роздільності
+    const main=ctx, hd=!GFX.fast;
+    if(hd){ HDL.ctx.setTransform(1,0,0,1,0,0); HDL.ctx.clearRect(0,0,W,H);
+      SPR_HD.ctx=HDL.ctx; SPR_HD.k=PIX; }   // бійці з растрових деталей — у повній роздільності
     this._post=false;
     this._bgImg=drawArenaImage(this,main);        // картинка арени — одразу на екран, світ (LOW) поверх із прозорістю
     if(this._bgImg){ LOW.ctx.setTransform(1,0,0,1,0,0); LOW.ctx.clearRect(0,0,LOW.cv.width,LOW.cv.height); }
@@ -286,7 +286,7 @@ class Game{
     ctx.save();
     ctx.imageSmoothingEnabled=false;
     ctx.drawImage(LOW.cv,0,0,W,H);
-    ctx.drawImage(HDL.cv,0,0,W,H);
+    if(hd) ctx.drawImage(HDL.cv,0,0,W,H);
     if(this._post) ctx.drawImage(POST.cv,0,0,W,H);
     ctx.restore();
     this.drawOverlay();
@@ -429,7 +429,7 @@ class Game{
 
     // бійці
     for(const f of this.f) f.draw(this);
-    this.splitPost();
+    if(SPR_HD.ctx) this.splitPost();   // без шару повної роздільності ефекти й так лягають на LOW поверх бійців
     for(const f of this.f) f.drawPost(this);   // стани ультимейтів поверх бійців
 
     // промені

@@ -17,6 +17,7 @@ const SKIN_PREF=store('aa_skins',{});
 if(SKIN_PREF['rogue/Outlaw']&&!SKIN_PREF['rogue/Combat']) SKIN_PREF['rogue/Combat']=SKIN_PREF['rogue/Outlaw']; // спек перейменовано
 const PREFS=store('aa_prefs',{aiSkill:1,muted:false});
 state.aiSkill=PREFS.aiSkill??1; muted=!!PREFS.muted;
+if(['auto','high','fast'].includes(PREFS.gfx)) GFX.mode=PREFS.gfx; GFX.autoFast=!!PREFS.gfxAutoFast;
 function skinKey(cls,spec){ return cls.id+'/'+spec.name; }
 // вибір пам'ятаємо за назвою сету (сети на спеку можуть переставлятися); старі збереження — номер, де 0 був «Класичний»
 function preferredSkin(cls,spec){
@@ -25,7 +26,8 @@ function preferredSkin(cls,spec){
   return k||spec.skins[0];
 }
 function rememberSkin(cls,spec,skin){ SKIN_PREF[skinKey(cls,spec)]=skin.name; save('aa_skins',SKIN_PREF); }
-function savePrefs(){ save('aa_prefs',{aiSkill:state.aiSkill,muted}); }
+function savePrefs(){ save('aa_prefs',{aiSkill:state.aiSkill,muted,gfx:GFX.mode,gfxAutoFast:GFX.autoFast}); }
+const GFX_MODES=['auto','high','fast'], GFX_NAMES={auto:'авто',high:'висока',fast:'швидка'};
 const DIFF_NAMES=['Легко','Нормально','Важко'];
 
 /* ---------- показ екранів ---------- */
@@ -85,6 +87,7 @@ function act(a,dir=1,el){
     case 'netRetry': sfx('tick'); netOpen(); break;
     case 'diff': state.aiSkill=(state.aiSkill+dir+3)%3; savePrefs(); renderMenuVals(); sfx('tick'); break;
     case 'sound': muted=!muted; savePrefs(); renderMenuVals(); sfx('tick'); break;
+    case 'gfx': GFX.mode=GFX_MODES[(GFX_MODES.indexOf(GFX.mode)+dir+3)%3]; GFX.autoFast=false; savePrefs(); renderMenuVals(); sfx('tick'); break;   // «авто» — заново оцінює пристрій
     case 'controls': sfx('ok'); show('controls'); break;
     case 'settings': sfx('ok'); show('settings'); break;
     case 'gallery': location.href='gallery.html'; break;
@@ -107,7 +110,8 @@ function toSelect(){
   closePause(); screens.overlay.classList.add('hidden'); state.game=null;
   NET.remoteSel=null; openSelect();
 }
-function renderMenuVals(){ $('diffVal').textContent=DIFF_NAMES[state.aiSkill]; $('soundVal').textContent=muted?'вимкнено':'увімкнено'; }
+function renderMenuVals(){ $('diffVal').textContent=DIFF_NAMES[state.aiSkill]; $('soundVal').textContent=muted?'вимкнено':'увімкнено';
+  $('gfxVal').textContent=GFX_NAMES[GFX.mode]+(GFX.mode==='auto'&&GFX.autoFast?' (швидка)':''); }
 renderMenuVals();
 renderHints();
 
@@ -405,6 +409,10 @@ function warmModel(cls,spec,skin,t){
   const m=t._m||(t._m=resolveModel(cls,spec,skin));
   if(m.cutout&&!CUTOUT_LOAD[m.cutout]&&!(typeof CUTOUT_IMG!=='undefined'&&CUTOUT_IMG[m.cutout])&&!CUTOUT_OFF
     &&(UI.cur==='versus'||(state.game&&state.game._ready!==state.game.theme)||cutoutInflight()>=2)) return null;
+  return warmLUT(m,t);
+}
+// затемнені копії й таблиця кольорів уже створеної моделі (t — стан прогріву між викликами)
+function warmLUT(m,t){
   if(m.cutout&&!cutoutKey(m)) return CUTOUT_LOAD[m.cutout]==='err';
   if(!t._b){
     if(m.cutout) for(const im of Object.values(cutoutImgs(m.cutout))) dimOf(im);
@@ -564,7 +572,7 @@ function openVersus(){
   VS.fs=[a,b].map((p,i)=>{ const f=new Fighter(p.cls,p.spec,i,p.skin); f.preview=true; f.x=0; f.y=0; f.facing=i?-1:1; f.anim.play('roar'); return f; });
   $('vsWhoL').textContent=NET.on?(NET.side===0?'Ти':'Суперник'):'Гравець 1';
   $('vsWhoR').textContent=state.mode==='ai'?'Бот':(NET.on?(NET.side===1?'Ти':'Суперник'):'Гравець 2');
-  VS.t=0;
+  VS.t=0; VS.warm=null;
   preloadFight();
   // перезапуск CSS-анімацій
   el.classList.add('hidden'); void el.offsetWidth;
@@ -586,6 +594,12 @@ function frameVersus(dt){
     renderFighterTo(v,f,0.72,60,114,VS.t);
     v.present();
   });
+  // форми й пети з'являються лише посеред бою: їхні таблиці кольорів і затемнені деталі готуємо тут, зрізами по кадрах,
+  // інакше перша поява вовка чи кота — ривок (~12 мс на ПК, на телефоні в рази більше)
+  if(!VS.warm) VS.warm=VS.fs.flatMap(f=>{ const sets=new Set(f.cutoutSets()), ms=Object.values(f.forms).map(F=>({m:F.model}));
+    for(const k in PET_CUTOUT) if(sets.has(PET_CUTOUT[k])) ms.push({m:petModel(k)});
+    return ms; });
+  if(VS.warm.length&&warmLUT(VS.warm[0].m,VS.warm[0])!==false) VS.warm.shift();
 }
 
 /* ============================================================
