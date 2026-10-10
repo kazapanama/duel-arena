@@ -88,7 +88,7 @@ def publish():
     ids = {a[0] for a in ARENAS} | {'menu'}   # лише арени зі списку: прибрані з ARENAS не повертаються зі старих out/*.png
     pngs = [f for f in os.listdir(OUT) if f.endswith('.png') and f[:-4] in ids]
     for f in pngs:
-        Image.open(os.path.join(OUT, f)).convert('RGB').save(os.path.join(DST, f[:-4] + '.webp'), 'WEBP', quality=86, method=6)
+        Image.open(os.path.join(OUT, f)).convert('RGB').save(os.path.join(DST, f[:-4] + '.webp'), 'WEBP', quality=80, method=6)   # 80: на око як 86, а файл на ~20% менший
     os.makedirs(os.path.join(DST, 'thumbs'), exist_ok=True)
     for f in pngs:
         if True:

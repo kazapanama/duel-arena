@@ -1,4 +1,4 @@
-"""Пакує нарізані деталі набору (img/cutout/<набір>/*.png) у JS із data-URI, щоб гра працювала й через file://
+"""Пакує нарізані деталі набору (img/cutout/<набір>/*.png) у JS із data-URI (WebP без втрат, див. to_webp), щоб гра працювала й через file://
    (інакше полотно «брудне» і getImageData падає), і рахує точки кріплення до кісток рига.
    python tools/setsheets/pack_cutout.py <набір> [--weapons axe1h,sword1h]   →  img/cutout/<набір>.js
    Типи зброї: як у js/paint.js (staff, axe2h, axe1h, sword1h, sword2h, mace1h, hammer1h, hammer2h, spear, dagger, bow,
@@ -12,6 +12,7 @@ ART = 1.4        # арт-пікселів на світову одиницю д
 MARGIN = 1.3     # запас роздільності над ігровою: браузер ще трохи зменшує
 PALETTE = 64     # кольорів у палітрі набору (квантизація піксельного конвеєра)
 ACCENTS = 10     # + стільки кольорів із яскравих насичених пікселів (сяйво, руни)
+COLORS = 128     # кольорів у кожній деталі в пакунку: у бою спрайт однаково зводиться до палітри набору (PALETTE + ACCENTS)
 # зброя в системі кисті (y угору — мінус): [руків'я, вістря] уздовж осі, як малює procedural drawWeapon
 WEAPON_AXIS = {'staff': (44, -62), 'spear': (44, -72), 'axe2h': (18, -66), 'hammer2h': (18, -58), 'sword2h': (15, -60),
                'axe1h': (8, -36), 'sword1h': (9, -39), 'mace1h': (8, -35), 'hammer1h': (8, -35), 'dagger': (6, -23)}
@@ -179,8 +180,16 @@ def encode(im0, k):
     ring = a.point(lambda v: 255 if v > 110 else 0).filter(ImageFilter.MaxFilter(3))
     base = Image.new('RGBA', small.size, (11, 8, 8, 0)); base.putalpha(ring)
     small = Image.alpha_composite(base, small)
-    buf = io.BytesIO(); small.save(buf, 'PNG', optimize=True)
-    return base64.b64encode(buf.getvalue()).decode(), [round(im.width / w, 4), pad]
+    return to_webp(small), [round(im.width / w, 4), pad]
+
+def to_webp(im):
+    """Деталь → base64 WebP без втрат: RGB зведено до COLORS кольорів, альфа точна (контур і краї не змінюються).
+       Утричі менше за повнокольоровий PNG; під альфою 0 — чорне, щоб не витрачати байти на невидиме."""
+    a = np.asarray(im.getchannel('A'))
+    q = im.convert('RGB').quantize(COLORS, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.NONE).convert('RGB')
+    arr = np.dstack([np.asarray(q), a]); arr[a == 0] = 0
+    buf = io.BytesIO(); Image.fromarray(arr, 'RGBA').save(buf, 'WEBP', lossless=True, method=6, exact=True)
+    return base64.b64encode(buf.getvalue()).decode()
 
 def palette(src, parts):
     ims = [Image.open(os.path.join(src, p + '.png')).convert('RGBA') for p in parts]
@@ -290,7 +299,7 @@ def _write(name, src, parts, D, K):
     scales = {}
     for p in parts:
         b64, scales[p] = encode(Image.open(os.path.join(src, p + '.png')).convert('RGBA'), K.get(p, 0.25))
-        lines.append(f"  {p}:'data:image/png;base64,{b64}',")
+        lines.append(f"  {p}:'data:image/webp;base64,{b64}',")
     lines.append('};')
     for var, val in (('CUTOUT_SCALE', scales), ('CUTOUT_AUTO', D), ('CUTOUT_PAL', palette(src, parts))):
         lines.append(f'var {var}=window.{var}||{{}}; window.{var}={var};')

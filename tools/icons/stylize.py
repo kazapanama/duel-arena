@@ -53,7 +53,12 @@ def slice_grid(path, icons):
     for i, p in enumerate(icons):
         x0, y0, x1, y1 = (int(v * k) for v in cell_box(i)); m = int((x1 - x0) * 0.04)
         dst = os.path.join(DST, p); os.makedirs(os.path.dirname(dst), exist_ok=True)
-        im.crop((x0 + m, y0 + m, x1 - m, y1 - m)).resize((60, 60), Image.LANCZOS).save(dst, optimize=True)
+        save_icon(im.crop((x0 + m, y0 + m, x1 - m, y1 - m)).resize((60, 60), Image.LANCZOS), dst)
+
+def save_icon(im, dst):
+    """PNG з палітрою 256 кольорів без дизеринга: удвічі менше за повнокольоровий, на око — той самий піксель-арт
+       (WebP з втратами розмиває краї пікселів через субдискретизацію кольору)."""
+    im.convert('RGB').quantize(256, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.NONE).save(dst, optimize=True)
 
 def review(icons):
     S, C = 96, 12; rows = (len(icons) + C - 1) // C

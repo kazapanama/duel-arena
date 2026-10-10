@@ -69,6 +69,7 @@ npm start              # або: node tools/server.js [порт], на Windows �
 | `tools/server.js`, `tools/netsim.js` | сервер: статика, WebSocket і бій, що рахується на сервері |
 | `gallery.html` | спрайт-шит будь-якого скіну (`?skin=rogue/Assassination/2`) і сітка всіх (`?mode=all`) |
 | `tools/balance.py`, `tools/sim.js` | турнір ботів для перевірки балансу (Python + Playwright) |
+| `tools/optimize_assets.py` | перетискає наявні асети: деталі скінів → WebP без втрат, іконки → PNG з палітрою, фони арен → WebP q80 (`--arenas`) |
 
 ### Як влаштована гра по мережі
 

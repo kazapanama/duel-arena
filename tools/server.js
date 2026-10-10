@@ -9,7 +9,7 @@
      обом знімок; телефони лише малюють і шлють ввід. Вибір бійців
      сервер пересилає від одного гравця іншому.
    ============================================================ */
-const http=require('http'), fs=require('fs'), path=require('path'), crypto=require('crypto'), os=require('os');
+const http=require('http'), fs=require('fs'), path=require('path'), crypto=require('crypto'), os=require('os'), zlib=require('zlib');
 const {createSim}=require('./netsim');
 
 const ROOT=path.resolve(__dirname,'..');
@@ -35,6 +35,8 @@ function lanAddrs(){
 const urls=()=>lanAddrs().filter(a=>!a.virt).map(a=>`http://${a.addr}:${PORT}`);
 
 /* ---------- статика ---------- */
+// текст стискаємо gzip (код гри ~650 КБ → ~150 КБ); картинки й шрифти вже стиснені. Стиснене тримаємо в пам'яті до зміни файлу
+const GZIP=/\.(html|js|css|json|svg|txt|md)$/i, GZ_CACHE=new Map();
 const server=http.createServer((req,res)=>{
   let p;
   try{ p=decodeURIComponent(new URL(req.url,'http://x').pathname); }catch(e){ res.writeHead(400); return res.end(); }
@@ -44,10 +46,23 @@ const server=http.createServer((req,res)=>{
   if(!file.startsWith(ROOT)){ res.writeHead(403); return res.end(); }
   fs.stat(file,(err,st)=>{
     if(err||!st.isFile()){ res.writeHead(404,{'Content-Type':'text/plain; charset=utf-8'}); return res.end('404'); }
-    res.writeHead(200,{'Content-Type':MIME[path.extname(file).toLowerCase()]||'application/octet-stream',
-      'Content-Length':st.size,'Cache-Control':'no-cache'}); // правки в коді видно після простого оновлення сторінки
-    if(req.method==='HEAD') return res.end();
-    fs.createReadStream(file).pipe(res);
+    // no-cache + ETag: правки в коді видно після простого оновлення сторінки, а незмінене браузер бере з кешу (304)
+    const etag=`W/"${st.size.toString(36)}-${Math.floor(st.mtimeMs).toString(36)}"`;
+    const head={'Content-Type':MIME[path.extname(file).toLowerCase()]||'application/octet-stream','Cache-Control':'no-cache','ETag':etag};
+    if(req.headers['if-none-match']===etag){ res.writeHead(304,head); return res.end(); }
+    if(!GZIP.test(file)||!/\bgzip\b/.test(req.headers['accept-encoding']||'')){
+      head['Content-Length']=st.size; res.writeHead(200,head);
+      if(req.method==='HEAD') return res.end();
+      return fs.createReadStream(file).pipe(res);
+    }
+    head['Content-Encoding']='gzip'; head['Vary']='Accept-Encoding';
+    const send=buf=>{ head['Content-Length']=buf.length; res.writeHead(200,head); res.end(req.method==='HEAD'?undefined:buf); };
+    const hit=GZ_CACHE.get(file);
+    if(hit&&hit.etag===etag) return send(hit.buf);
+    fs.readFile(file,(e,data)=>{
+      if(e){ res.writeHead(500); return res.end(); }
+      zlib.gzip(data,(e2,buf)=>{ if(e2){ res.writeHead(500); return res.end(); } GZ_CACHE.set(file,{etag,buf}); send(buf); });
+    });
   });
 });
 
