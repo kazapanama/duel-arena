@@ -1,4 +1,4 @@
-// згенеровано tools/picker/build_catalog.py — сети для обиралки sets-picker.html
+// згенеровано tools/picker/build_catalog.py — довідник сетів для tools/setsheets/build_jobs.py
 const CATALOG=[
 {
 "id": 511,

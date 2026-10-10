@@ -68,7 +68,6 @@ npm start              # або: node tools/server.js [порт], на Windows �
 | `js/net.js`, `tools/server.js` | гра по мережі: клієнт і сервер (статика + WebSocket) |
 | `gallery.html` | спрайт-шит будь-якого скіну (`?skin=rogue/Assassination/2`) і сітка всіх (`?mode=all`) |
 | `tools/balance.py`, `tools/sim.js` | турнір ботів для перевірки балансу (Python + Playwright) |
-| `ROADMAP.md` | що ще хочеться зробити |
 
 ### Як влаштована гра по мережі
 

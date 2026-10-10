@@ -2,9 +2,7 @@
    - tools/setsheets/jobs.json        — 90 завдань (спек × слот): сет, реф, промпт, раса, зброя
    - tools/setsheets/refs/<job>.png   — скріншот сету: обрізаний до портрета й збільшений (так модель краще бачить броню)
    - tools/setsheets/prompts/<job>.txt — промпт із template.txt
-   - SKINS.todo (корінь проєкту)       — список для відмітки: ☐ не зроблено, ✔ у грі
    python tools/setsheets/build_jobs.py          — усе заново
-   python tools/setsheets/build_jobs.py --todo   — лише оновити SKINS.todo (етапи: які аркуші вже згенеровано)
    Расу чи зброю окремого скіну міняємо в OVERRIDES нижче й перезапускаємо."""
 import os, re, json
 from PIL import Image
@@ -103,32 +101,7 @@ def main():
                          'weapons': [main_w, off_w], 'ref': f'tools/setsheets/refs/{jid}.png', 'prompt': f'tools/setsheets/prompts/{jid}.txt',
                          'wowhead': e['url']})
     json.dump(jobs, open(os.path.join(HERE, 'jobs.json'), 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
-    write_todo(jobs)
     print(f'{len(jobs)} завдань, {len({j["set_id"] for j in jobs})} унікальних сетів')
 
-def write_todo(jobs, done=None):
-    """SKINS.todo: відмітки, які вже стояли (✔), зберігаються при перезапуску; done — додатково позначити ✔."""
-    path = os.path.join(ROOT, 'SKINS.todo')
-    done = set(done or ())
-    if os.path.exists(path):
-        done |= set(re.findall(r'✔ .*?@(\w+)', open(path, encoding='utf-8').read()))
-    lines = ['Азерот Арена — скіни: по 3 сети на спек (вибір — tools/picker/picks.json, обиралка — sets-picker.html).',
-             '☐ — не зроблено, ✔ — скін у грі. Після мітки @ — ідентифікатор завдання (tools/setsheets/jobs.json, out/<id>.png).',
-             'Етапи кожного скіну: реф (tools/setsheets/refs) → аркуш GPT (tools/setsheets/gen.py) → нарізка (slice.py, pack_cutout.py) → у грі.',
-             '«· аркуш» — аркуш деталей уже згенеровано (tools/setsheets/out/<id>.png).', '']
-    cur_cls = cur_spec = None
-    for j in jobs:
-        if j['clsName'] != cur_cls:
-            cur_cls = j['clsName']; lines.append(f'{cur_cls}:')
-        if j['spec'] != cur_spec:
-            cur_spec = j['spec']; lines.append(f'  {cur_spec}:')
-        mark = '✔' if j['id'] in done else '☐'
-        fac = {'A': ' (Альянс)', 'H': ' (Орда)'}.get(j['faction'], '')
-        stage = '  · аркуш' if os.path.exists(os.path.join(HERE, 'out', f"{j['id']}.png")) else ''
-        lines.append(f"    {mark} {j['label']} {j['set']}{fac}  @{j['id']}{stage}")
-    open(path, 'w', encoding='utf-8').write('\n'.join(lines) + '\n')
-
 if __name__ == '__main__':
-    import sys
-    if '--todo' in sys.argv: write_todo(json.load(open(os.path.join(HERE, 'jobs.json'), encoding='utf-8')))
-    else: main()
+    main()

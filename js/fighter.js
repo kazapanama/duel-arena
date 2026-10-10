@@ -93,9 +93,12 @@ class Fighter{
     this.aiT=0; this.aiMove=0; this.aiBlockT=0;
     this.meter=0;           // супершкала переходить з раунду в раунд
   }
-  // дальник, якщо у наборі ≥2 снарядні/проклятні здібності
+  /* Дистанція, яку тримає бот. Основний удар (слот X) упритул — ближній бій (Prot Paladin, Unholy: снаряд чи зона
+     в наборі не роблять їх дальніми). Інакше — дальник, якщо ≥2 дальні здібності (зона під собою — не дальня).
+     Лікарі з одним снарядом (Resto Shaman, Resto Druid) лишаються ближче: на дистанції турнір ботів дає їм на 5–15% менше */
   static rangeFor(abs){
-    const n=abs.filter(a=>['proj','multi','curse','zone','drain'].includes(a.type)).length;
+    if(abs[0].type==='melee') return 115;
+    const n=abs.filter(a=>['proj','multi','curse','drain'].includes(a.type)||(a.type==='zone'&&a.at!=='self')).length;
     return n>=2?rnd(380,480):115;
   }
   setForm(id){

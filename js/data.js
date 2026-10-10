@@ -62,9 +62,9 @@ const CLASSES = [
    { name:'Protection', em:'🛡️', role:'Танк',
      classAb: mk.curse('Hammer of Justice','🔨',12,{dmg:35,stun:1.2,range:360}),
      abilities:[
-     mk.melee('Hammer of the Righteous','🔨',1.2,66,{selfHeal:8}),
-     mk.proj("Avenger's Shield",'🛡️',6,162,{stun:0.8,speed:920,pcolor:'#9fd7ff',psize:13}),
-     mk.zone('Consecration','🔥',9,70,135,5,{at:'self',zcolor:'#ffd97a'}),
+     mk.melee('Hammer of the Righteous','🔨',1.2,55,{selfHeal:8}),
+     mk.proj("Avenger's Shield",'🛡️',6,110,{stun:0.6,speed:920,pcolor:'#9fd7ff',psize:13}),
+     mk.zone('Consecration','🔥',9,30,135,5,{at:'self',zcolor:'#ffd97a'}),
    ]},
    { name:'Retribution', em:'⚔️', role:'Бій', abilities:[
      mk.melee('Crusader Strike','⚔️',1.2,60),
@@ -78,8 +78,8 @@ const CLASSES = [
    { name:'Beast Mastery', em:'🐻', role:'Бій',
      classAb: mk.curse('Intimidation','🐺',12,{dmg:25,stun:1.0,range:520}),
      abilities:[
-     mk.proj('Arcane Shot','✴️',1.3,50,{speed:880,pcolor:'#c9a8ff'}),
-     mk.proj('Kill Command','🐺',5,135,{speed:1100,pcolor:'#ff8866',psize:13}),
+     mk.proj('Arcane Shot','✴️',1.3,54,{speed:880,pcolor:'#c9a8ff'}),
+     mk.proj('Kill Command','🐺',5,145,{speed:1100,pcolor:'#ff8866',psize:13}),
      mk.pet('Call Pet','🐺',14,10,{pkind:'wolf',pdmg:15,pcd:1.25}),
    ]},
    { name:'Marksmanship', em:'🎯', role:'Бій', abilities:[
@@ -158,11 +158,11 @@ const CLASSES = [
      mk.buff('Unbreakable Armor','🧊',15,6,{dmgMult:1.3,dmgTakenMult:0.8}),
    ]},
    { name:'Unholy', em:'🧟', role:'Бій',
-     classAb: mk.zone('Death and Decay','💀',12,40,140,5,{at:'enemy',zkind:'dnd',slow:{mult:0.5,dur:1},zcolor:'#6aff5a'}),   // осквернена земля під ворогом; сповільнення — як із гліфом Glyph of Death and Decay
+     classAb: mk.zone('Death and Decay','💀',12,22,140,5,{at:'enemy',zkind:'dnd',slow:{mult:0.5,dur:1},zcolor:'#6aff5a'}),   // осквернена земля під ворогом; сповільнення — як із гліфом Glyph of Death and Decay
      abilities:[
      mk.melee('Scourge Strike','🦠',1.2,54,{dot:{dps:8,dur:3}}),
-     mk.proj('Death Coil','🟢',5,120,{pcolor:'#7cff6b'}),
-     mk.pet('Raise Dead','🧟',14,9,{pkind:'ghoul',pdmg:15,pcd:1.25}),
+     mk.proj('Death Coil','🟢',5,85,{pcolor:'#7cff6b'}),
+     mk.pet('Raise Dead','🧟',14,9,{pkind:'ghoul',pdmg:12,pcd:1.25}),
    ]},
   ]},
 { id:'shaman', name:'Шаман', em:'⚡', color:'#0070DD',
@@ -172,19 +172,19 @@ const CLASSES = [
    { name:'Elemental', em:'🌋', role:'Бій',
      classAb: mk.knock('Thunderstorm','🌩️',12,30,175,{toss:{v:600,vy:-640},gcd:0.15,wall:{dmg:30,stun:0.7}}),
      abilities:[
-     mk.proj('Lightning Bolt','⚡',1.4,48,{speed:950,pcolor:'#8fd0ff'}),
-     mk.proj('Lava Burst','☄️',6,175,{cast:1.0,dot:{dps:12,dur:3},speed:1300,pcolor:'#ff7733',psize:13}),
+     mk.proj('Lightning Bolt','⚡',1.4,56,{speed:950,pcolor:'#8fd0ff'}),
+     mk.proj('Lava Burst','☄️',6,200,{cast:1.0,dot:{dps:12,dur:3},speed:1300,pcolor:'#ff7733',psize:13}),
      mk.zone('Magma Totem','🔥',11,38,140,5,{at:'self',zkind:'magma',zcolor:'#ff7733'}),   // тотем біля ніг: тримає ближній бій на відстані
    ]},
    { name:'Enhancement', em:'🐺', role:'Бій', abilities:[
-     mk.melee('Stormstrike','⚡',1.2,66),
-     mk.melee('Lava Lash','🔥',5,172,{dot:{dps:12,dur:3}}),
-     mk.pet('Feral Spirit','🐺',15,8,{pkind:'spiritwolf',pdmg:12,pcd:1.3}),
+     mk.melee('Stormstrike','⚡',1.2,74),
+     mk.melee('Lava Lash','🔥',5,190,{dot:{dps:12,dur:3}}),
+     mk.pet('Feral Spirit','🐺',15,8,{pkind:'spiritwolf',pdmg:15,pcd:1.3}),
    ]},
    { name:'Restoration', em:'💧', role:'Лікар', abilities:[
-     mk.proj('Lightning Bolt','⚡',1.35,57,{speed:950,pcolor:'#8fd0ff'}),
-     mk.heal('Healing Wave','💙',9,225,{cast:1.1}),
-     mk.heal('Riptide','🌊',8,50,{hot:{tick:12,dur:5}}),
+     mk.proj('Lightning Bolt','⚡',1.35,60,{speed:950,pcolor:'#8fd0ff'}),
+     mk.heal('Healing Wave','💙',9,235,{cast:1.1}),
+     mk.heal('Riptide','🌊',8,55,{hot:{tick:13,dur:5}}),
    ]},
   ]},
 { id:'mage', name:'Маг', em:'🧙', color:'#3FC7EB',
@@ -215,9 +215,9 @@ const CLASSES = [
   classAb: mk.curse('Fear','😱',15,{cast:1.2,fear:{dur:2,brk:70}}),
   specs:[
    { name:'Affliction', em:'🕷️', role:'Бій', abilities:[
-     mk.proj('Shadow Bolt','🟣',1.45,51,{pcolor:'#a878ff'}),
-     mk.drain('Drain Life','🩸',6,32,{chan:{dur:2.4,ticks:6},healFrac:0.55,pcolor:'#7cff4a'}),   // зелений промінь, як у WoW
-     mk.curse('Curse of Agony','😖',8,{dot:{dps:20,dur:6}}),
+     mk.proj('Shadow Bolt','🟣',1.45,56,{pcolor:'#a878ff'}),
+     mk.drain('Drain Life','🩸',6,36,{chan:{dur:2.4,ticks:6},healFrac:0.55,pcolor:'#7cff4a'}),   // зелений промінь, як у WoW
+     mk.curse('Curse of Agony','😖',8,{dot:{dps:24,dur:6}}),
    ]},
    { name:'Demonology', em:'👿', role:'Бій',
      classAb: mk.tele('Demonic Circle: Teleport','🌀',7,'away',{dist:300}),
@@ -277,18 +277,18 @@ const CLASSES = [
      }},
    /* Restoration: гуманоїд — Wrath/Regrowth/Barkskin; Дерево життя — міцніше й повільніше, лікує без кастів */
    { name:'Restoration', em:'🌿', role:'Лікар', abilities:[
-     mk.proj('Wrath','🌞',1.4,50,{pcolor:'#ffe27a'}),
-     mk.heal('Regrowth','🌿',9,190,{cast:1.1,hot:{tick:10,dur:4}}),
+     mk.proj('Wrath','🌞',1.4,58,{pcolor:'#ffe27a'}),
+     mk.heal('Regrowth','🌿',9,220,{cast:1.1,hot:{tick:10,dur:4}}),
      mk.buff('Barkskin','🪵',14,5,{dmgTakenMult:0.55}),
    ],
      form:{ id:'tree', name:'Дерево життя', em:'🌳', h:128, passive:{dr:0.92,spd:0.85},
        note:'−8% отримуваної шкоди, повільніше; лікування без кастів',
        abilities:[
-         mk.proj('Wrath','🌞',1.4,46,{pcolor:'#ffe27a'}),
-         mk.heal('Wild Growth','🌱',12,60,{hot:{tick:12,dur:5}}),
+         mk.proj('Wrath','🌞',1.4,54,{pcolor:'#ffe27a'}),
+         mk.heal('Wild Growth','🌱',12,60,{hot:{tick:15,dur:5}}),
          mk.curse('Entangling Roots','🌱',10,{cast:1.2,dmg:15,root:{dur:2.2,kind:'vine'},dot:{dps:8,dur:3}}),
        ],
-       classAb: mk.heal('Swiftmend','🍃',15,90),
+       classAb: mk.heal('Swiftmend','🍃',15,120),
      }},
   ]},
 ];

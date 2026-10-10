@@ -5,12 +5,11 @@
 
 ## Процес
 
-1. **Вибір сетів** — `sets-picker.html` → `tools/picker/picks.json` (по 3 сети на спек).
+1. **Вибір сетів** — `tools/picker/picks.json` (по 3 сети на спек; обиралку прибрано — вибір зроблено).
 2. **Завдання** — `python tools/setsheets/build_jobs.py`:
    - `jobs.json` — 90 завдань (спек × слот): сет, раса, зброя спеку;
    - `refs/<id>.png` — скріншот сету з `_refs/picker/img/` (обрізаний до портрета, збільшений);
    - `prompts/<id>.txt` — промпт із `template.txt`;
-   - `SKINS.todo` у корені — список для відміток (✔ = скін у грі; відмітки переживають перезапуск).
    Расу чи зброю окремого скіну міняємо в `OVERRIDES` у `build_jobs.py`.
 3. **Генерація** — `python tools/setsheets/gen.py` (див. довідку у файлі):
    Image 1 = `layout_template.png` (сітка й «привиди» деталей), Image 2 = реф сету. Результат — `out/<id>.png`.

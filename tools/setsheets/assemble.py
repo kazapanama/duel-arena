@@ -2,7 +2,6 @@
    1) нарізка за сіткою шаблону → img/cutout/<id>/*.png
    2) пакування з точками кріплення → img/cutout/<id>.js (вантажиться грою за потреби, js/cutout.js)
    3) SPEC_SKINS у js/data.js — 3 скіни на спек із вибору користувача (tools/picker/picks.json → jobs.json)
-   4) SKINS.todo — ✔ для скінів, що вже в грі
    python tools/setsheets/assemble.py              — усі, для яких є аркуш
    python tools/setsheets/assemble.py --only dk_*  — частина (SPEC_SKINS однаково пишеться для всіх готових)"""
 import os, re, sys, json, fnmatch, importlib.util
@@ -119,7 +118,6 @@ def main():
         print(f"  ✔ {f['id']:24} {os.path.getsize(out) // 1024:4} KB  {','.join(parts)}")
         slicer.KEY = pack_cutout.KEY = 'magenta'
     ready = write_skins(jobs)
-    build_jobs.write_todo(jobs, done={j['id'] for j in ready})
     print(f'у грі: {len(ready)} з {len(jobs)}')
 
 if __name__ == '__main__':

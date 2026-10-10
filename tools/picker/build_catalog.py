@@ -1,4 +1,4 @@
-"""Довідник сетів для обиралки (sets-picker.html): назви → id у базі Wowhead (WotLK Classic) → головний скріншот.
+"""Довідник сетів (вибір у picks.json, завдання — tools/setsheets/build_jobs.py): назви → id у базі Wowhead (WotLK Classic) → головний скріншот.
    python tools/picker/build_catalog.py      →  tools/picker/catalog.js + _refs/picker/img/<id>.jpg
    Кеш сторінок — _refs/picker/cache (повторний запуск нічого не качає вдруге)."""
 import os, re, json, time, urllib.request, urllib.error
@@ -202,7 +202,7 @@ def main():
             print(f"{cls:8} {label:5} {d['id']:>6}  {d['name']}{'' if ok else '   (без скріншота)'}")
 
     with open(os.path.join(ROOT, 'tools', 'picker', 'catalog.js'), 'w', encoding='utf-8') as f:
-        f.write('// згенеровано tools/picker/build_catalog.py — сети для обиралки sets-picker.html\n')
+        f.write('// згенеровано tools/picker/build_catalog.py — довідник сетів для tools/setsheets/build_jobs.py\n')
         f.write('const CATALOG=' + json.dumps(entries, ensure_ascii=False, indent=0) + ';\n')
     print(f'\nусього {len(entries)}; не знайдено {len(missing)}; без скріншота {len(noshot)}')
     for m in missing: print('  НЕ ЗНАЙДЕНО', m)

@@ -32,31 +32,11 @@ function lanAddrs(){
 }
 const urls=()=>lanAddrs().filter(a=>!a.virt).map(a=>`http://${a.addr}:${PORT}`);
 
-/* ---------- обиралка сетів (sets-picker.html): вибір зберігається в tools/picker/picks.json ----------
-   Лише з цього комп'ютера — сервер видно в локальній мережі, а писати на диск чужим не можна */
-const PICKS=path.join(ROOT,'tools','picker','picks.json');
-function picksApi(req,res){
-  const local=/^(::1|127\.|::ffff:127\.)/.test(req.socket.remoteAddress||'');
-  if(!local){ res.writeHead(403); return res.end(); }
-  if(req.method==='GET'){
-    fs.readFile(PICKS,'utf8',(err,txt)=>{ res.writeHead(200,{'Content-Type':'application/json','Cache-Control':'no-store'}); res.end(err?'null':txt); });
-    return;
-  }
-  if(req.method!=='POST'){ res.writeHead(405); return res.end(); }
-  let body='';
-  req.on('data',ch=>{ body+=ch; if(body.length>2e6) req.destroy(); });
-  req.on('end',()=>{
-    try{ JSON.parse(body); }catch(e){ res.writeHead(400); return res.end(); }
-    fs.writeFile(PICKS,body,err=>{ res.writeHead(err?500:200); res.end(); });
-  });
-}
-
 /* ---------- статика ---------- */
 const server=http.createServer((req,res)=>{
   let p;
   try{ p=decodeURIComponent(new URL(req.url,'http://x').pathname); }catch(e){ res.writeHead(400); return res.end(); }
   if(p==='/net-info'){ res.writeHead(200,{'Content-Type':'application/json','Cache-Control':'no-store'}); return res.end(JSON.stringify({urls:urls()})); }
-  if(p==='/api/picks') return picksApi(req,res);
   if(p.endsWith('/')) p+='index.html';
   const file=path.join(ROOT,path.normalize(p));
   if(!file.startsWith(ROOT)){ res.writeHead(403); return res.end(); }

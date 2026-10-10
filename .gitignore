@@ -16,10 +16,6 @@ desktop.ini
 .idea/
 .claude/
 
-# Внутрішній план візуалу (локально; публічний — ROADMAP.md)
-VISUALS_TODO.md
-# список здібностей не з 3.3.5 (локально)
-WOTLK.todo
 
 # генерація скінів: ключ OpenAI і згенеровані/похідні картинки
 tools/setsheets/.openai_key
