@@ -6,7 +6,7 @@
 let AC=null, muted=false;
 function ac(){ if(!AC){ try{ AC=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } return AC; }
 function sfx(kind){
-  if(NET.host){ NET.sfxQ.push(kind); if(NET.sfxQ.length>24) NET.sfxQ.shift(); } // звуки бою чує й гість (їдуть у знімку)
+  if(NET.sim){ NET.sfxQ.push(kind); if(NET.sfxQ.length>24) NET.sfxQ.shift(); return; } // бій на сервері: звуки їдуть гравцям у знімку
   if(muted) return;
   const c=ac(); if(!c) return;
   if(c.state==='suspended') c.resume();

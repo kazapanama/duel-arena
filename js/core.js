@@ -46,8 +46,10 @@ const THEMES=(typeof ARENA_IMG!=='undefined'&&ARENA_IMG.length)?ARENA_IMG:[
   {kind:'northrend',name:'Нордскол'},
 ];
 
-/* Гра по мережі (див. net.js): side — мій бік (0 — хост, 1 — гість), paired — суперник на зв'язку */
-const NET={ws:null,side:-1,paired:false,urls:[],snap:null,sfxQ:[],rin:null,remoteSel:null,sentSel:'',out:null,
+/* Гра по мережі (див. net.js): side — мій бік (0 — хост, 1 — гість), paired — суперник на зв'язку, rtt — затримка, мс,
+   snap — текст останнього знімка від сервера (розбирається в кадрі).
+   sim і sfxQ — лише на сервері (tools/netsim.js): там рахується бій, а звуки збираються для знімка */
+const NET={ws:null,side:-1,paired:false,urls:[],snap:null,sim:false,sfxQ:[],remoteSel:null,sentSel:'',out:null,ready:false,rtt:0,pingT:0,
   get on(){ return this.paired; },
   get host(){ return this.paired&&this.side===0; },
   get guest(){ return this.paired&&this.side===1; }};

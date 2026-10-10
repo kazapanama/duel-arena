@@ -1008,9 +1008,9 @@ class Fighter{
       && this.mcT<=0 && this.untargT<=0 && this.sleepT<=0;
     if(canAct){
       if(this.isAI){ this.aiReact(dt,game); this.aiThink(dt,game); mv=this.aiMove; wantJump=this.aiJump; this.aiJump=false; wantBlock=this.aiBlockT>0; }
-      else if(NET.on&&this.idx!==NET.side){ // суперник по мережі: лише його ввід, місцеві клавіші й пади не чіпають
+      else if(this.vin){ // гравець по мережі (бій на сервері, tools/netsim.js): лише його ввід із телефона
         const st={mv:0,jump:false,block:false};
-        vinApply(this,NET.rin,game,st);
+        vinApply(this,this.vin,game,st);
         mv=st.mv; this.inputDir=mv; wantJump=st.jump; wantBlock=st.block;
       }
       else{
@@ -1037,7 +1037,7 @@ class Fighter{
           if(pad.form) this.shapeshift(game);
           if(pad.ult) this.useUlt(game);
         }
-        if(this.idx===(NET.on?NET.side:0)){ // сенсорне керування — за першим гравцем (у мережі — за своїм)
+        if(this.idx===0){ // сенсорне керування — за першим гравцем (у мережі бій рахує сервер, а телефон лише шле ввід)
           const st={mv,jump:wantJump,block:wantBlock};
           vinApply(this,TIN,game,st);
           mv=st.mv; wantJump=st.jump; wantBlock=st.block;

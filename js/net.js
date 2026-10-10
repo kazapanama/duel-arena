@@ -1,14 +1,17 @@
 "use strict";
 /* ============================================================
    ГРА ПО МЕРЕЖІ: двоє пристроїв у локальній мережі.
-   Сервер — tools/server.js (пересилає повідомлення між гравцями).
-   Хост (Гравець 1) рахує бій як звичайно і щокадру шле знімок
-   усього, що малюється; гість (Гравець 2) нічого не рахує — лише
-   малює знімки й шле свій ввід. Розсинхрону бути не може,
-   а гість грає із затримкою на один «туди-назад» по Wi-Fi.
-   Повідомлення: sel — вибір бійця; vs, fight, end — етапи матчу;
-   s — знімок стану; i/a/f/u — ввід гостя (утримання, здібність, форма, ультимейт);
-   p — пауза; rematch, chars — дії з фінального екрана.
+   Бій рахує сервер — tools/server.js (tools/netsim.js) на комп'ютері.
+   Телефони нічого не рахують: щокадру отримують знімок усього, що
+   малюється (js/snap.js), малюють його й шлють свій ввід. Тож слабкий
+   телефон гальмує лише сам себе, а не суперника, і розсинхрону бути не може.
+   Хост (Гравець 1) лише обирає арену; обидва грають із затримкою
+   на один «туди-назад» по Wi-Fi.
+   Повідомлення: sel — вибір бійця (сервер пересилає суперникові);
+   vs — хост оголосив пару й арену; start — VS скінчився; fight, end — етапи матчу від сервера;
+   ready — мої картинки завантажились; s — знімок стану; x — звуки бою;
+   i/a/f/u — ввід (утримання, здібність, форма, ультимейт); p — пауза;
+   rematch, chars — дії з фінального екрана; ping/pong — затримка мережі (?perf).
    ============================================================ */
 NET.send=function(o){ const ws=this.ws; if(ws&&ws.readyState===1) ws.send(JSON.stringify(o)); };
 
@@ -45,7 +48,13 @@ function netConnect(){
   try{ ws=new WebSocket(`${location.protocol==='https:'?'wss':'ws'}://${location.host}/ws`); }
   catch(e){ netLobby('Не вдалося підключитися.',[],'',true); return; }
   NET.ws=ws;
-  ws.onmessage=e=>{ let m; try{ m=JSON.parse(e.data); }catch(x){ return; } netOnMsg(m); };
+  ws.onmessage=e=>{
+    // знімок (~60 на секунду) лише запам'ятовуємо: розбираємо останній, коли малюємо кадр (netFrame).
+    // Слабкий телефон малює менше кадрів, ніж приходить знімків, — розбирати кожен для нього марна робота
+    if(e.data.startsWith('{"t":"s"')){ NET.snap=e.data; return; }
+    let m; try{ m=JSON.parse(e.data); }catch(x){ return; }
+    netOnMsg(m);
+  };
   ws.onclose=()=>{
     if(NET.ws!==ws) return;                 // це старе з'єднання, ми вже перепідключились
     const was=NET.paired;
@@ -59,7 +68,7 @@ function netClose(){ const ws=NET.ws; NET.ws=null; if(ws){ ws.onclose=null; try{
 function netLeave(){ netClose(); netDropPeer(); NET.side=-1; state.mode='ai'; }
 // суперник зник: прибрати все, що трималося на ньому
 function netDropPeer(){
-  NET.paired=false; NET.snap=null; NET.remoteSel=null; NET.sentSel=''; NET.vsPending=false; NET.rin=newVin(); NET.out=null;
+  NET.paired=false; NET.snap=null; NET.remoteSel=null; NET.sentSel=''; NET.vsPending=false; NET.out=null; NET.rtt=0;
   document.body.classList.remove('net');
   clearTimeout(VS.timer);
   if(state.game||UI.cur==='overlay'||state.paused){ closePause(); screens.overlay.classList.add('hidden'); state.game=null; }
@@ -70,25 +79,19 @@ function netOnMsg(m){
     case 'welcome': NET.side=m.side; NET.urls=m.urls||[]; if(!NET.paired) netWaiting(); break;
     case 'full': netClose(); netLobby('Тут уже грають двоє.',[],'Зачекай, поки хтось вийде з мережевої гри.',true); break;
     case 'paired':
-      NET.paired=true; NET.remoteSel=null; NET.sentSel=''; NET.vsPending=false; NET.rin=newVin(); NET.out=null;
+      NET.paired=true; NET.remoteSel=null; NET.sentSel=''; NET.vsPending=false; NET.out=null;
       document.body.classList.add('net');
       state.mode='net'; sfx('ok'); openSelect();
       break;
     case 'peer-left': netDropPeer(); show('netLobby'); netWaiting('Суперник вийшов.'); sfx('tick'); break;
     case 'sel': netApplySel(m); break;
-    case 'vs': if(NET.guest){ NET.vsPending=true; state.picks=m.p.map(netPick); state.arena=THEMES[m.a]||null; setTimeout(()=>{ if(NET.on) openVersus(); },650); } break;
-    case 'fight': if(NET.guest) netStartMirror(); break;
-    case 's': if(NET.guest){ NET.snap=m; for(const k of m.sfx) sfx(k); } break;   // звуки — одразу, навіть якщо кадр знімка пропустимо
-    case 'end': if(NET.guest&&state.game) showOverlay(state.game.f[m.w]); break;
-    case 'i': if(NET.host){ const r=NET.rin, now=performance.now();
-      if(m.j&&!r.jump) r.jumpUntil=now+70; if(m.b&&!r.block) r.blockUntil=now+70; // тап, що прийшов разом із відпусканням, не губиться
-      r.mv=m.mv; r.jump=m.j; r.block=m.b; } break;
-    case 'a': if(NET.host) NET.rin.ab[m.i]=performance.now(); break;
-    case 'f': if(NET.host) NET.rin.form=performance.now(); break;
-    case 'u': if(NET.host) NET.rin.ult=performance.now(); break;
-    case 'p': if(NET.host) togglePause(); break;
-    case 'rematch': if(NET.host&&state.game&&state.game.phase==='matchEnd') startFight(); break;
+    case 'vs': if(NET.guest){ NET.vsPending=true; state.picks=m.p.map(netPick); state.arena=THEMES[m.a]||null; setTimeout(()=>{ if(NET.on&&NET.vsPending) openVersus(); },650); } break;   // vsPending — бій ще не почався (хост міг пропустити VS)
+    case 'fight': netStartMirror(m.a); break;
+    case 'x': for(const k of m.k) sfx(k); break;   // звуки бою — одразу, навіть якщо кадр знімка пропустимо
+    case 'end': if(state.game) showOverlay(state.game.f[m.w]); break;
     case 'chars': if(UI.cur!=='select') toSelect(); break;
+    case 'pong': NET.rtt=performance.now()-m.c; break;
+    case 'err': netDropPeer(); show('netLobby'); netLobby('Сервер не зміг почати бій.',[],m.msg||'',true); break;
   }
 }
 
@@ -122,115 +125,44 @@ function netAnnounceVersus(){
   const P=SEL.sides.map(s=>[s.ci,s.si,s.ki]);
   state.picks=P.map(netPick);
   if(!state.arena) state.nextArena=THEMES[Math.floor(Math.random()*THEMES.length)];   // випадкову — вже тут: гість почне вантажити ту саму картинку
-  NET.send({t:'vs',p:P,a:THEMES.indexOf(state.arena||state.nextArena)});
+  NET.send({t:'vs',p:P,a:THEMES.indexOf(state.arena||state.nextArena),r:state.arena?0:1});   // r — випадкова: на реванш сервер обере нову
   openVersus();
 }
 
-/* ---------- гість: дзеркальна гра без власної симуляції ---------- */
-function netStartMirror(){
+/* ---------- дзеркальна гра: лише малює знімки сервера ---------- */
+function netStartMirror(a){
   clearTimeout(VS.timer);
-  NET.vsPending=false; NET.snap=null; NET.out=null;
+  NET.vsPending=false; NET.snap=null; NET.out=null; NET.ready=false;
+  if(THEMES[a]){ state.arena=null; state.nextArena=THEMES[a]; }   // арена — від сервера (реванш на випадковій — уже інша)
   const P=state.picks, m0=muted;
-  muted=true;                               // звук раунду з конструктора пришле хост
+  muted=true;                               // звуки бою пришле сервер
   const p1=new Fighter(P[0].cls,P[0].spec,0,P[0].skin), p2=new Fighter(P[1].cls,P[1].spec,1,P[1].skin);
   state.game=new Game(p1,p2);
+  state.game.waitPeer=true;                 // до першого знімка — екран завантаження (сервер чекає обох гравців)
   muted=m0;
   closePause();
   show(null);
   state.screen='fight';
 }
 
-/* ---------- знімок стану (хост → гість) ---------- */
-const r1=v=>Math.round(v*10)/10, r3=v=>Math.round(v*1000)/1000;
-// числові поля бійця, що потрібні малюванню й HUD (порядок однаковий на обох кінцях)
-const NF=['x','y','facing','hp','maxHp','shield','guard','gcd','formCd','hitT','shiftT','wingsT','wingsDur','stealthT','dispersT','rootT','rootDur','fearT','stunT','roundWins','knockT',
-  'meter','combo','comboT','growT','dotLeft','hotLeft','pomT',
-  // стани ультимейтів (малювання: купол, брила, жаба, копії, клинок, крила демона…)
-  'growDur','ccImmT','stormT','invulnT','untargT','healRedT','silenceT','mcT','hexT','freezeT','freezeDur','bombT','hauntT',
-  'dwT','metaT','immoT','berserkT','lustT','bwT','hasteT','guardT','drwT','drwSwing','mirrorT','tranqT','sleepT'];
-const poseOf=pose=>{ const po={}; for(const k in pose){ const v=pose[k]; po[k]=typeof v==='number'?r3(v):v; } return po; };
-function snapFighter(f){
-  const po=poseOf(f.anim.pose);
-  const c=f.casting, p=f.pet;
-  return {n:NF.map(k=>r3(+f[k]||0)), fm:f.form, bl:f.blocking?1:0, ko:f.ko?1:0, rk:f.rootKind,
-    cd:f.cds.map(r3), bf:[r3(f.buffs.dmg.t),r3(f.buffs.spd.t),r3(f.buffs.dr.t)],
-    cs:c?[c.i,r3(c.t),r3(c.total),c.chan?1:0]:0, cc:f.model.castCol||'', po,
-    pt:p?{k:p.kind,x:r1(p.x),f:p.facing,t:r3(p.t),T:p.T,h:r3(p.hitT),r:r3(p.rage||0),hp:Math.round(p.hp||0),mh:p.maxHp||0,po:poseOf(p.anim.pose)}:0};
+/* ---------- щокадровий крок (з main.js) ---------- */
+function netFrame(){
+  const g=state.game, now=performance.now();
+  let s=null;
+  if(NET.snap&&g){ try{ s=JSON.parse(NET.snap); }catch(e){} NET.snap=null; }
+  if(s){
+    applySnap(g,s); g.waitPeer=false;
+    if(!!s.pa!==state.paused&&UI.cur!=='overlay') setPaused(!!s.pa);   // пауза спільна: меню паузи — слідом за сервером
+  }
+  // мої картинки готові — сервер почне відлік, щойно готові обидва
+  if(g&&!NET.ready&&g.assetsReady()){ NET.ready=true; NET.send({t:'ready'}); }
+  if(now-(NET.pingT||0)>1000){ NET.pingT=now; NET.send({t:'ping',c:now}); }
+  netInput();
 }
-function netSnap(g){
-  return {t:'s', tm:r3(g.time), sh:r1(g.shake), cam:[r3(g.cam.scale),r1(g.cam.x),r1(g.cam.offX),r1(g.cam.offY)],
-    ph:g.phase, pT:r3(g.phaseT), bn:g.banner, rd:g.round, rt:r3(g.roundTimer), th:THEMES.indexOf(g.theme), ko:r3(g.koFlash||0), pa:state.paused?1:0,
-    f:g.f.map(snapFighter),
-    P:g.particles.map(p=>[r1(p.x),r1(p.y),r3(p.t),r1(p.size),p.color]),
-    fl:g.floats.map(f=>[r1(f.x),r1(f.y),f.txt,f.color,f.size,r3(f.t)]),
-    pr:g.projectiles.map(p=>[r1(p.x),r1(p.y),r1(p.vx),p.color,p.size,p.kind,p.school||0]),
-    sl:g.slashes.map(s=>[r1(s.x),r1(s.y),s.dir,r3(s.t),s.T,s.color,s.kind]),
-    be:g.beams.map(b=>[r1(b.x1),r1(b.y1),r1(b.x2),r1(b.y2),r3(b.t),b.color]),
-    ri:g.rings.map(r=>[r1(r.x),r1(r.y),r1(r.r),r3(r.t),r.color]),
-    tr:g.trails.map(t=>[r1(t.x1),r1(t.x2),r1(t.y),r3(t.t),t.color]),
-    te:(g.tells||[]).map(t=>[r1(t.x),r1(t.y),r3(t.t),r3(t.T)]),
-    zo:g.zones.map(z=>[r1(z.x),z.r,z.color,z.kind||0]),
-    mk:g.marks.map(m=>[r1(m.x),m.r,r3(m.t),m.T,m.color]),
-    fa:g.fallers.map(f=>[f.kind,r1(f.x),r1(f.y),r1(f.x0),r1(f.y0),r1(f.x1)]),
-    er:g.erupts.map(e=>[r1(e.x),r3(e.t),e.T]),
-    po:g.portals.map(q=>[r1(q.x),r1(q.y),r3(q.t),q.T,q.color]),
-    tp:g.traps.map(q=>[r1(q.x),r3(q.arm),q.r]),
-    zp:g.zaps.map(z=>[r1(z.x1),r1(z.y1),r1(z.x2),r1(z.y2),r3(z.t),z.T,z.color,z.seed]),
-    uf:g.ultFx?[r3(g.ultFx.t),g.ultFx.T,g.ultFx.side,g.ultFx.name,g.ultFx.color,g.ultFx.em]:0,
-    sfx:NET.sfxQ.splice(0)};
-}
-function applyFighter(f,d){
-  if(f.form!==d.fm) f.setForm(d.fm);
-  NF.forEach((k,i)=>{ f[k]=d.n[i]; });
-  f.blocking=!!d.bl; f.ko=!!d.ko; f.rootKind=d.rk;
-  for(let i=0;i<4;i++) f.cds[i]=d.cd[i];
-  f.buffs.dmg.t=d.bf[0]; f.buffs.spd.t=d.bf[1]; f.buffs.dr.t=d.bf[2];
-  f.casting=d.cs?{i:d.cs[0],t:d.cs[1],total:d.cs[2],chan:!!d.cs[3]}:null;
-  if(d.pt){ // пет: модель і кеш спрайта переживають кадри, оновлюються лише числа
-    const q=d.pt; let p=f.pet;
-    if(!p||p.kind!==q.k) p=f.pet={kind:q.k,y:GROUND,anim:{pose:{}}};
-    p.x=q.x; p.facing=q.f; p.t=q.t; p.T=q.T; p.hitT=q.h; p.rage=q.r||0; p.hp=q.hp; p.maxHp=q.mh; Object.assign(p.anim.pose,q.po);
-  } else f.pet=null;
-  f.model.castCol=d.cc||f.accent;
-  Object.assign(f.anim.pose,d.po);
-}
-function applySnap(g,s){
-  g.time=s.tm; g.shake=s.sh;
-  g.cam.scale=s.cam[0]; g.cam.x=s.cam[1]; g.cam.offX=s.cam[2]; g.cam.offY=s.cam[3];
-  g.phase=s.ph; g.phaseT=s.pT; g.banner=s.bn; g.round=s.rd; g.roundTimer=s.rt; g.koFlash=s.ko;
-  if(THEMES[s.th]) g.theme=THEMES[s.th];
-  s.f.forEach((d,i)=>applyFighter(g.f[i],d));
-  g.particles=s.P.map(a=>({x:a[0],y:a[1],t:a[2],size:a[3],color:a[4]}));
-  g.floats=s.fl.map(a=>({x:a[0],y:a[1],txt:a[2],color:a[3],size:a[4],t:a[5]}));
-  g.projectiles=s.pr.map(a=>({x:a[0],y:a[1],vx:a[2],color:a[3],size:a[4],kind:a[5],school:a[6]||null}));
-  g.slashes=s.sl.map(a=>({x:a[0],y:a[1],dir:a[2],t:a[3],T:a[4],color:a[5],kind:a[6]}));
-  g.beams=s.be.map(a=>({x1:a[0],y1:a[1],x2:a[2],y2:a[3],t:a[4],color:a[5]}));
-  g.rings=s.ri.map(a=>({x:a[0],y:a[1],r:a[2],t:a[3],color:a[4]}));
-  g.trails=s.tr.map(a=>({x1:a[0],x2:a[1],y:a[2],t:a[3],color:a[4]}));
-  g.tells=s.te.map(a=>({x:a[0],y:a[1],t:a[2],T:a[3]}));
-  g.zones=s.zo.map(a=>({x:a[0],r:a[1],color:a[2],kind:a[3]||null}));
-  g.marks=s.mk.map(a=>({x:a[0],r:a[1],t:a[2],T:a[3],color:a[4]}));
-  g.fallers=s.fa.map(a=>({kind:a[0],x:a[1],y:a[2],x0:a[3],y0:a[4],x1:a[5]}));
-  g.erupts=s.er.map(a=>({x:a[0],t:a[1],T:a[2]}));
-  g.portals=s.po.map(a=>({x:a[0],y:a[1],t:a[2],T:a[3],color:a[4]}));
-  g.traps=(s.tp||[]).map(a=>({x:a[0],arm:a[1],r:a[2],t:1}));
-  g.zaps=(s.zp||[]).map(a=>({x1:a[0],y1:a[1],x2:a[2],y2:a[3],t:a[4],T:a[5],color:a[6],seed:a[7]}));
-  g.ultFx=s.uf?{t:s.uf[0],T:s.uf[1],side:s.uf[2],name:s.uf[3],color:s.uf[4],em:s.uf[5]}:null;
-  // спільна пауза: показуємо/ховаємо меню паузи слідом за хостом
-  if(!!s.pa!==state.paused&&UI.cur!=='overlay') setPaused(!!s.pa);
-}
-
-/* ---------- щокадрові кроки (з main.js) ---------- */
-function netHostFrame(){
-  const ws=NET.ws;
-  if(!state.game||!ws||ws.readyState!==1) return;
-  if(ws.bufferedAmount>256*1024) return;    // гість не встигає приймати — пропускаємо кадр, а не копимо затримку
-  ws.send(JSON.stringify(netSnap(state.game)));
-}
-function netGuestFrame(){
-  if(NET.snap&&state.game){ applySnap(state.game,NET.snap); NET.snap=null; }
-  if(state.paused||UI.cur) return;
-  // ввід гостя: клавіатура (обидві розкладки), перший геймпад, сенсорне керування
+/* Ввід: клавіатура (обидві розкладки), перший геймпад, сенсорне керування. Кличеться щокадру й одразу з подій
+   клавіш і дотиків (input.js, touch.js): на повільному телефоні натискання не чекає наступного кадру */
+function netInput(){
+  if(!state.game||state.screen!=='fight'||state.paused||UI.cur) return;
   const now=performance.now(), pad=padInputs[0];
   let mv=0;
   if(keys.has('KeyA')||keys.has('ArrowLeft')) mv-=1;
@@ -241,10 +173,12 @@ function netGuestFrame(){
   const b=keys.has('KeyS')||keys.has('ArrowDown')||!!(pad&&pad.block)||TIN.block||now<TIN.blockUntil;
   const o=NET.out||{};
   if(mv!==o.mv||j!==o.j||b!==o.b){ NET.out={mv,j,b}; NET.send({t:'i',mv,j,b}); }
+  // натискання — один раз: відправлене прибираємо, щоб наступний виклик у тому ж кадрі не послав його вдруге
+  const hit=kk=>{ const on=kk.some(c=>pressed.has(c)); for(const c of kk) pressed.delete(c); return on; };
   for(let i=0;i<4;i++){
-    const kk=[P1KEYS.ab[i]].concat(P2KEYS.ab[i]);
-    if(kk.some(c=>pressed.has(c))||(pad&&pad.ab[i])||TIN.ab[i]){ TIN.ab[i]=0; NET.send({t:'a',i}); }
+    const k=hit([P1KEYS.ab[i]].concat(P2KEYS.ab[i])), p=pad&&pad.ab[i], t=TIN.ab[i];
+    if(k||p||t){ TIN.ab[i]=0; if(pad) pad.ab[i]=false; NET.send({t:'a',i}); }
   }
-  if(P1KEYS.form.concat(P2KEYS.form).some(c=>pressed.has(c))||(pad&&pad.form)||TIN.form){ TIN.form=0; NET.send({t:'f'}); }
-  if(P1KEYS.ult.concat(P2KEYS.ult).some(c=>pressed.has(c))||(pad&&pad.ult)||TIN.ult){ TIN.ult=0; NET.send({t:'u'}); }
+  if(hit(P1KEYS.form.concat(P2KEYS.form))||(pad&&pad.form)||TIN.form){ TIN.form=0; if(pad) pad.form=false; NET.send({t:'f'}); }
+  if(hit(P1KEYS.ult.concat(P2KEYS.ult))||(pad&&pad.ult)||TIN.ult){ TIN.ult=0; if(pad) pad.ult=false; NET.send({t:'u'}); }
 }

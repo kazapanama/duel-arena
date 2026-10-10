@@ -98,7 +98,7 @@ function act(a,dir=1,el){
     case 'restart': closePause(); startFight(); break;
     case 'chars': if(NET.on) NET.send({t:'chars'}); toSelect(); break;
     case 'menu': closePause(); state.game=null; if(NET.ws) netLeave(); show('title'); break;
-    case 'rematch': if(NET.guest) NET.send({t:'rematch'}); else startFight(); break;
+    case 'rematch': if(NET.on) NET.send({t:'rematch'}); else startFight(); break;
   }
 }
 function backToTitle(){
@@ -578,7 +578,7 @@ function openVersus(){
   el.classList.add('hidden'); void el.offsetWidth;
   show('versus');
   sting('vs');   // акорд припадає на падіння «VS» (0.7 с)
-  clearTimeout(VS.timer); VS.timer=setTimeout(()=>{ if(UI.cur==='versus') startFight(); },2700); // гостю startFight нічого не робить — бій почне хост
+  clearTimeout(VS.timer); VS.timer=setTimeout(()=>{ if(UI.cur==='versus') startFight(); },2700); // у мережі бій почне сервер за сигналом хоста
 }
 // поки йде VS (2.7 с) — вантажимо картинку арени й деталі обох бійців, щоб бій почався одразу (Game.assetsReady)
 function preloadFight(){
@@ -606,9 +606,8 @@ function frameVersus(dt){
    БІЙ, ПАУЗА, ФІНАЛ
    ============================================================ */
 function startFight(){
-  if(NET.guest) return;                       // бій у мережі рахує хост, гість лише дзеркалить його
+  if(NET.on){ if(NET.host) NET.send({t:'start'}); return; }   // бій у мережі рахує сервер: хост лише каже, що VS скінчився
   clearTimeout(VS.timer);
-  NET.sfxQ.length=0; NET.rin=newVin(); NET.vsPending=false;
   const P=state.picks;
   const p1=new Fighter(P[0].cls,P[0].spec,0,P[0].skin);
   const p2=new Fighter(P[1].cls,P[1].spec,1,P[1].skin);
@@ -617,11 +616,9 @@ function startFight(){
   closePause();
   show(null);
   state.screen='fight';
-  if(NET.host) NET.send({t:'fight'});
 }
 function showOverlay(winner){
   const who=NET.on?(winner.idx===NET.side?'Перемога!':'Поразка'):(winner.isAI?'Бот перемагає':`Перемога гравця ${winner.idx+1}`);
-  if(NET.host) NET.send({t:'end',w:winner.idx});
   sting(NET.on?(winner.idx===NET.side?'win':'lose'):(winner.isAI?'lose':'win'));
   $('winTitle').textContent=who;
   $('winSub').textContent=`${winner.cls.name}, ${winner.spec.name}. ${winner.skin.name}`;
@@ -647,7 +644,7 @@ function frameWin(dt){
 }
 function togglePause(){
   if(!(state.screen==='fight'&&state.game&&state.game.phase!=='matchEnd')) return;
-  if(NET.guest){ NET.send({t:'p'}); return; }   // пауза в мережі спільна: ставить її хост, гість бачить зі знімка
+  if(NET.on){ NET.send({t:'p'}); return; }   // пауза в мережі спільна: ставить її сервер, обидва бачать зі знімка
   setPaused(!state.paused);
 }
 function setPaused(on){

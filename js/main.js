@@ -16,17 +16,16 @@ function loop(now){
   pollPads();
   if(state.screen==='fight' && state.game){
     const t0=performance.now();
-    if(NET.guest) netGuestFrame();              // гість не рахує бій — бере знімок від хоста й шле свій ввід
+    if(NET.on) netFrame();                      // у мережі бій рахує сервер — беремо його знімок і шлемо свій ввід
     else if(!state.paused){
       // довгий кадр — кілька кроків симуляції (кожен ≤ 34 мс): на повільному пристрої гра йде з реальною швидкістю,
-      // а не сповільнюється «під водою». У мережі це важливо вдвічі: бій рахує хост, і його сповільнення бачать обоє
+      // а не сповільнюється «під водою»
       const n=Math.ceil(dt/0.034);
       for(let i=0;i<n;i++){ state.game.update(dt/n); if(!i) clearEdges(); }
     }
     const t1=performance.now();
     state.game.draw();
     const t2=performance.now();
-    if(NET.host) netHostFrame();
     if(UI.cur==='overlay') UI.frame(dt); // переможець на фінальному екрані
     gfxAuto(t2-t0,dt);
     if(PERF){ PM.upd+=(t1-t0-PM.upd)*0.05; PM.drw+=(t2-t1-PM.drw)*0.05; drawPerf(); }
@@ -50,7 +49,7 @@ function gfxAuto(ms,dt){
 }
 function drawPerf(){
   const c=ctx, s=`${PM.fps.toFixed(0)} fps · рух ${PM.upd.toFixed(1)} · малювання ${PM.drw.toFixed(1)} мс · `+
-    `${GFX.fast?'швидка':'висока'} · ${cv.width}×${cv.height}`+(NET.on?(NET.host?' · хост':' · гість'):'');
+    `${GFX.fast?'швидка':'висока'} · ${cv.width}×${cv.height}`+(NET.on?` · пінг ${Math.round(NET.rtt)} мс`:'');
   c.save(); c.setTransform(VIEW_K,0,0,VIEW_K,0,0);
   c.font='14px "Tiny5",monospace'; c.textAlign='left'; c.textBaseline='top';
   c.fillStyle='rgba(0,0,0,.7)'; c.fillRect(8,H-30,c.measureText(s).width+12,22);

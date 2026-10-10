@@ -26,6 +26,7 @@ class Game{
      Через 12 с починаємо з тим, що є (для того, що не довантажилось, — запасні процедурні) */
   assetsReady(){
     if(this._ready===this.theme) return true;
+    if(Game.headless){ this._ready=this.theme; return true; }   // бій на сервері (tools/netsim.js): картинок там нема й не треба
     const sets=cutoutSetsReady(this.f.flatMap(f=>f.cutoutSets()));   // обидва виклики — завжди: вони ж і замовляють завантаження
     const ok=!arenaPending(this.theme)&&sets;
     if(ok||performance.now()-this.born>12000) this._ready=this.theme;
@@ -33,6 +34,7 @@ class Game{
   }
   drawLoading(){
     const c=ctx, t=(performance.now()-this.born)/1000;
+    const what=this._ready===this.theme?'Чекаємо суперника':'Завантаження';   // гра по мережі: мої картинки готові, а суперника — ще ні
     c.save(); c.setTransform(VIEW_K,0,0,VIEW_K,0,0);
     c.fillStyle='#000'; c.fillRect(0,0,W,H);
     if(t>0.25){   // коротке очікування — просто чорний кадр, без мигання напису
@@ -40,7 +42,7 @@ class Game{
       c.font='26px "Tiny5",sans-serif'; c.textAlign='center'; c.fillStyle='#c9d4e8';
       c.fillText(this.theme.name,W/2,H/2-10);
       c.font='18px "Tiny5",sans-serif'; c.fillStyle='#7f8aa0';
-      c.fillText('Завантаження'+'.'.repeat(1+Math.floor(t*3)%3),W/2,H/2+22);
+      c.fillText(what+'.'.repeat(1+Math.floor(t*3)%3),W/2,H/2+22);
     }
     c.restore();
   }
@@ -269,7 +271,7 @@ class Game{
   toScreen(x,y){ return {x:this.cam.offX+this._shx+x*this.cam.scale, y:this.cam.offY+this._shy+y*this.cam.scale}; }
 
   draw(){
-    if(!this.assetsReady()) return this.drawLoading();
+    if(!this.assetsReady()||this.waitPeer) return this.drawLoading();   // waitPeer — мережа: сервер ще не почав бій (net.js)
     const main=ctx, hd=!GFX.fast;
     if(hd){ HDL.ctx.setTransform(1,0,0,1,0,0); HDL.ctx.clearRect(0,0,W,H);
       SPR_HD.ctx=HDL.ctx; SPR_HD.k=PIX; }   // бійці з растрових деталей — у повній роздільності
@@ -741,6 +743,7 @@ class Game{
     ctx.fillText(`${Math.max(0,Math.ceil(this.roundTimer))}`,W/2,56);
   }
 }
+Game.headless=false;   // true — бій на сервері (tools/netsim.js): без картинок і малювання
 
 function bannerText(txt,color,size){
   ctx.save();

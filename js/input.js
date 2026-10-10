@@ -12,22 +12,22 @@ addEventListener('keydown',e=>{
   if(typeof UI!=='undefined'&&UI.cur&&e.code!=='KeyM'){ UI.key(e.code); return; }
   keys.add(e.code); pressed.add(e.code);
   if(e.code==='Escape') togglePause();
+  if(NET.on) netInput();   // гра по мережі: натискання — на сервер одразу, не чекаючи кадру (net.js)
 });
-addEventListener('keyup',e=>keys.delete(e.code));
+addEventListener('keyup',e=>{ keys.delete(e.code); if(NET.on) netInput(); });
 addEventListener('pointerdown',()=>ac());
 
 const P1KEYS={left:'KeyA',right:'KeyD',jump:'KeyW',block:'KeyS',ab:['KeyJ','KeyK','KeyL','KeyU'],form:['KeyI'],ult:['KeyO']};
 const P2KEYS={left:'ArrowLeft',right:'ArrowRight',jump:'ArrowUp',block:'ArrowDown',
   ab:[['Numpad1','Comma'],['Numpad2','Period'],['Numpad3','Slash'],['Numpad4','Quote']],form:['Numpad5','Semicolon'],ult:['Numpad6','BracketLeft']};
 
-/* ---------- Віртуальний ввід: сенсорне керування (TIN) і суперник по мережі (NET.rin) ----------
+/* ---------- Віртуальний ввід: сенсорне керування (TIN) і гравці по мережі (Fighter.vin — на сервері) ----------
    mv/jump/block — утримання; ab[i]/form — час натискання (0 — нема): натискання чекає
    до BUF_MS, поки боєць зможе його виконати (буфер вводу, щоб тап не губився в замаху).
    jumpUntil/blockUntil — короткий тап не пропаде, навіть якщо почався й скінчився між кадрами. */
 const BUF_MS=150;
 const newVin=()=>({mv:0,jump:false,block:false,ab:[0,0,0,0],form:0,ult:0,jumpUntil:0,blockUntil:0});
 const TIN=newVin();
-NET.rin=newVin();
 function vinApply(f,v,game,st){
   const now=performance.now();
   if(v.mv) st.mv=v.mv;

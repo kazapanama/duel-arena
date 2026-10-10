@@ -55,6 +55,7 @@ const TOUCH={on:matchMedia('(hover:none) and (pointer:coarse)').matches||/[?&]to
     TIN.block=b;
   }
   const buzz=ms=>{ if(navigator.vibrate) try{ navigator.vibrate(ms); }catch(e){} };
+  const net=()=>{ if(NET.on) netInput(); };   // гра по мережі: дотик — на сервер одразу, не чекаючи кадру (net.js)
 
   el.addEventListener('touchstart',e=>{
     e.preventDefault();
@@ -78,10 +79,12 @@ const TOUCH={on:matchMedia('(hover:none) and (pointer:coarse)').matches||/[?&]to
         stickSet(t);
       }
     }
+    net();
   },{passive:false});
   el.addEventListener('touchmove',e=>{
     e.preventDefault();
     for(const t of e.changedTouches) if(TOUCH.stick&&t.identifier===TOUCH.stick.id) stickSet(t);
+    net();
   },{passive:false});
   const end=e=>{
     e.preventDefault();
@@ -90,6 +93,7 @@ const TOUCH={on:matchMedia('(hover:none) and (pointer:coarse)').matches||/[?&]to
       const h=TOUCH.held.get(t.identifier);
       if(h){ h.el.classList.remove('on'); TOUCH.held.delete(t.identifier); syncBlock(); }
     }
+    net();
   };
   el.addEventListener('touchend',end,{passive:false});
   el.addEventListener('touchcancel',end,{passive:false});
@@ -100,6 +104,7 @@ const TOUCH={on:matchMedia('(hover:none) and (pointer:coarse)').matches||/[?&]to
     else if(b.hasAttribute('data-ult')) TIN.ult=performance.now();
     else if(b.hasAttribute('data-pause')) togglePause();
     else TIN.ab[+b.dataset.ab]=performance.now();
+    net();
   });
 
   TOUCH.releaseAll=()=>{
