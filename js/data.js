@@ -46,7 +46,7 @@ const CLASSES = [
    { name:'Protection', em:'🛡️', role:'Танк',
      classAb: mk.aoe('Intimidating Shout','😱',14,20,170,{fear:{dur:1.6,brk:60}}),
      abilities:[
-     mk.melee('Shield Slam','🛡️',1.3,58,{knockback:90}),
+     mk.melee('Shield Slam','🛡️',1.3,61,{knockback:90}),
      mk.aoe('Thunder Clap','⛈️',6,95,155,{slow:{mult:0.5,dur:3}}),
      mk.shield('Shield Block','🔰',12,190,6),
    ]},
@@ -62,9 +62,9 @@ const CLASSES = [
    { name:'Protection', em:'🛡️', role:'Танк',
      classAb: mk.curse('Hammer of Justice','🔨',12,{dmg:35,stun:1.2,range:360}),
      abilities:[
-     mk.melee('Hammer of the Righteous','🔨',1.2,55,{selfHeal:8}),
+     mk.melee('Hammer of the Righteous','🔨',1.2,58,{selfHeal:8}),
      mk.proj("Avenger's Shield",'🛡️',6,110,{stun:0.6,speed:920,pcolor:'#9fd7ff',psize:13}),
-     mk.zone('Consecration','🔥',9,30,135,5,{at:'self',zcolor:'#ffd97a'}),
+     mk.zone('Consecration','🔥',9,34,135,5,{at:'self',zcolor:'#ffd97a'}),
    ]},
    { name:'Retribution', em:'⚔️', role:'Бій', abilities:[
      mk.melee('Crusader Strike','⚔️',1.2,60),
@@ -78,13 +78,13 @@ const CLASSES = [
    { name:'Beast Mastery', em:'🐻', role:'Бій',
      classAb: mk.curse('Intimidation','🐺',12,{dmg:25,stun:1.0,range:520}),
      abilities:[
-     mk.proj('Arcane Shot','✴️',1.3,54,{speed:880,pcolor:'#c9a8ff'}),
-     mk.proj('Kill Command','🐺',5,145,{speed:1100,pcolor:'#ff8866',psize:13}),
-     mk.pet('Call Pet','🐺',14,10,{pkind:'wolf',pdmg:15,pcd:1.25}),
+     mk.proj('Arcane Shot','✴️',1.3,57,{speed:880,pcolor:'#c9a8ff'}),
+     mk.proj('Kill Command','🐺',5,152,{speed:1100,pcolor:'#ff8866',psize:13}),
+     mk.pet('Call Pet','🐺',14,10,{pkind:'wolf',pdmg:17,pcd:1.25}),
    ]},
    { name:'Marksmanship', em:'🎯', role:'Бій', abilities:[
-     mk.proj('Steady Shot','🏹',1.3,58,{speed:880,pcolor:'#d8e8ff'}),
-     mk.proj('Aimed Shot','🎯',5,240,{cast:0.85,speed:900,psize:14,pcolor:'#e8f2ff'}),
+     mk.proj('Steady Shot','🏹',1.3,61,{speed:880,pcolor:'#d8e8ff'}),
+     mk.proj('Aimed Shot','🎯',5,250,{cast:0.85,speed:900,psize:14,pcolor:'#e8f2ff'}),
      mk.buff('Rapid Fire','🏹',15,6,{haste:1.45}),   // швидкість стрільби: відкати йдуть швидше
    ]},
    /* Survival у 3.3.5 — дальній бій і контроль: Explosive Shot, отрути, пастка й сон Wyvern Sting (замість відскоку) */
@@ -92,7 +92,7 @@ const CLASSES = [
      classAb: mk.curse('Wyvern Sting','🐉',18,{sleep:{dur:2,dot:{dps:8,dur:6}},range:560}),
      abilities:[
      mk.proj('Serpent Sting','🐍',1.3,32,{dot:{dps:10,dur:3},speed:880,pcolor:'#9dff70'}),
-     mk.proj('Explosive Shot','💥',6,70,{boom:{n:2,dmg:36,every:0.8},speed:950,psize:12,pcolor:'#ffae42'}),
+     mk.proj('Explosive Shot','💥',6,66,{boom:{n:2,dmg:36,every:0.8},speed:950,psize:12,pcolor:'#ffae42'}),
      mk.trap('Freezing Trap','❄️',14,{freeze:3,arm:0.5,life:12,r:44}),
    ]},
   ]},
@@ -109,8 +109,8 @@ const CLASSES = [
    { name:'Combat', em:'⚔️', role:'Бій',   // у 3.3.5 Outlaw ще звався Combat
      classAb: mk.dash('Sprint','💨',6,{move:true,dist:340}),
      abilities:[
-     mk.melee('Sinister Strike','🗡️',1.1,58),
-     mk.proj('Deadly Throw','🔪',4,115,{slow:{mult:0.6,dur:2},speed:1000,pcolor:'#ffdf8a'}),
+     mk.melee('Sinister Strike','🗡️',1.1,60),
+     mk.proj('Deadly Throw','🔪',4,125,{slow:{mult:0.6,dur:2},speed:1000,pcolor:'#ffdf8a'}),
      mk.buff('Adrenaline Rush','⚡',15,6,{spdMult:1.4,dmgMult:1.25}),
    ]},
    { name:'Subtlety', em:'🌑', role:'Бій', abilities:[
@@ -125,9 +125,9 @@ const CLASSES = [
    { name:'Discipline', em:'🛡️', role:'Лікар',
      classAb: mk.aoe('Psychic Scream','😱',14,20,170,{fear:{dur:1.6,brk:60}}),
      abilities:[
-     mk.proj('Smite','✨',1.5,54,{pcolor:'#fff6cf',speed:820}),
-     mk.multi('Penance','🌠',6,52,3,{pcolor:'#ffe9a3',chan:{dur:1.5}}),
-     mk.shield('Power Word: Shield','🔮',12,170,8),
+     mk.proj('Smite','✨',1.5,60,{pcolor:'#fff6cf',speed:820}),
+     mk.multi('Penance','🌠',6,57,3,{pcolor:'#ffe9a3',chan:{dur:1.5}}),
+     mk.shield('Power Word: Shield','🔮',12,190,8),
    ]},
    { name:'Holy', em:'🌟', role:'Лікар', abilities:[
      mk.proj('Holy Fire','🔥',1.45,51,{dot:{dps:11,dur:3},pcolor:'#ffd070'}),
@@ -135,8 +135,8 @@ const CLASSES = [
      mk.aoe('Holy Nova','✨',9,90,170,{selfHeal:60}),
    ]},
    { name:'Shadow', em:'🌑', role:'Бій', abilities:[
-     mk.drain('Mind Flay','🌀',1.4,21,{chan:{dur:0.75,ticks:3},slow:{mult:0.55,dur:1.2},pcolor:'#b48cff'}),   // канал: три тіки й сповільнення
-     mk.proj('Mind Blast','💥',6,180,{cast:0.9,speed:900,pcolor:'#8a5cff',psize:13}),
+     mk.drain('Mind Flay','🌀',1.4,22,{chan:{dur:0.75,ticks:3},slow:{mult:0.55,dur:1.2},pcolor:'#b48cff'}),   // канал: три тіки й сповільнення
+     mk.proj('Mind Blast','💥',6,192,{cast:0.9,speed:900,pcolor:'#8a5cff',psize:13}),
      mk.curse('Shadow Word: Pain','🕳️',8,{dot:{dps:22,dur:6}}),
    ],
      classAb: mk.buff('Dispersion','🌫️',12,3,{dmgTakenMult:0.4,spdMult:1.25,disperse:true}),   // тінь: менше шкоди, прохід крізь ворога
@@ -177,7 +177,7 @@ const CLASSES = [
      mk.zone('Magma Totem','🔥',11,38,140,5,{at:'self',zkind:'magma',zcolor:'#ff7733'}),   // тотем біля ніг: тримає ближній бій на відстані
    ]},
    { name:'Enhancement', em:'🐺', role:'Бій', abilities:[
-     mk.melee('Stormstrike','⚡',1.2,74),
+     mk.melee('Stormstrike','⚡',1.2,76),
      mk.melee('Lava Lash','🔥',5,190,{dot:{dps:12,dur:3}}),
      mk.pet('Feral Spirit','🐺',15,8,{pkind:'spiritwolf',pdmg:15,pcd:1.3}),
    ]},
@@ -191,14 +191,14 @@ const CLASSES = [
   classAb: mk.tele('Blink','💫',6,'move',{dist:300}),
   specs:[
    { name:'Arcane', em:'🔮', role:'Бій', abilities:[
-     mk.proj('Arcane Blast','🔮',1.4,52,{pcolor:'#c9a8ff'}),
-     mk.multi('Arcane Barrage','🌌',6,45,4,{pcolor:'#b48cff'}),
+     mk.proj('Arcane Blast','🔮',1.4,58,{pcolor:'#c9a8ff'}),
+     mk.multi('Arcane Barrage','🌌',6,52,4,{pcolor:'#b48cff'}),
      mk.buff('Arcane Power','⚛️',15,6,{dmgMult:1.4}),
    ]},
    { name:'Fire', em:'🔥', role:'Бій',
      classAb: mk.knock("Dragon's Breath",'🐉',12,50,0,{front:true,range:210,push:0,stun:1.0,pcolor:'#ff9440'}),
      abilities:[
-     mk.proj('Fire Blast','🔥',1.4,46,{dot:{dps:8,dur:2},pcolor:'#ff9440'}),
+     mk.proj('Fire Blast','🔥',1.4,48,{dot:{dps:8,dur:2},pcolor:'#ff9440'}),
      mk.proj('Pyroblast','☄️',7,235,{cast:1.3,speed:560,psize:16,pcolor:'#ff6a2a'}),
      mk.buff('Presence of Mind','⏳',15,10,{instantCast:true}),   // наступний Pyroblast — без касту
    ]},
@@ -222,9 +222,9 @@ const CLASSES = [
    { name:'Demonology', em:'👿', role:'Бій',
      classAb: mk.tele('Demonic Circle: Teleport','🌀',7,'away',{dist:300}),
      abilities:[
-     mk.proj('Immolate','🔥',1.4,46,{dot:{dps:8,dur:3},pcolor:'#ff9440'}),
-     mk.proj('Soul Fire','☄️',6,190,{cast:1.0,speed:640,pcolor:'#ff7a2a',psize:14}),
-     mk.pet('Summon Felguard','👹',14,10,{pkind:'felguard',pdmg:19,pcd:1.2}),
+     mk.proj('Immolate','🔥',1.4,52,{dot:{dps:10,dur:3},pcolor:'#ff9440'}),
+     mk.proj('Soul Fire','☄️',6,210,{cast:1.0,speed:640,pcolor:'#ff7a2a',psize:14}),
+     mk.pet('Summon Felguard','👹',14,10,{pkind:'felguard',pdmg:23,pcd:1.2}),
    ],
      // Metamorphosis (ультимейт): на 10 с — набір форми демона з 3.3.5, бій упритул (Fighter.forms.meta)
      meta:[
@@ -236,7 +236,7 @@ const CLASSES = [
    { name:'Destruction', em:'🔥', role:'Бій',
      classAb: mk.aoe('Shadowfury','🌑',12,40,160,{stun:1.0}),
      abilities:[
-     mk.proj('Incinerate','🔥',1.4,45,{dot:{dps:6,dur:2},pcolor:'#ffb03a'}),
+     mk.proj('Incinerate','🔥',1.4,50,{dot:{dps:6,dur:2},pcolor:'#ffb03a'}),
      mk.proj('Chaos Bolt','🌈',7,240,{cast:1.4,speed:520,psize:16,pcolor:'#ff5ad0'}),
      mk.proj('Conflagrate','💥',6,90,{stun:0.4,speed:1000,pcolor:'#ffb03a'}),
    ]},
@@ -246,14 +246,14 @@ const CLASSES = [
   specs:[
    /* Balance: гуманоїд — Moonfire/Regrowth/Roots; форма сови (Moonkin) — Wrath/Starfire/Hurricane (Starfall — ультимейт) */
    { name:'Balance', em:'🌙', role:'Бій', abilities:[
-     mk.curse('Moonfire','🌙',6,{dmg:20,dot:{dps:9,dur:6}}),
+     mk.curse('Moonfire','🌙',6,{dmg:24,dot:{dps:10,dur:6}}),
      mk.heal('Regrowth','🌿',10,150,{cast:1.1,hot:{tick:8,dur:4}}),
      mk.curse('Entangling Roots','🌱',10,{cast:1.2,dmg:15,root:{dur:2.2,kind:'vine'},dot:{dps:8,dur:3}}),
    ],
      form:{ id:'moonkin', name:'Форма сови', em:'🦉', h:118, passive:{dr:0.9,spd:0.92},
        note:'−10% отримуваної шкоди, трохи повільніша',
        abilities:[
-         mk.proj('Wrath','🌞',1.4,44,{pcolor:'#ffe27a'}),
+         mk.proj('Wrath','🌞',1.4,47,{pcolor:'#ffe27a'}),
          mk.proj('Starfire','⭐',6,150,{cast:1.0,speed:820,psize:13,pcolor:'#b8c8ff'}),
          mk.zone('Hurricane','🌪️',11,24,165,6,{at:'enemy',zkind:'storm',slow:{mult:0.65,dur:1},zcolor:'#cfe9ff'}),
        ],
@@ -262,30 +262,30 @@ const CLASSES = [
      }},
    /* Feral: гуманоїд — Wrath/Regrowth/Roots; форма кота — Shred/Bite/Tiger's Fury/Pounce */
    { name:'Feral', em:'🐱', role:'Бій', abilities:[
-     mk.proj('Wrath','🌞',1.5,42,{pcolor:'#ffe27a'}),
+     mk.proj('Wrath','🌞',1.5,46,{pcolor:'#ffe27a'}),
      mk.heal('Regrowth','🌿',10,150,{cast:1.1,hot:{tick:8,dur:4}}),
      mk.curse('Entangling Roots','🌱',10,{cast:1.2,dmg:15,root:{dur:2.2,kind:'vine'},dot:{dps:8,dur:3}}),
    ],
      form:{ id:'cat', name:'Форма кота', em:'🐈', h:80, passive:{spd:1.15},
        note:'+15% швидкості, ближній бій',
        abilities:[
-         mk.melee('Shred','🐾',1.1,52),
-         mk.melee('Ferocious Bite','🐈',5,160),
+         mk.melee('Shred','🐾',1.1,56),
+         mk.melee('Ferocious Bite','🐈',5,165),
          mk.buff("Tiger's Fury",'🐯',12,5,{dmgMult:1.35,spdMult:1.2}),
        ],
        classAb: mk.dash('Pounce','🐆',7,{toEnemy:true,dmg:30,stun:0.8}),
      }},
    /* Restoration: гуманоїд — Wrath/Regrowth/Barkskin; Дерево життя — міцніше й повільніше, лікує без кастів */
    { name:'Restoration', em:'🌿', role:'Лікар', abilities:[
-     mk.proj('Wrath','🌞',1.4,58,{pcolor:'#ffe27a'}),
-     mk.heal('Regrowth','🌿',9,220,{cast:1.1,hot:{tick:10,dur:4}}),
+     mk.proj('Wrath','🌞',1.4,61,{pcolor:'#ffe27a'}),
+     mk.heal('Regrowth','🌿',9,240,{cast:1.1,hot:{tick:10,dur:4}}),
      mk.buff('Barkskin','🪵',14,5,{dmgTakenMult:0.55}),
    ],
      form:{ id:'tree', name:'Дерево життя', em:'🌳', h:128, passive:{dr:0.92,spd:0.85},
        note:'−8% отримуваної шкоди, повільніше; лікування без кастів',
        abilities:[
          mk.proj('Wrath','🌞',1.4,54,{pcolor:'#ffe27a'}),
-         mk.heal('Wild Growth','🌱',12,60,{hot:{tick:15,dur:5}}),
+         mk.heal('Wild Growth','🌱',12,60,{hot:{tick:17,dur:5}}),
          mk.curse('Entangling Roots','🌱',10,{cast:1.2,dmg:15,root:{dur:2.2,kind:'vine'},dot:{dps:8,dur:3}}),
        ],
        classAb: mk.heal('Swiftmend','🍃',15,120),
