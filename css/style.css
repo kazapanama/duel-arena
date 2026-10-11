@@ -214,6 +214,29 @@ img.broken{display:none}
 .foot-hint{display:flex; gap:1.4cqw; font-size:1.05cqw; color:var(--ink)}
 
 /* ============================================================
+   ГАЛЕРЕЯ БІЙЦІВ: перемикачі зверху, спрайт-шит гортається в рамці, живе прев'ю праворуч
+   ============================================================ */
+#gallery{background:radial-gradient(ellipse at 50% 40%,rgba(14,8,9,.8),rgba(8,5,6,.96) 80%); padding:0 2.4cqw 1.2cqw; gap:.9cqw}
+#gallery .screen-title{margin-top:1.4cqw; font-size:3cqw}
+.gal-bar{display:flex; flex-wrap:wrap; gap:.6cqw; align-items:center; justify-content:center; width:100%}
+.gal-gap{width:.8cqw}
+.gal-sel{font:500 1.4cqw var(--text); color:var(--parch); background:var(--stone1); border:.18cqw solid var(--goldD); padding:.2cqw .5cqw; max-width:17cqw; cursor:pointer; outline:none}
+.gal-sel:hover,.gal-sel:focus{border-color:var(--gold)}
+.gal-sel option{background:var(--stone1); color:var(--parch)}
+.gal-tab{--c:.6cqw; --b:.24cqw; --fa:#6a5040; --fb:#4a3528; --fc:#2a1c15; font:400 1.15cqw var(--display); color:var(--parch); padding:.5cqw .9cqw}
+.gal-tab.on{--fa:var(--goldL); --fb:var(--gold); --fc:var(--goldD); color:var(--goldL)}
+.gal-tab:hover{filter:brightness(1.15)}
+.gal-body{flex:1; min-height:0; width:100%; display:flex; gap:1.2cqw}
+.gal-frame{--c:.8cqw; flex:1; min-width:0; display:flex; padding:.5cqw}
+.gal-scroll{flex:1; min-height:0; overflow:auto; touch-action:pan-x pan-y; scrollbar-color:var(--goldD) var(--stone0)}
+.gal-scroll canvas,#galLive{display:block; image-rendering:pixelated; image-rendering:crisp-edges}
+.gal-scroll canvas.fit{image-rendering:auto; cursor:zoom-in}   /* зменшений піксель-арт — зі згладжуванням, інакше губляться пікселі */
+.gal-scroll canvas.full{cursor:zoom-out}
+.gal-live{flex:none; width:21cqw; align-self:flex-start; display:flex; flex-direction:column; align-items:center; gap:.6cqw; padding:1cqw}
+#galLive{width:100%; aspect-ratio:1; background:radial-gradient(circle at 50% 40%,#3b2a22,#140d0b 75%)}
+.gal-live p{margin:0; font-size:1cqw; line-height:1.25; color:var(--ink); text-align:center}
+
+/* ============================================================
    ВИБІР БІЙЦЯ
    ============================================================ */
 #select{--c0:#888; --c1:#888; padding:1.2cqw 1.6cqw .8cqw; gap:.8cqw;

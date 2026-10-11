@@ -5,7 +5,7 @@
    UI.key(code) і UI.pad(button) — точки входу з input.js.
    ============================================================ */
 const $=id=>document.getElementById(id);
-const screens={arenaSel:$('arenaSel'),title:$('title'),settings:$('settings'),controls:$('controls'),netLobby:$('netLobby'),select:$('select'),versus:$('versus'),pauseMenu:$('pauseMenu'),overlay:$('overlay')};
+const screens={arenaSel:$('arenaSel'),title:$('title'),settings:$('settings'),controls:$('controls'),gallery:$('gallery'),netLobby:$('netLobby'),select:$('select'),versus:$('versus'),pauseMenu:$('pauseMenu'),overlay:$('overlay')};
 // картинка, якої нема (набір іконок не в репозиторії), просто ховається — не лишає «битої» рамки
 addEventListener('error',e=>{ if(e.target instanceof HTMLImageElement) e.target.classList.add('broken'); },true);
 for(const im of document.images) if(im.complete&&!im.naturalWidth&&im.getAttribute('src')) im.classList.add('broken'); // ті, що впали до цього рядка
@@ -37,7 +37,7 @@ function show(name){
   if(name&&screens[name]) screens[name].classList.remove('hidden');
   UI.cur=name||null;
   state.screen=name&&name!=='overlay'&&name!=='pauseMenu'?name:'fight';
-  if(name==='title'||name==='settings'||name==='controls'||name==='netLobby'||name==='overlay'||name==='pauseMenu') focusFirst(name);
+  if(name==='title'||name==='settings'||name==='controls'||name==='gallery'||name==='netLobby'||name==='overlay'||name==='pauseMenu') focusFirst(name);
 }
 function listItems(scr){ return [...screens[scr].querySelectorAll('[data-nav]')].filter(el=>el.offsetParent!==null); }
 function setFocus(el,quiet){
@@ -64,6 +64,8 @@ const PB=b=>b==='dpad'?'<i class="pb dp"></i>':`<i class="pb${'XYBA'.includes(b)
 const HINTS={
   hintTitle:{kb:[[KB(ARR('u'),ARR('d')),'вибір'],[KB('Enter'),'обрати']], pad:[[PB('dpad'),'вибір'],[PB('A'),'обрати']]},
   hintSettings:{kb:[[KB(ARR('l'),ARR('r')),'змінити'],[KB('Esc'),'назад']], pad:[[PB('dpad'),'змінити'],[PB('B'),'назад']]},
+  hintGallery:{kb:[[KB(ARR('l'),ARR('r')),'клас'],[KB('Q','E'),'спеціалізація'],[KB('Z','C'),'скін'],[KB('X'),'режим'],[KB('F'),'форма'],[KB(ARR('u'),ARR('d')),'прокрутка'],[KB('Esc'),'назад']],
+               pad:[[PB('dpad'),'клас і прокрутка'],[PB('L1')+PB('R1'),'спеціалізація'],[PB('L2')+PB('R2'),'скін'],[PB('X'),'режим'],[PB('B'),'назад']]},
   hintControls:{kb:[[KB('Esc'),'пауза або назад'],[KB('M'),'звук']], pad:[[PB('B'),'назад'],[PB('▶'),'пауза в бою']]},
   selKeys:{kb:[[KB(ARR('l'),ARR('r'),ARR('u'),ARR('d')),'клас'],[KB('Q','E'),'спеціалізація'],[KB('Z','C'),'скін'],[KB('R'),'випадково'],[KB('Enter'),'готово'],[KB('Esc'),'назад']],
            pad:[[PB('dpad'),'клас'],[PB('L1')+PB('R1'),'спеціалізація'],[PB('L2')+PB('R2'),'скін'],[PB('Y'),'випадково'],[PB('A'),'готово'],[PB('B'),'назад']]},
@@ -90,7 +92,7 @@ function act(a,dir=1,el){
     case 'gfx': GFX.mode=GFX_MODES[(GFX_MODES.indexOf(GFX.mode)+dir+3)%3]; GFX.autoFast=false; savePrefs(); renderMenuVals(); sfx('tick'); break;   // «авто» — заново оцінює пристрій
     case 'controls': sfx('ok'); show('controls'); break;
     case 'settings': sfx('ok'); show('settings'); break;
-    case 'gallery': location.href='gallery.html'; break;
+    case 'gallery': sfx('ok'); GAL.open(); break;
     case 'back': sfx('tick'); if(UI.cur==='select') selBack(); else { if(UI.cur==='netLobby') netLeave(); backToTitle(); } break;
     case 'random': selRandom(); break;
     case 'lock': selLock(); break;
@@ -685,6 +687,7 @@ UI.key=function(code){
     else if(code==='Escape'||code==='Backspace') act('back');
     return true;
   }
+  if(cur==='gallery'){ GAL.key(code); return true; }
   // списки: титул, керування, пауза, фінал
   if(K_UP.includes(code)) listMove(cur,-1);
   else if(K_DN.includes(code)) listMove(cur,1);
@@ -708,6 +711,7 @@ UI.frame=function(dt){
   if(UI.cur==='select') frameSelect(dt);
   else if(UI.cur==='versus') frameVersus(dt);
   else if(UI.cur==='overlay') frameWin(dt);
+  else if(UI.cur==='gallery') GAL.frame(dt);
 };
 
 show('title');

@@ -129,6 +129,33 @@
     </div>
   </section>
 
+  <!-- ГАЛЕРЕЯ БІЙЦІВ (gallery.js): спрайт-шит, усі скіни, анатомія моделі -->
+  <section id="gallery" class="screen hidden">
+    <h2 class="screen-title">Галерея бійців</h2>
+    <div class="gal-bar">
+      <select class="gal-sel" id="galCls" aria-label="Клас"></select>
+      <select class="gal-sel" id="galSpec" aria-label="Спеціалізація"></select>
+      <select class="gal-sel" id="galSkin" aria-label="Скін"></select>
+      <span class="gal-gap"></span>
+      <button class="pf gal-tab" id="galM_sheet">Спрайт-шит</button>
+      <button class="pf gal-tab" id="galM_all">Усі скіни</button>
+      <button class="pf gal-tab" id="galM_parts">Анатомія</button>
+      <button class="pf gal-tab" id="galProc" title="Процедурна модель замість растрових деталей — для порівняння (перезавантажує гру)">Процедурний</button>
+      <button class="pf gal-tab hidden" id="galForm"></button>
+    </div>
+    <div class="gal-body">
+      <div class="pf dark gal-frame"><div class="gal-scroll" id="galScroll"><canvas id="galSheet"></canvas></div></div>
+      <div class="pf gal-live">
+        <canvas id="galLive" width="120" height="120"></canvas>
+        <p>Усі анімації по колу. Кадри рахує той самий риг, що й у бою.<br>Клік по шиту — масштаб 1:1 або вмістити.</p>
+      </div>
+    </div>
+    <div class="screen-foot">
+      <button class="mi small" data-nav data-act="back">Назад</button>
+      <span class="foot-hint" id="hintGallery"></span>
+    </div>
+  </section>
+
   <!-- ВИБІР БІЙЦЯ: гравець зліва, суперник справа, ростер у центрі -->
   <section id="select" class="screen hidden">
     <div class="sel-head">
@@ -243,6 +270,7 @@
 <script src="js/snap.js"></script>
 <script src="js/net.js"></script>
 <script src="js/menubg.js"></script>
+<script src="js/gallery.js"></script>
 <script src="js/main.js"></script>
 </body>
 </html>

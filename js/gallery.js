@@ -1,16 +1,19 @@
 "use strict";
 /* ============================================================
-   ГАЛЕРЕЯ: спрайт-шит скіну (як референс) і сітка всіх скінів.
-   Параметри URL: ?skin=rogue/Assassination/2  ?mode=all  ?mode=parts (анатомія)
+   ГАЛЕРЕЯ (екран у грі): спрайт-шит скіну (як референс), сітка всіх скінів, анатомія моделі.
+   Відкривається з головного меню або одразу за адресою index.html?gallery
+   (параметри: &skin=rogue/Assassination/2  &mode=all|parts  &form=alt  &scale  &zoom  &cutout=off).
+   Усе своє — всередині GAL, назовні лише GAL і onCutoutReady.
    ============================================================ */
-const $=id=>document.getElementById(id);
+const GAL=(()=>{
 const Q=new URLSearchParams(location.search);
 const G_SCALE=+(Q.get('scale')||1.4);   // арт-пікселів на світову одиницю: 1.4 — як бійці з растрових деталей у бою (процедурні — 0.7)
 const CELL_W=Math.round(84*G_SCALE/0.38), CELL_H=Math.round(100*G_SCALE/0.38); // клітинка кадру в арт-пікселях
 const ZOOM=+(Q.get('zoom')||1);                // збільшення на сторінці
 const LABEL_W=150;
+const MODES=['sheet','all','parts'];
 
-let mode=Q.get('mode')||'sheet';
+let mode=MODES.includes(Q.get('mode'))?Q.get('mode'):'sheet';
 let sel={cls:CLASSES[0],spec:CLASSES[0].specs[0],skin:null};
 if(Q.get('skin')){
   const [ci,sn,ki]=Q.get('skin').split('/');
@@ -108,51 +111,68 @@ function sheetRows(m,cls,spec){
   return R;
 }
 
+/* Шит і сітка скінів за замовчуванням вміщаються в ширину рамки (клік по них — 1:1).
+   Клітинки тоді зменшуються, а підписи малюємо з поправкою 1/k — на екрані вони лишаються свого розміру. */
+let fit=true;
+function viewFit(contentW,labelCss){
+  const W=$('galScroll').clientWidth;
+  if(!fit||!W) return {k:1,lab:labelCss};
+  const lab=Math.min(labelCss,Math.round(W*0.2));
+  return {k:Math.max(0.05,Math.min(1,(W-lab)/contentW)),lab};
+}
+function setView(cv,k){
+  cv.style.width=(cv.width*k)+'px';
+  cv.classList.toggle('fit',k<1); cv.classList.toggle('full',!fit);
+}
+
 function drawSheet(){
   const {cls,spec,skin}=sel;
   const m=modelOf(cls,spec,skin,sel.form);
   const pup=puppetFor(m);
   const rows=sheetRows(m,cls,spec);
   const maxN=Math.max(...rows.map(r=>r[1].length));
-  const cv=$('sheet');
-  cv.width=LABEL_W+maxN*CELL_W*ZOOM; cv.height=rows.length*CELL_H*ZOOM+40;
-  cv.style.width=cv.width+'px';
+  const cv=$('galSheet');
+  const {k,lab}=viewFit(maxN*CELL_W*ZOOM,LABEL_W), t=1/k;   // t — множник для підписів
+  const LW=Math.round(lab*t), TH=Math.round(40*t);
+  cv.width=LW+maxN*CELL_W*ZOOM; cv.height=rows.length*CELL_H*ZOOM+TH;
+  setView(cv,k);
   const g=cv.getContext('2d');
   g.fillStyle='#121826'; g.fillRect(0,0,cv.width,cv.height);
-  g.fillStyle='#f4c430'; g.font='bold 16px "Segoe UI"';
-  g.fillText(`${cls.name} · ${spec.name} · ${skin.name}${skin.tier?' ('+skin.tier+')':''}${sel.form==='alt'?' · '+spec.form.name:''}`,12,26);
+  g.fillStyle='#f4c430'; g.font=`bold ${16*t}px "Segoe UI"`;
+  g.fillText(`${cls.name} · ${spec.name} · ${skin.name}${skin.tier?' ('+skin.tier+')':''}${sel.form==='alt'?' · '+spec.form.name:''}`,12*t,26*t);
   g.imageSmoothingEnabled=false;
   rows.forEach(([label,frames],r)=>{
-    const y0=40+r*CELL_H*ZOOM;
+    const y0=TH+r*CELL_H*ZOOM;
     g.fillStyle=r%2?'#151c2c':'#18202f'; g.fillRect(0,y0,cv.width,CELL_H*ZOOM);
-    g.fillStyle='#9fb0cc'; g.font='bold 13px Consolas,monospace';
-    g.fillText(label,12,y0+22);
+    g.fillStyle='#9fb0cc'; g.font=`bold ${13*t}px Consolas,monospace`;
+    g.fillText(label,12*t,y0+22*t,LW-16*t);
     frames.forEach((f,i)=>{
       renderCell(pup,f.pose,f.t,CELL_H-12-(f.lift||0)*G_SCALE/0.38);
-      g.drawImage(cellCv,LABEL_W+i*CELL_W*ZOOM,y0,CELL_W*ZOOM,CELL_H*ZOOM);
+      g.drawImage(cellCv,LW+i*CELL_W*ZOOM,y0,CELL_W*ZOOM,CELL_H*ZOOM);
     });
   });
 }
 
 function drawAll(){
-  const cv=$('sheet');
+  const cv=$('galSheet');
   const list=[];
   for(const c of CLASSES) for(const s of c.specs) for(const k of s.skins){ list.push({c,s,k,form:'base'}); if(s.form) list.push({c,s,k,form:'alt'}); }
-  const cols=12, cw=CELL_W, ch=CELL_H+14;
-  cv.width=cols*cw*ZOOM; cv.height=Math.ceil(list.length/cols)*ch*ZOOM;
-  cv.style.width=cv.width+'px';
+  const cols=12, cw=CELL_W*ZOOM;
+  const {k}=viewFit(cols*cw,0), t=1/k, ch=CELL_H*ZOOM+Math.round(16*t);
+  cv.width=cols*cw; cv.height=Math.ceil(list.length/cols)*ch;
+  setView(cv,k);
   const g=cv.getContext('2d');
   g.fillStyle='#121826'; g.fillRect(0,0,cv.width,cv.height);
   g.imageSmoothingEnabled=false;
   list.forEach((e,i)=>{
-    const x=(i%cols)*cw*ZOOM, y=Math.floor(i/cols)*ch*ZOOM;
+    const x=(i%cols)*cw, y=Math.floor(i/cols)*ch;
     const m=modelOf(e.c,e.s,e.k,e.form), pup=puppetFor(m);
     const pose=m.kind==='cat'?catLoco({mode:'idle'},{...CAT0},0.3):locoPose(m.style,{mode:'idle'},baseOf(m.style,m),0.3);
-    g.fillStyle=(Math.floor(i/3))%2?'#151c2c':'#1a2233'; g.fillRect(x,y,cw*ZOOM,ch*ZOOM);
+    g.fillStyle=(Math.floor(i/3))%2?'#151c2c':'#1a2233'; g.fillRect(x,y,cw,ch);
     renderCell(pup,pose,0.3);
-    g.drawImage(cellCv,x,y,cw*ZOOM,CELL_H*ZOOM);
-    g.fillStyle=e.k.tier?'#dfe6f3':'#8b95a8'; g.font='11px "Segoe UI"'; g.textAlign='center';
-    g.fillText((e.form==='alt'?e.s.form.em+' ':'')+(e.k.tier?e.k.tier+' ':'')+e.k.name,x+cw*ZOOM/2,y+CELL_H*ZOOM+14);
+    g.drawImage(cellCv,x,y,cw,CELL_H*ZOOM);
+    g.fillStyle=e.k.tier?'#dfe6f3':'#8b95a8'; g.font=`${11*t}px "Segoe UI"`; g.textAlign='center';
+    g.fillText((e.form==='alt'?e.s.form.em+' ':'')+(e.k.tier?e.k.tier+' ':'')+e.k.name,x+cw/2,y+CELL_H*ZOOM+12*t,cw-4);
     g.textAlign='left';
   });
 }
@@ -165,20 +185,24 @@ const PART_FN=[['drawAuraBack','aura'],['drawWing','wings'],['drawCape','cape'],
   ['drawHelm','helm'],['drawTendrils','tendrils'],['drawWeapon','weapon'],['drawShield','weapon']];
 let partOnly=null;                       // Set ключів частин ('arm:f', 'helm', 'weapon:b'…) або null — уся модель
 const NULL_C=document.createElement('canvas').getContext('2d');
-for(const [fn,part] of PART_FN){
-  const orig=window[fn];
-  window[fn]=function(P,...a){
-    if(!partOnly) return orig(P,...a);
-    if(!P._real){ P._real=P.c; P._lights=P.lights; }
-    if(part==='arm') P._side=a[0];
-    const side=part==='weapon'?P._side:(a[0]==='b'||a[0]==='f'?a[0]:null);
-    const on=partOnly.has(part)||(side&&partOnly.has(part+':'+side));
-    const cur=P.c, l0=P.lights, tgt=on?P._real:NULL_C;
-    if(tgt!==cur){ tgt.save(); tgt.setTransform(cur.getTransform()); }  // вкладена частина (шолом у голові) — у тих самих координатах
-    P.c=tgt; P.lights=on?P._lights:[];
-    try{ return orig(P,...a); }
-    finally{ if(tgt!==cur) tgt.restore(); P.c=cur; P.lights=l0; }
-  };
+// обгортки ставимо, лише коли вперше відкрили анатомію: у бою вони не потрібні
+function hookParts(){
+  if(hookParts.done) return; hookParts.done=true;
+  for(const [fn,part] of PART_FN){
+    const orig=window[fn];
+    window[fn]=function(P,...a){
+      if(!partOnly) return orig(P,...a);
+      if(!P._real){ P._real=P.c; P._lights=P.lights; }
+      if(part==='arm') P._side=a[0];
+      const side=part==='weapon'?P._side:(a[0]==='b'||a[0]==='f'?a[0]:null);
+      const on=partOnly.has(part)||(side&&partOnly.has(part+':'+side));
+      const cur=P.c, l0=P.lights, tgt=on?P._real:NULL_C;
+      if(tgt!==cur){ tgt.save(); tgt.setTransform(cur.getTransform()); }  // вкладена частина (шолом у голові) — у тих самих координатах
+      P.c=tgt; P.lights=on?P._lights:[];
+      try{ return orig(P,...a); }
+      finally{ if(tgt!==cur) tgt.restore(); P.c=cur; P.lights=l0; }
+    };
+  }
 }
 const PARTS=[['Аура','aura'],['Крила (задні)','wings'],['Плащ','cape'],['Задня рука','arm:b'],['Зброя в задній руці','weapon:b'],
   ['Задній наплічник','shoulder:b'],['Хвіст','tail'],['Задня нога','leg:b'],['Передня нога','leg:f'],['Низ броні','lower'],
@@ -206,9 +230,10 @@ function drawBones(g,pose,style,cx,gy,k,m){
   g.restore();
 }
 function drawParts(){
+  hookParts();
   const {cls,spec,skin}=sel;
   const m=modelOf(cls,spec,skin,sel.form);
-  const cv=$('sheet'), g=cv.getContext('2d');
+  const cv=$('galSheet'), g=cv.getContext('2d');
   if(m.kind==='cat'){
     cv.width=640; cv.height=60; cv.style.width='640px';
     g.fillStyle='#121826'; g.fillRect(0,0,640,60); g.fillStyle='#dfe6f3'; g.font='14px "Segoe UI"';
@@ -248,7 +273,7 @@ function drawParts(){
   const palCols=2, palRowH=34, palRows=Math.ceil(pal.length/palCols);
   cv.width=PER*cw+24;
   cv.height=50+secH*5+(rowsOf(singles.length)+rowsOf(steps.length)+rowsOf(bones.length))*(ch+lab)+palRows*palRowH+desc.length*20+30;
-  cv.style.width=cv.width+'px';
+  cv.style.width=cv.width+'px'; cv.classList.remove('fit','full');
   g.fillStyle='#121826'; g.fillRect(0,0,cv.width,cv.height);
   g.imageSmoothingEnabled=false;
   g.fillStyle='#f4c430'; g.font='bold 18px "Segoe UI"';
@@ -322,11 +347,11 @@ function liveStep(dt){
     if(!['idle','run','block','channel'].includes(nx)) L.ctl.play(nx);
   }
   const pose=L.ctl.update(dt,loco);
-  const cv=$('live'), g=cv.getContext('2d');
+  const cv=$('galLive'), g=cv.getContext('2d');
   const main=ctx; ctx=g;
   ctx.setTransform(1,0,0,1,0,0); ctx.clearRect(0,0,cv.width,cv.height);
-  ctx.fillStyle='rgba(0,0,0,.35)'; ctx.beginPath(); ctx.ellipse(60,104,16,3.5,0,0,7); ctx.fill();
-  ctx.setTransform(0.5,0,0,0.5,60,102);
+  ctx.fillStyle='rgba(0,0,0,.35)'; ctx.beginPath(); ctx.ellipse(60,110,22,4.5,0,0,7); ctx.fill();
+  ctx.setTransform(0.68,0,0,0.68,60,108);
   L.pup.pose=pose; L.pup.time=performance.now()/1000;
   drawSprite(L.pup);
   ctx=main;
@@ -334,37 +359,85 @@ function liveStep(dt){
 
 /* ---------- вибір ---------- */
 function fillSelects(){
-  const sc=$('selCls'), ss=$('selSpec'), sk=$('selSkin');
+  const sc=$('galCls'), ss=$('galSpec'), sk=$('galSkin');
   sc.innerHTML=CLASSES.map((c,i)=>`<option value="${i}" ${c===sel.cls?'selected':''}>${c.em} ${c.name}</option>`).join('');
   ss.innerHTML=sel.cls.specs.map((s,i)=>`<option value="${i}" ${s===sel.spec?'selected':''}>${s.em} ${s.name}</option>`).join('');
   sk.innerHTML=sel.spec.skins.map((k,i)=>`<option value="${i}" ${k===sel.skin?'selected':''}>${k.tier?k.tier+' ':''}${k.name}</option>`).join('');
 }
+let opened=false;
 function refresh(){
+  if(!opened) return;
   fillSelects();
-  $('bSheet').classList.toggle('on',mode==='sheet'); $('bAll').classList.toggle('on',mode==='all'); $('bParts').classList.toggle('on',mode==='parts');
+  for(const m of MODES) $('galM_'+m).classList.toggle('on',mode===m);
   if(!sel.spec.form) sel.form='base';
-  $('bForm').style.display=sel.spec.form?'':'none';
-  $('bProc').classList.toggle('on',CUTOUT_OFF);
-  $('bForm').classList.toggle('on',sel.form==='alt');
-  $('bForm').textContent=sel.spec.form?(sel.form==='alt'?'🧝 Гуманоїд':sel.spec.form.em+' '+sel.spec.form.name):'';
+  const bf=$('galForm');
+  bf.classList.toggle('hidden',!sel.spec.form);
+  bf.classList.toggle('on',sel.form==='alt');
+  bf.textContent=sel.spec.form?(sel.form==='alt'?'🧝 Гуманоїд':sel.spec.form.em+' '+sel.spec.form.name):'';
+  $('galProc').classList.toggle('on',CUTOUT_OFF);
   if(mode==='sheet') drawSheet(); else if(mode==='parts') drawParts(); else drawAll();
   setupLive();
 }
-$('selCls').onchange=e=>{ sel.cls=CLASSES[+e.target.value]; sel.spec=sel.cls.specs[0]; sel.skin=sel.spec.skins[0]; refresh(); };
-$('selSpec').onchange=e=>{ sel.spec=sel.cls.specs[+e.target.value]; sel.skin=sel.spec.skins[0]; refresh(); };
-$('selSkin').onchange=e=>{ sel.skin=sel.spec.skins[+e.target.value]; refresh(); };
-$('bSheet').onclick=()=>{ mode='sheet'; refresh(); };
-$('bAll').onclick=()=>{ mode='all'; refresh(); };
-$('bParts').onclick=()=>{ mode='parts'; refresh(); };
-// процедурна модель замість растрових деталей (?cutout=off) задається при завантаженні — перемикач перезавантажує сторінку
-$('bProc').onclick=()=>{ const q=new URLSearchParams(location.search);
-  q.set('skin',`${sel.cls.id}/${sel.spec.name}/${sel.spec.skins.indexOf(sel.skin)}`); q.set('mode',mode);
+const wrapI=(i,n)=>(i%n+n)%n;
+function setCls(i){ sel.cls=CLASSES[wrapI(i,CLASSES.length)]; sel.spec=sel.cls.specs[0]; sel.skin=sel.spec.skins[0]; refresh(); }
+function setSpec(i){ sel.spec=sel.cls.specs[wrapI(i,sel.cls.specs.length)]; sel.skin=sel.spec.skins[0]; refresh(); }
+function setSkin(i){ sel.skin=sel.spec.skins[wrapI(i,sel.spec.skins.length)]; refresh(); }
+function setMode(m){ mode=m; $('galScroll').scrollTo(0,0); refresh(); }
+function toggleForm(){ if(!sel.spec.form) return; sel.form=sel.form==='alt'?'base':'alt'; refresh(); }
+function randomPick(){ const c=CLASSES[Math.floor(Math.random()*CLASSES.length)], s=c.specs[Math.floor(Math.random()*c.specs.length)];
+  sel.cls=c; sel.spec=s; sel.skin=s.skins[Math.floor(Math.random()*s.skins.length)]; refresh(); }
+// після вибору мишею список віддає фокус, інакше клавіші меню гортали б і його
+const pick=fn=>e=>{ fn(+e.target.value); e.target.blur(); sfx('tick'); };
+$('galCls').onchange=pick(setCls);
+$('galSpec').onchange=pick(setSpec);
+$('galSkin').onchange=pick(setSkin);
+for(const m of MODES) $('galM_'+m).onclick=()=>{ sfx('tick'); setMode(m); };
+$('galForm').onclick=()=>{ sfx('tick'); toggleForm(); };
+// процедурна модель замість растрових деталей (?cutout=off) задається при завантаженні — перемикач перезавантажує гру
+// одразу в галерею з тим самим бійцем
+$('galProc').onclick=()=>{ const q=new URLSearchParams(location.search);
+  q.set('gallery',''); q.set('skin',`${sel.cls.id}/${sel.spec.name}/${sel.spec.skins.indexOf(sel.skin)}`); q.set('mode',mode);
+  if(sel.form==='alt') q.set('form','alt'); else q.delete('form');
   if(CUTOUT_OFF) q.delete('cutout'); else q.set('cutout','off');
-  location.search=q.toString(); };
-// набори деталей вантажаться за потреби — коли черговий готовий, перемальовуємо (не частіше раз на кадр)
-let cutRedraw=0;
-function onCutoutReady(){ if(!cutRedraw) cutRedraw=requestAnimationFrame(()=>{ cutRedraw=0; refresh(); }); }
-$('bForm').onclick=()=>{ if(!sel.spec.form) return; sel.form=sel.form==='alt'?'base':'alt'; refresh(); };
-refresh();
-let lastT=performance.now();
-(function tick(now){ liveStep(Math.min(0.05,(now-lastT)/1000)); lastT=now; requestAnimationFrame(tick); })(lastT);
+  location.search=q.toString().replace('gallery=&','gallery&'); };
+$('galSheet').onclick=()=>{ if(mode==='parts') return; fit=!fit; sfx('tick'); refresh(); };
+// набори деталей вантажаться за потреби — коли черговий готовий, перемальовуємо (не частіше раз на кадр); так само після зміни розміру вікна
+let redrawQ=0;
+function redrawSoon(){ if(UI.cur!=='gallery'||redrawQ) return; redrawQ=requestAnimationFrame(()=>{ redrawQ=0; refresh(); }); }
+addEventListener('resize',redrawSoon);
+
+/* ---------- екран ---------- */
+function open(){
+  // уперше — з бійцем, якого гравець обирав останнім (якщо адреса не задала іншого)
+  if(!opened&&!Q.get('skin')&&state.picks[0]){ const p=state.picks[0]; sel.cls=p.cls; sel.spec=p.spec; sel.skin=p.skin; }
+  opened=true;
+  show('gallery');
+  refresh();
+}
+function key(code){
+  const scroll=dy=>$('galScroll').scrollBy({top:dy*CELL_H*ZOOM,behavior:'smooth'});
+  if(K_L.includes(code)) setCls(CLASSES.indexOf(sel.cls)-1);
+  else if(K_R.includes(code)) setCls(CLASSES.indexOf(sel.cls)+1);
+  else if(K_UP.includes(code)) scroll(-1);
+  else if(K_DN.includes(code)) scroll(1);
+  else if(code==='KeyQ') setSpec(sel.cls.specs.indexOf(sel.spec)-1);
+  else if(code==='KeyE') setSpec(sel.cls.specs.indexOf(sel.spec)+1);
+  else if(code==='KeyZ') setSkin(sel.spec.skins.indexOf(sel.skin)-1);
+  else if(code==='KeyC') setSkin(sel.spec.skins.indexOf(sel.skin)+1);
+  else if(code==='KeyX') setMode(MODES[(MODES.indexOf(mode)+1)%MODES.length]);
+  else if(code==='KeyF') toggleForm();
+  else if(code==='KeyR') randomPick();
+  else if(code==='Escape'||code==='Backspace') { act('back'); return; }
+  else if(K_OK.includes(code)){ const el=UI.focusEl; if(el) act(el.dataset.act,1,el); return; }
+  else return;
+  sfx('tick');
+}
+const frame=dt=>liveStep(Math.min(0.05,dt));
+
+// index.html?gallery — гра відкривається одразу в галереї (меню за нею вже «прокинуте»)
+if(Q.has('gallery')){ UI.awake=true; screens.title.classList.add('awake'); open(); }
+
+return {open,key,frame,cutoutReady:redrawSoon};
+})();
+// cutout.js кличе, коли черговий набір деталей завантажився
+function onCutoutReady(){ GAL.cutoutReady(); }
