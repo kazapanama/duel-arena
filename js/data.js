@@ -469,13 +469,13 @@ const ABILITY_ICONS={
   // Паладін
   'Holy Wrath':'Wowhead/spell_holy_excorcism.png',
   'Divine Storm':'Abilities/DivineStorm.png',
-  'Hammer of Justice':'Spells/FistOfJustice.png',
+  'Hammer of Justice':'Wowhead/spell_holy_sealofmight.png',
   'Holy Shock':'Spells/SearingLight.png',
   'Flash of Light':'Spells/FlashHeal.png',
   'Holy Light':'Spells/HolyBolt.png',
   'Hammer of the Righteous':'Abilities/HammeroftheRighteous.png',
   "Avenger's Shield":'Spells/AvengersShield.png',
-  'Consecration':'Spells/SealOfFire.png',
+  'Consecration':'Wowhead/spell_holy_innerfire.png',
   'Crusader Strike':'Spells/CrusaderStrike.png',
   'Avenging Wrath':'Spells/Crusade.png',
   // Мисливець
