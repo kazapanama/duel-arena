@@ -216,6 +216,181 @@ function drawFaller(f,time){
   g.restore();
 }
 
+/* ---------- піксельні кільце й промінь (game.ring / game.beam) ----------
+   Раніше — згладжені векторні лінії (тонке коло, пунктир), що виглядали як налагоджувальна розмітка поверх піксель-арту.
+   Тепер — цілі пікселі LOW, як у снарядів: товстий обідок кольору зі світлим ядром, що тоншає з розширенням */
+function drawPxRing(r){
+  const p=1-r.t/0.35, {X,Y,s}=toLow(r.x,r.y), R=(r.r*p+10)*s, th=Math.max(1,Math.round(3.4*(1-p)+0.6));
+  const g=ctx; g.save(); g.setTransform(1,0,0,1,0,0);
+  const P=palOf(r.color), out=new Path2D(), core=new Path2D(), n=Math.max(16,Math.round(R*6.3));
+  let lx=1e9, ly=1e9;
+  for(let i=0;i<n;i++){
+    const a=i/n*Math.PI*2, x=Math.round(X+Math.cos(a)*R), y=Math.round(Y+Math.sin(a)*R);
+    if(x===lx&&y===ly) continue; lx=x; ly=y;
+    out.rect(x-(th>>1),y-(th>>1),th,th);
+    if(th>1||i%2===0) core.rect(x,y,1,1);
+  }
+  g.globalAlpha=Math.min(1,(1-p)*1.4); g.fillStyle=P[2]; g.fill(out);
+  g.globalAlpha=Math.min(1,(1-p)*1.2); g.fillStyle=P[1]; g.fill(core);
+  g.restore();
+}
+// клуб диму: піксельний круг зі світлішою верхівкою, росте й тане
+function drawPuff(p){
+  const {X,Y,s}=toLow(p.x,p.y), R=Math.max(1,Math.round(p.size*s*0.5));
+  const g=ctx; g.save(); g.setTransform(1,0,0,1,0,0); g.globalAlpha=clamp(p.t*1.8,0,0.85);
+  pxDisc(g,X,Y,R,p.color); if(R>2) pxDisc(g,X-Math.round(R*0.25),Y-Math.round(R*0.3),Math.round(R*0.5),lightOf(p.color,0.25));
+  g.restore();
+}
+function drawPxBeam(b,time){
+  const A=toLow(b.x1,b.y1), B=toLow(b.x2,b.y2), dx=B.X-A.X, dy=B.Y-A.Y, L=Math.hypot(dx,dy)||1;
+  const nx=-dy/L, ny=dx/L, k=Math.min(1,b.t*5), P=palOf(b.color);
+  const g=ctx; g.save(); g.setTransform(1,0,0,1,0,0);
+  const glow=new Path2D(), body=new Path2D(), core=new Path2D(), n=Math.ceil(L);
+  for(let i=0;i<=n;i++){
+    const u=i/n, taper=Math.min(1,u*8,(1-u)*14);                       // тонкий біля руки, обрізаний біля цілі
+    const w=Math.sin(u*L*0.35-time*40)*1.1*taper;                       // енергія тремтить уздовж
+    const x=Math.round(A.X+dx*u+nx*w), y=Math.round(A.Y+dy*u+ny*w);
+    const hw=Math.max(0,Math.round(1.6*taper*k));
+    glow.rect(x-hw-1,y-hw-1,hw*2+3,hw*2+3); body.rect(x-hw,y-hw,hw*2+1,hw*2+1); core.rect(x,y,1,1);
+  }
+  g.globalCompositeOperation='lighter'; g.globalAlpha=0.28*k; g.fillStyle=P[2]; g.fill(glow);
+  g.globalCompositeOperation='source-over'; g.globalAlpha=k; g.fillStyle=P[2]; g.fill(body);
+  g.fillStyle=P[0]; g.fill(core);
+  // іскри, що біжать від заклинача до цілі
+  for(let j=0;j<4;j++){ const u=(time*3.2+j/4)%1, x=Math.round(A.X+dx*u), y=Math.round(A.Y+dy*u);
+    g.fillStyle=P[1]; g.fillRect(x-1,y-1,3,3); g.fillStyle=P[0]; g.fillRect(x,y,1,1); }
+  g.restore();
+}
+
+/* ---------- лід: Deep Freeze, Freezing Trap (брила на весь зріст) і Frost Nova (по коліна) ----------
+   Кластер кристалів у пікселях LOW: кожен кристал — призма зі світлою лівою й тіньовою правою гранню, напівпрозора
+   (боєць усередині видно), світлі ребра, відблиски й іскра, що пробігає. Кристали виростають з землі по черзі.
+   ctx переведено в точку між ступнями; W — ширина, H — висота в одиницях світу, k — 0…1 наростання */
+// багатокутник → рядки пікселів у шлях (без згладжування — краї чіткі, як у спрайтів)
+function pxPoly(path,pts){
+  let y0=1e9,y1=-1e9; for(const p of pts){ y0=Math.min(y0,p[1]); y1=Math.max(y1,p[1]); }
+  for(let y=Math.floor(y0);y<Math.ceil(y1);y++){
+    const yc=y+0.5, xs=[];
+    for(let i=0;i<pts.length;i++){ const [ax,ay]=pts[i], [bx,by]=pts[(i+1)%pts.length];
+      if((ay<=yc)!==(by<=yc)) xs.push(ax+(yc-ay)/(by-ay)*(bx-ax)); }
+    xs.sort((a,b)=>a-b);
+    for(let i=0;i+1<xs.length;i+=2){ const a=Math.round(xs[i]), b=Math.round(xs[i+1]); if(b>a) path.rect(a,y,b-a,1); }
+  }
+}
+const ICE_SHARDS=[[-0.66,0.36,0.62,-0.2],[-0.36,0.44,0.9,-0.07],[0.02,0.48,1,0.02],[0.36,0.42,0.84,0.09],[0.66,0.34,0.58,0.2],[-0.12,0.3,0.5,-0.1],[0.22,0.28,0.44,0.14]];
+function drawIce(W,H,k,time){
+  const {X,Y,s}=toLow(0,0), g=ctx, A0=g.globalAlpha; g.save(); g.setTransform(1,0,0,1,0,0);   // A0 — зовнішня прозорість (кайдани тануть)
+  const hw=W*s/2, Hp=H*s;
+  const light=new Path2D(), dark=new Path2D(), edge=new Path2D(), rim=new Path2D(), base=new Path2D();
+  ICE_SHARDS.forEach(([cx,w,h,tilt],i)=>{
+    const g1=clamp(k*1.5-i*0.07,0,1), hh=h*Hp*(1-(1-g1)*(1-g1));   // кристали виростають по черзі
+    if(hh<2) return;
+    const x=X+cx*hw, bw=w*hw, tx=x+tilt*hh, sh=hh*0.8;
+    const L=[x-bw,Y], R=[x+bw,Y], LS=[x-bw+tilt*sh,Y-sh], RS=[x+bw+tilt*sh,Y-sh*0.96], T=[tx,Y-hh], M=[x+tilt*hh*0.02,Y];
+    pxPoly(light,[L,M,T,LS]); pxPoly(dark,[M,R,RS,T]);
+    for(const [a,b] of [[LS,T],[T,RS]]){ const n=Math.ceil(Math.hypot(b[0]-a[0],b[1]-a[1])); for(let j=0;j<=n;j++) edge.rect(Math.round(a[0]+(b[0]-a[0])*j/n),Math.round(a[1]+(b[1]-a[1])*j/n),1,1); }
+    { const n=Math.ceil(sh); for(let j=0;j<=n;j+=1){ rim.rect(Math.round(T[0]+(M[0]-T[0])*j/n*0.85),Math.round(T[1]+(M[1]-T[1])*j/n*0.85),1,1); } }   // ребро між гранями
+  });
+  pxPoly(base,[[X-hw*1.05,Y+1],[X+hw*1.05,Y+1],[X+hw*0.9,Y-3],[X-hw*0.9,Y-3]]);   // іній під ногами
+  const a=Math.min(1,k*2)*A0;
+  g.globalAlpha=0.58*a; g.fillStyle='#bfe9ff'; g.fill(light);
+  g.globalAlpha=0.62*a; g.fillStyle='#5aa6dc'; g.fill(dark);
+  g.globalAlpha=0.75*a; g.fillStyle='#e8f8ff'; g.fill(base);
+  g.globalAlpha=0.95*a; g.fillStyle='#ffffff'; g.fill(edge);
+  g.globalAlpha=0.5*a; g.fillStyle='#eaf8ff'; g.fill(rim);
+  // відблиск, що пробігає знизу вгору, і мерехтливі іскри
+  const q=(time*0.7)%1.6;
+  if(q<1){ g.globalAlpha=0.55*a; g.fillStyle='#ffffff';
+    for(let j=0;j<Hp*0.9;j+=1){ const yy=Y-j, xx=X-hw*0.8+(q*2.2-0.5)*hw+j*0.45; if(Math.abs(xx-X)<hw*0.85) g.fillRect(Math.round(xx),Math.round(yy),2,1); } }
+  for(let i=0;i<5;i++){ const ph=(time*1.3+i*0.37)%1; if(ph>0.25) continue;
+    const x=Math.round(X+(hash1(i,21)*2-1)*hw*0.7), y=Math.round(Y-hash1(i,22)*Hp*0.85), r=ph<0.12?2:1;
+    g.globalAlpha=a; g.fillStyle='#ffffff'; g.fillRect(x-r,y,r*2+1,1); g.fillRect(x,y-r,1,r*2+1); }
+  g.restore();
+}
+
+/* ---------- Tranquility: стовп м'якого світла з розмитими краями й листя, що спіраллю здіймається ----------
+   ctx переведено в точку між ступнями друїда; k — 0…1 поява/згасання */
+const LEAF=[[-2,1,2,1],[-1,0,3,1],[0,-1,3,1],[1,-2,2,1],[-1,1,1,1]], LEAF_VEIN=[[0,0,1,1],[-1,1,1,1]];   // піксельний листок навскіс і світла жилка
+function drawTranquility(time,k){
+  const {X,Y,s}=toLow(0,0), g=ctx; g.save(); g.setTransform(1,0,0,1,0,0);
+  const Hc=320*s, Wc=118*s, pul=0.85+0.15*Math.sin(time*6);
+  g.globalCompositeOperation='lighter';
+  // стовп: по ширині — м'який спад до країв, по висоті — тане вгорі
+  const hg=g.createLinearGradient(X-Wc,0,X+Wc,0);
+  hg.addColorStop(0,'rgba(120,255,140,0)'); hg.addColorStop(0.25,'rgba(120,255,140,.35)'); hg.addColorStop(0.42,'rgba(170,255,180,.7)'); hg.addColorStop(0.5,'rgba(230,255,230,.95)'); hg.addColorStop(0.58,'rgba(170,255,180,.7)');
+  hg.addColorStop(0.75,'rgba(120,255,140,.35)'); hg.addColorStop(1,'rgba(120,255,140,0)');
+  // по висоті — тане вгору ступенями (смуги, як у піксель-арті)
+  const N=14; g.fillStyle=hg;
+  for(let i=0;i<N;i++){ const y0=Math.round(Y-Hc*(i+1)/N), y1=Math.round(Y-Hc*i/N);
+    g.globalAlpha=0.85*k*pul*Math.pow(1-i/N,0.9); g.fillRect(Math.round(X-Wc),y0,Math.round(Wc*2),y1-y0); }
+  // пляма світла на землі
+  const gg=g.createRadialGradient(X,Y,0,X,Y,Wc*1.6); gg.addColorStop(0,'rgba(160,255,160,.55)'); gg.addColorStop(1,'rgba(120,255,140,0)');
+  g.globalAlpha=k; g.fillStyle=gg; g.save(); g.translate(X,Y); g.scale(1,0.25); g.beginPath(); g.arc(0,0,Wc*1.6,0,7); g.fill(); g.restore();
+  g.globalCompositeOperation='source-over';
+  // листя: по спіралі довкола стовпа, ближні — яскравіші й попереду
+  for(let i=0;i<14;i++){
+    const q=(time*0.42+i/14)%1, a=time*2.4+i*2.1, sy=Math.sin(a);
+    const x=Math.round(X+Math.cos(a)*Wc*(0.45+0.2*hash1(i,31))), y=Math.round(Y-q*Hc*0.9);
+    g.globalAlpha=k*Math.min(1,q*5,(1-q)*3)*(sy>0?1:0.55);
+    const col=i%3===0?'#e8ffb0':(i%3===1?'#7cff6b':'#3fbf4a'), flip=Math.cos(a*1.3)>0;
+    g.fillStyle=col; for(const [dx,dy,w,h] of LEAF) g.fillRect(x+(flip?-dx-w:dx),y+dy,w,h);
+    g.fillStyle='#f4ffd8'; for(const [dx,dy,w,h] of LEAF_VEIN) g.fillRect(x+(flip?-dx-w:dx),y+dy,w,h);
+  }
+  g.restore();
+}
+
+/* ---------- піксельна дуга еліпса (блок, щит-бульбашка, Divine Shield, Bladestorm) ----------
+   (x,y) і радіуси — у світових одиницях під поточним ctx; th — товщина в пікселях LOW; хвіст дуги (від a0) тоншає й блідне,
+   якщо fadeTail; core — світліша серединна лінія */
+function drawPxArc(x,y,rx,ry,a0,a1,th,col,alpha,o={}){
+  const C=toLow(x,y), s=C.s, Rx=rx*s, Ry=ry*s, P=palOf(col), g=ctx;
+  g.save(); g.setTransform(1,0,0,1,0,0);
+  const n=Math.max(12,Math.round((a1-a0)*Math.max(Rx,Ry)*1.2)), body=new Path2D(), core=new Path2D(), tail=new Path2D();
+  for(let i=0;i<=n;i++){
+    const u=i/n, a=a0+(a1-a0)*u, px=Math.round(C.X+Math.cos(a)*Rx), py=Math.round(C.Y+Math.sin(a)*Ry);
+    const w=o.fadeTail?Math.max(1,Math.round(th*Math.min(1,u*1.6))):th;
+    (o.fadeTail&&u<0.35?tail:body).rect(px-(w>>1),py-(w>>1),w,w);
+    if(w>=2&&(!o.fadeTail||u>0.3)) core.rect(px,py,1,1);
+  }
+  if(o.fill){ g.globalCompositeOperation='lighter'; g.globalAlpha=o.fill*alpha; g.fillStyle=P[2];
+    g.beginPath(); g.ellipse(C.X,C.Y,Rx,Ry,0,0,7); g.fill(); g.globalCompositeOperation='source-over'; }
+  g.globalAlpha=alpha*0.55; g.fillStyle=P[2]; g.fill(tail);
+  g.globalAlpha=alpha; g.fillStyle=P[2]; g.fill(body);
+  g.fillStyle=P[0]; g.globalAlpha=alpha*0.9; g.fill(core);
+  g.restore();
+}
+
+/* ---------- Hex: кадр жаби (img/cutout/fx_frog.js, tools/setsheets/frog.py) ----------
+   Кадр масштабується під камеру один раз (кеш за масштабом) і отримує поріг прозорості — чіткий край, як у бійців
+   із деталей; малюється туди ж, куди й вони: у шар повної роздільності (SPR_HD), інакше в поточний ctx */
+const FROG_CACHE=new Map();
+function frogFrame(n,s){
+  const I=CUTOUT_DONE.fx_frog&&cutoutImgs('fx_frog'), F=typeof FROG_DEF!=='undefined'&&FROG_DEF.frames[n];
+  if(!I||!F||!I['f'+n]) return null;
+  const key=n*10000+Math.round(s*50);
+  let e=FROG_CACHE.get(key); if(e) return e;
+  const src=I['f'+n], k=F.u*s, w=Math.max(1,Math.round(src.width*k)), h=Math.max(1,Math.round(src.height*k));
+  const mk=()=>{ const cv=document.createElement('canvas'); cv.width=w; cv.height=h; return [cv,cv.getContext('2d',{willReadFrequently:true})]; };
+  const [cv,c]=mk(); c.imageSmoothingEnabled=true; c.imageSmoothingQuality='high'; c.drawImage(src,0,0,w,h);
+  const d=c.getImageData(0,0,w,h), a=d.data; for(let i=3;i<a.length;i+=4) a[i]=a[i]<110?0:255; c.putImageData(d,0,0);
+  const [fl,fc]=mk(); fc.drawImage(cv,0,0); fc.globalCompositeOperation='source-atop'; fc.fillStyle='#ffffff'; fc.fillRect(0,0,w,h);   // спалах від удару
+  if(FROG_CACHE.size>=60) FROG_CACHE.clear();   // камера зумить — масштабів небагато, але не тримаємо зайвих
+  FROG_CACHE.set(key,e={cv,fl,ax:F.ax*k,ay:F.ay*k});
+  return e;
+}
+// x,y — точка під жабою у світі; dir — куди дивиться; sx,sy — сплющення/розтяг від ніг; flash 0…1
+function drawFrogFrame(n,x,y,dir,sx,sy,flash){
+  const hd=!!SPR_HD.ctx, g=hd?SPR_HD.ctx:ctx;
+  const T=hd?new DOMMatrix().scale(SPR_HD.k).multiply(ctx.getTransform()):ctx.getTransform();
+  const e=frogFrame(n,Math.hypot(T.a,T.b)); if(!e) return;
+  const p=T.transformPoint(new DOMPoint(x,y));
+  g.save(); g.setTransform(1,0,0,1,Math.round(p.x),Math.round(p.y)); g.imageSmoothingEnabled=false;
+  g.scale(dir<0?-sx:sx,sy);
+  g.drawImage(e.cv,-Math.round(e.ax),-Math.round(e.ay));
+  if(flash>0){ g.globalAlpha=0.7*flash; g.drawImage(e.fl,-Math.round(e.ax),-Math.round(e.ay)); }
+  g.restore();
+}
+
 /* ---------- Immolation Aura (форма демона): піксельне кільце полум'я довкола ніг ----------
    Два проходи: задня половина кільця, жар землі й полум'я за тілом — до бійця (front=false), передня половина
    й іскри — поверх нього. Усе рахується від часу без частинок, тож однаково виглядає й у мережевій грі.

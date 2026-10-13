@@ -92,7 +92,8 @@ class Game{
   mark(x,r,T,color){ this.marks.push({x,r,t:T,T,color}); }
   // предмет із неба (молот, метеор, інфернал): летить T секунд від (x0,y0) до землі в x1, потім onHit
   fall(kind,x0,y0,x1,T,color,onHit){ this.fallers.push({kind,x0,y0,x1,x:x0,y:y0,t:0,T,color,onHit}); }
-  erupt(x){ this.erupts.push({x,t:0.7,T:0.7}); }                 // гуль виривається з-під землі
+  erupt(x){ this.erupts.push({x,t:0.85,T:0.85});                // гуль виривається з-під землі; грудки землі летять угору
+    for(let i=0;i<10;i++) this.particles.push({x:x+rnd(-26,26),y:GROUND-4,vx:rnd(-120,120),vy:-rnd(160,340),t:rnd(.35,.6),color:i%3?'#4a3a2a':'#6a5440',size:rnd(3,6),g:900}); }
   portal(x,y,color){ this.portals.push({x,y,t:0.55,T:0.55,color}); }
   // зачепити пета суперника att: удар чи вибух по області x±r
   splashPet(att,x,r,dmg){ const foe=this.other(att), p=foe.pet; if(p&&Math.abs(p.x-x)<r+20) foe.hurtPet(dmg,this,att); }
@@ -106,7 +107,7 @@ class Game{
       foe.takeDamage(B.dmg*k,owner,this,{unblockable:true});   // відкладені вибухи — звичайна сила, як тіки: самі по собі не перебивають сильне
     });
   }
-  smoke(x,y){ for(let i=0;i<16;i++){ const a=rnd(0,7), s=rnd(20,90); this.particles.push({x:x+rnd(-14,14),y:y+rnd(-40,40),vx:Math.cos(a)*s,vy:Math.sin(a)*s-30,t:rnd(.3,.6),color:i%3?'#3a3448':'#6a5a8a',size:rnd(4,8),g:-40}); } }
+  smoke(x,y){ for(let i=0;i<14;i++){ const a=rnd(0,7), s=rnd(20,80); this.particles.push({x:x+rnd(-14,14),y:y+rnd(-40,40),vx:Math.cos(a)*s,vy:Math.sin(a)*s-30,t:rnd(.35,.65),color:['#8a7fa6','#6a5f84','#b4a8cc'][i%3],size:rnd(5,9),g:-40,pf:1}); } }   // pf — клуб диму (росте, круглий)
   dust(x,y){ for(let i=0;i<8;i++){ const d=i<4?-1:1; this.particles.push({x:x+d*rnd(4,16),y:y-2,vx:d*rnd(40,110),vy:-rnd(10,60),t:rnd(.25,.45),color:'#b8a890',size:rnd(3,6),g:120}); } }
 
   spawnProj(owner,a,x,y,dir,dmgM){
@@ -253,7 +254,7 @@ class Game{
     for(const q of this.portals) q.t-=dt; this.portals=this.portals.filter(q=>q.t>0);
 
     // частинки та ефекти
-    for(const p of this.particles){ p.t-=dt; p.x+=p.vx*dt; p.y+=p.vy*dt; p.vy+=(p.g??400)*dt; }
+    for(const p of this.particles){ p.t-=dt; p.x+=p.vx*dt; p.y+=p.vy*dt; p.vy+=(p.g??400)*dt; if(p.pf){ p.size+=dt*22; p.vx*=1-dt*3; } }
     this.particles=this.particles.filter(p=>p.t>0);
     for(const s of this.slashes) s.t-=dt; this.slashes=this.slashes.filter(s=>s.t>0);
     for(const b of this.beams) b.t-=dt; this.beams=this.beams.filter(b=>b.t>0);
@@ -410,16 +411,6 @@ class Game{
       ctx.restore();
     }
     // гулі виривають із землі: рука з пазурами піднімається й ховається
-    for(const e of this.erupts){
-      const k=1-e.t/e.T, up=k<0.3?k/0.3:(k>0.7?(1-k)/0.3:1), h=70*up;
-      ctx.save();
-      ctx.fillStyle='#3a2e22'; ctx.beginPath(); ctx.ellipse(e.x,GROUND+3,30,8,0,0,7); ctx.fill();
-      ctx.fillStyle='#8a9a72'; ctx.fillRect(e.x-7,GROUND-h,14,h);
-      ctx.fillStyle='#5a6a4a'; ctx.fillRect(e.x-7,GROUND-h,4,h);
-      for(let i=-1;i<=1;i++){ ctx.fillStyle='#e4dcc4'; ctx.fillRect(e.x+i*6-1.5,GROUND-h-14,3,14); }
-      ctx.fillStyle='#7cff6b'; ctx.globalAlpha=0.5*up; ctx.fillRect(e.x-12,GROUND-h-4,24,4);
-      ctx.restore();
-    }
 
     // сліди ривків
     for(const t of this.trails){
@@ -431,17 +422,12 @@ class Game{
 
     // бійці
     for(const f of this.f) f.draw(this);
+    for(const e of this.erupts) drawGhoulErupt(e,this.time);   // гулі вилазять перед ціллю (pets.js)
     if(SPR_HD.ctx) this.splitPost();   // без шару повної роздільності ефекти й так лягають на LOW поверх бійців
     for(const f of this.f) f.drawPost(this);   // стани ультимейтів поверх бійців
 
     // промені
-    for(const b of this.beams){
-      ctx.save(); ctx.globalAlpha=b.t*3.5;
-      ctx.strokeStyle=b.color; ctx.lineWidth=4;
-      ctx.setLineDash([10,8]); ctx.lineDashOffset=-this.time*120;
-      ctx.beginPath(); ctx.moveTo(b.x1,b.y1); ctx.lineTo(b.x2,b.y2); ctx.stroke();
-      ctx.restore();
-    }
+    for(const b of this.beams) drawPxBeam(b,this.time);
 
     // ламані блискавки (Chain Lightning): форма мерехтить, але однакова в межах кадру
     for(const z of this.zaps){
@@ -459,13 +445,7 @@ class Game{
     for(const s of this.slashes) drawSlash(s);
 
     // кільця AoE
-    for(const r of this.rings){
-      const p=1-r.t/0.35;
-      ctx.save(); ctx.globalAlpha=(1-p)*0.8;
-      ctx.strokeStyle=r.color; ctx.lineWidth=5;
-      ctx.beginPath(); ctx.arc(r.x,r.y,r.r*p+10,0,7); ctx.stroke();
-      ctx.restore();
-    }
+    for(const r of this.rings) drawPxRing(r);
 
     // золоті зірки-попередження (атака, яку не можна парирувати)
     for(const t of this.tells||[]){
@@ -486,6 +466,7 @@ class Game{
 
     // частинки
     for(const p of this.particles){
+      if(p.pf){ drawPuff(p); continue; }
       ctx.globalAlpha=clamp(p.t*2.5,0,1);
       ctx.fillStyle=p.color;
       ctx.fillRect(p.x-p.size/2,p.y-p.size/2,p.size,p.size);

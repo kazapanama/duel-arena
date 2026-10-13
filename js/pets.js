@@ -72,6 +72,30 @@ function demonFormModel(){
 }
 function petAnim(kind){ return WOLF_LOOK[kind]?new CatAnimCtl():new AnimCtl(PET_LOOK[kind].style,PET_LOOK[kind].L.stance); }
 
+// Army of the Dead: гуль вилазить із землі під ворогом — та сама модель, що й пет, обрізана лінією ґрунту
+// (і в шарі світу, і в шарі повної роздільності, куди йде спрайт із деталей); поза — замах пазурами (roar), без стану
+const ERUPT={spr:{},base:null};
+function drawGhoulErupt(e,time){
+  const k=1-e.t/e.T, sm=v=>v*v*(3-2*v), up=k<0.3?sm(k/0.3):(k>0.72?sm((1-k)/0.28):1);
+  ctx.save(); ctx.globalAlpha=0.85*Math.min(1,k*6,(1-k)*5);   // яма в землі
+  ctx.fillStyle='#1e1812'; ctx.beginPath(); ctx.ellipse(e.x,GROUND+3,36,8,0,0,7); ctx.fill();
+  ctx.fillStyle='#3a2e22'; ctx.beginPath(); ctx.ellipse(e.x,GROUND+1,36,5,0,Math.PI,0); ctx.fill();
+  ctx.restore();
+  const L=PET_LOOK.ghoul, D=PET_DEFS.ghoul, sc=D.scale, H=D.h*sc+12;
+  if(!ERUPT.base) ERUPT.base={...POSE0,...STANCE[L.style],...(L.L.stance||{})};
+  const sp=ERUPT.spr;
+  sp.model=petModel('ghoul'); sp.pose=sampleAction(getAction(L.style,'roar'),Math.min(0.5,k*e.T),ERUPT.base);
+  sp.facing=(Math.round(e.x/7)&1)?1:-1; sp.x=0; sp.y=0; sp.time=time; sp.flash=0; sp.alpha=1; sp.outline=[124,255,107]; sp.fade=1;
+  const T=ctx.getTransform(), hd=SPR_HD.ctx;
+  const clipAbove=(g,M)=>{ const gy=Math.round(M.transformPoint(new DOMPoint(0,GROUND+2)).y);
+    g.save(); g.setTransform(1,0,0,1,0,0); g.beginPath(); g.rect(0,0,g.canvas.width,gy); g.clip(); };
+  clipAbove(ctx,T); ctx.setTransform(T);
+  if(hd) clipAbove(hd,new DOMMatrix().scale(SPR_HD.k).multiply(T));
+  ctx.save(); ctx.translate(e.x,GROUND+(1-up)*H); ctx.scale(sc,sc); drawSprite(sp); ctx.restore();
+  if(hd) hd.restore();
+  ctx.restore();
+}
+
 // малюємо в низькороздільний шар світу (ctx — LOW), як бійця
 function drawPet(p,time){
   const D=PET_DEFS[p.kind], m=petModel(p.kind);

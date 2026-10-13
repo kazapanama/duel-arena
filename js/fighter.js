@@ -918,6 +918,7 @@ class Fighter{
     for(const F of Object.values(this.forms)) for(let i=0;i<4;i++) F.cds[i]=Math.max(0,F.cds[i]-cdr); // КД тікають в обох формах
     this.formCd=Math.max(0,this.formCd-dt); this.shiftT=Math.max(0,this.shiftT-dt);
     this.gcd=Math.max(0,this.gcd-dt*(this.lustT>0?2:1));
+    if(this.hexT>0&&this.hexT<=dt&&game.smoke){ game.smoke(this.x,this.y-24); game.burst(this.x,this.y-24,'#9dff70',10); }   // жаба знову боєць — пуф
     for(const k of ULT_TIMERS) this[k]=Math.max(0,this[k]-dt);
     this.drwSwing=Math.max(0,(this.drwSwing||0)-dt);
     this.stunT=Math.max(0,this.stunT-dt);
@@ -1450,6 +1451,7 @@ class Fighter{
       for(const a of F.abilities) if(a&&a.type==='pet') out.add(PET_CUTOUT[a.pkind||'wolf']);
     }
     if(key==='hunter/Beast Mastery') out.add(PET_CUTOUT.wolf);
+    if(key==='shaman/Restoration') out.add('fx_frog');   // Hex: жаба — кадри для суперника
     if(key==='warlock/Destruction') out.add(PET_CUTOUT.infernal);
     out.delete(undefined); out.delete(null);
     return [...out];
@@ -1516,16 +1518,13 @@ class Fighter{
     ctx.translate(x,y);
     // блок: дуга перед бійцем
     if(this.blocking){
-      ctx.globalAlpha=0.75+Math.sin(g.time*12)*0.1;
-      ctx.strokeStyle='#cfe4ff'; ctx.lineWidth=5;
-      ctx.beginPath(); ctx.arc(this.facing*26,-68,34,this.facing>0?-1.1:Math.PI-1.1,this.facing>0?1.1:Math.PI+1.1); ctx.stroke();
-      ctx.globalAlpha=1;
+      const a0=this.facing>0?-1.1:Math.PI-1.1;
+      drawPxArc(this.facing*26,-68,34,34,a0,a0+2.2,3,'#9fd0ff',0.8+Math.sin(g.time*12)*0.12);   // дуга блоку — піксельна (projectiles.js)
     }
     // щит-бабл
     if(this.shield>0){
-      ctx.strokeStyle='rgba(140,200,255,.6)'; ctx.lineWidth=4;
-      ctx.beginPath(); ctx.arc(0,-66,52+Math.sin(g.time*6)*2,0,7); ctx.stroke();
-      ctx.fillStyle='rgba(140,200,255,.08)'; ctx.fill();
+      const r=52+Math.sin(g.time*6)*2;
+      drawPxArc(0,-66,r,r,0,Math.PI*2,2,'#8cc8ff',0.7,{fill:0.1});
     }
     // кайдани біля ніг: крижана брила (Frost Nova) або лози (Entangling Roots)
     if(this.rootT>0) this.drawRoot(g);
@@ -1569,16 +1568,9 @@ class Fighter{
       ctx.beginPath(); ctx.ellipse(0,-22,15,4.5,0,0,7); ctx.stroke();
       ctx.restore();
     }
-    if(this.tranqT>0){ // Tranquility: зелений стовп світла
-      const a=0.22+0.08*Math.sin(t*8);
-      ctx.save(); ctx.globalCompositeOperation='lighter';
-      const gr=ctx.createLinearGradient(0,y-260,0,y); gr.addColorStop(0,'rgba(125,255,138,0)'); gr.addColorStop(1,`rgba(125,255,138,${a})`);
-      ctx.fillStyle=gr; ctx.fillRect(x-46,y-260,92,264); ctx.restore();
-    }
+    if(this.tranqT>0){ ctx.save(); ctx.translate(x,y); drawTranquility(t,Math.min(1,(3-this.tranqT)/0.3,this.tranqT/0.4)); ctx.restore(); }   // projectiles.js
     if(this.stormT>0){ // Bladestorm: вихор довкола
-      ctx.save(); ctx.strokeStyle='rgba(255,226,140,.55)'; ctx.lineWidth=3;
-      for(let i=0;i<2;i++){ ctx.beginPath(); ctx.ellipse(x,y-46+i*28,118-i*22,15,0,t*9+i*2,t*9+i*2+4.2); ctx.stroke(); }
-      ctx.restore();
+      for(let i=0;i<3;i++) drawPxArc(x,y-58+i*26,118-i*18,15,t*9+i*2,t*9+i*2+3.6,3,'#ffe28c',0.75,{fadeTail:true});   // вихор — піксельні дуги з хвостом
     }
   }
   // поверх спрайта — у шарі ефектів (game.js splitPost), інакше спрайт із деталей у шарі вищої роздільності їх перекриває
@@ -1595,20 +1587,12 @@ class Fighter{
     if(this.immoT>0) this.drawImmo(g,true);
     if(this.invulnT>0){ // Divine Shield: золотий купол
       const p=0.5+0.5*Math.sin(t*6), r=70+p*3;
-      ctx.save(); ctx.globalCompositeOperation='lighter';
-      ctx.fillStyle=`rgba(255,226,120,${0.12+0.05*p})`; ctx.beginPath(); ctx.ellipse(0,-62,r*0.82,r,0,0,7); ctx.fill();
-      ctx.strokeStyle=`rgba(255,240,170,${0.55+0.3*p})`; ctx.lineWidth=4; ctx.stroke();
-      ctx.restore();
+      drawPxArc(0,-62,r*0.82,r,0,Math.PI*2,3,'#ffd86a',0.65+0.3*p,{fill:0.16+0.06*p});
+      for(let i=0;i<3;i++){ const a=t*1.8+i*2.1; drawPxArc(0,-62,r*0.82,r,a,a+0.5,2,'#fff4c0',0.8,{fadeTail:true}); }   // відблиски біжать по куполу
     }
     if(this.freezeT>0){ // брила льоду на весь зріст (Deep Freeze, Freezing Trap)
-      const k=Math.min(1,(this.freezeDur-this.freezeT)/0.15), H=(this.h+18)*k;
-      ctx.save();
-      ctx.fillStyle='rgba(150,215,255,.5)'; ctx.fillRect(-34,-H,68,H+4);
-      ctx.fillStyle='rgba(205,240,255,.55)';
-      for(const [sx,w,hh] of [[-38,12,0.75],[-24,12,1.05],[-8,14,0.9],[8,12,1.1],[22,14,0.8]]) ctx.fillRect(sx,-H*hh,w,H*hh+4);
-      ctx.fillStyle='#ffffff'; ctx.fillRect(-20,-H+8,4,H*0.5); ctx.fillRect(14,-H+16,4,H*0.35);
-      ctx.strokeStyle='rgba(60,140,220,.8)'; ctx.lineWidth=2; ctx.strokeRect(-34,-H,68,H+4);
-      ctx.restore();
+      const k=Math.min(1,(this.freezeDur-this.freezeT)/0.22);
+      drawIce(84,this.h+26,k,t);   // кристали на весь зріст (projectiles.js)
     }
     if(this.mcT>0){ // Mind Control: фіолетовий вир над головою
       ctx.save(); ctx.translate(0,-this.h-34);
@@ -1659,19 +1643,34 @@ class Fighter{
     ctx.fillStyle='#3a2a2a'; ctx.fillRect(-2,-1,4,12); ctx.fillStyle='#ff4a4a'; ctx.fillRect(-3,10,6,4);
     ctx.restore();
   }
-  // Hex: піксельна жаба на місці бійця, підскакує, коли рухається
+  // Hex: жаба з растрових кадрів (img/cutout/fx_frog.js) на місці бійця. Сидить — дихає горлом і кліпає; рухається —
+  // стрибає (присід → політ → приземлення). Рух — за зміною x між кадрами: vx у мережевий знімок не потрапляє
   drawFrog(g){
-    const t=g.time, d=this.facing, hop=Math.abs(Math.sin(t*7))*(Math.abs(this.vx)>1?16:3);
-    ctx.save(); ctx.translate(this.x,GROUND-hop); ctx.scale(d*1.7,1.7);
-    ctx.fillStyle='#1a3a10'; ctx.fillRect(-15,-17,30,17);
-    ctx.fillStyle='#4aa02a'; ctx.fillRect(-14,-16,28,15);
-    ctx.fillStyle='#8ad04a'; ctx.fillRect(-6,-8,18,6);
-    ctx.fillStyle='#3a8a20'; ctx.fillRect(-17,-6,7,6); ctx.fillRect(10,-6,7,6);
-    ctx.fillStyle='#1a3a10'; ctx.fillRect(1,-24,8,8); ctx.fillRect(-9,-24,8,8);
-    ctx.fillStyle='#d8ff90'; ctx.fillRect(2,-23,6,6); ctx.fillRect(-8,-23,6,6);
-    ctx.fillStyle='#101010'; ctx.fillRect(5,-21,2,3); ctx.fillRect(-5,-21,2,3);
-    ctx.fillStyle='#1a3a10'; ctx.fillRect(4,-10,10,1);
-    ctx.restore();
+    const t=g.time, dt=Math.min(0.1,Math.max(0,t-(this._frT??t))); this._frT=t;
+    const dx=this.x-(this._frX??this.x); this._frX=this.x;
+    const sp=dt>0?Math.abs(dx)/dt:0; this._frV=(this._frV||0)+(sp-(this._frV||0))*Math.min(1,dt*12);
+    const moving=this._frV>25;
+    if(moving&&Math.abs(dx)>0.3) this._frD=Math.sign(dx);
+    // фаза стрибка: поки рухається — крутиться; зупинилась — договорює поточний стрибок до приземлення
+    let ph=this._frP||0;
+    if(moving||ph>0) ph+=dt*2.1; if(ph>=1) ph=moving?ph%1:0; this._frP=ph;
+    let n=0, hop=0, sx=1, sy=1;
+    if(ph>0){
+      if(ph<0.16){ n=3; const k=ph/0.16; sx=1+0.08*k; sy=1-0.1*k; }                    // присіла
+      else if(ph<0.74){ const k=(ph-0.16)/0.58; n=k<0.55?4:5; hop=Math.sin(k*Math.PI)*30; }   // у польоті
+      else if(ph<0.86){ n=3; const k=1-(ph-0.74)/0.12; sx=1+0.1*k; sy=1-0.13*k; }         // приземлилась — сплющилась
+      else n=0;
+    } else {
+      const q=(t+this.idx*0.7)%2.6;
+      n=q<0.42?1:(((t*0.83+this.idx)%3.1)<0.13?2:0);                               // роздуває горло, зрідка кліпає
+      if(n===1){ const k=Math.sin(q/0.42*Math.PI); sx=1+0.03*k; sy=1-0.02*k; }
+    }
+    // поява й зникнення — «пуф»: вистрибує з диму з перебільшеним розмахом і так само зникає
+    // поява — за реальним часом: на кінопаузі ульти таймер Hex стоїть, а жаба вже має вистрибнути з диму
+    const now=performance.now()/1000; if(!(this.hexT<=this._frHex)) this._frBorn=now; this._frHex=this.hexT;   // таймер виріс — нові чари
+    const age=now-this._frBorn, u=Math.min(1,age/0.25)-1;
+    const ps=Math.max(0,Math.min(1+2.7*u*u*u+1.7*u*u,this.hexT/0.18));   // easeOutBack на появі, стискання в кінці
+    drawFrogFrame(n,this.x,GROUND-hop,(this._frD||this.facing),sx*ps,sy*ps,this.hitT>0.05?Math.min(1,this.hitT*5):0);
   }
   // Mirror Image: напівпрозорі копії того самого кадру спрайта позаду мага
   drawMirrors(o){
@@ -1689,14 +1688,8 @@ class Fighter{
     const k=Math.min(1,(this.rootDur-this.rootT)/0.12)*Math.min(1,this.rootT/0.3); // наростає і тане
     ctx.save(); ctx.globalAlpha=k;
     if(this.rootKind==='ice'){
-      // брила по коліна з гранями й відблисками
-      const H=46*k;
-      ctx.fillStyle='rgba(150,215,255,.55)'; ctx.fillRect(-30,-H,60,H+4);
-      ctx.fillStyle='rgba(200,240,255,.7)';
-      for(const [sx,w,h] of [[-34,10,H*0.8],[-20,12,H+10],[-4,10,H*0.7],[10,12,H+14],[24,10,H*0.9]]){ ctx.fillRect(sx,-h,w,h+4); }
-      ctx.fillStyle='#ffffff'; ctx.fillRect(-18,-H-6,4,H*0.6); ctx.fillRect(12,-H-10,4,H*0.5);
-      ctx.fillStyle='rgba(60,140,220,.6)'; ctx.fillRect(-30,0,60,4);
-      if(Math.sin(g.time*9)>0.6){ ctx.fillStyle='#fff'; ctx.fillRect(-26+((g.time*40)%52),-H*0.6,3,3); }
+      // кристали по коліна (projectiles.js); тане — прозорішає через globalAlpha вище
+      drawIce(72,52,Math.min(1,(this.rootDur-this.rootT)/0.18),g.time);
     } else {
       // лози обвивають ноги, з листками
       ctx.strokeStyle='#3f7a22'; ctx.lineWidth=5; ctx.lineCap='square';

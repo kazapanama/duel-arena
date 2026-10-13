@@ -27,7 +27,7 @@ function netSnap(g){
   return {t:'s', tm:r3(g.time), sh:r1(g.shake), cam:[r3(g.cam.scale),r1(g.cam.x),r1(g.cam.offX),r1(g.cam.offY)],
     ph:g.phase, pT:r3(g.phaseT), bn:g.banner, rd:g.round, rt:r3(g.roundTimer), th:THEMES.indexOf(g.theme), ko:r3(g.koFlash||0), pa:state.paused?1:0,
     f:g.f.map(snapFighter),
-    P:g.particles.map(p=>[r1(p.x),r1(p.y),r3(p.t),r1(p.size),p.color]),
+    P:g.particles.map(p=>p.pf?[r1(p.x),r1(p.y),r3(p.t),r1(p.size),p.color,1]:[r1(p.x),r1(p.y),r3(p.t),r1(p.size),p.color]),
     fl:g.floats.map(f=>[r1(f.x),r1(f.y),f.txt,f.color,f.size,r3(f.t)]),
     pr:g.projectiles.map(p=>[r1(p.x),r1(p.y),r1(p.vx),p.color,p.size,p.kind,p.school||0]),
     sl:g.slashes.map(s=>[r1(s.x),r1(s.y),s.dir,r3(s.t),s.T,s.color,s.kind]),
@@ -65,7 +65,7 @@ function applySnap(g,s){
   g.phase=s.ph; g.phaseT=s.pT; g.banner=s.bn; g.round=s.rd; g.roundTimer=s.rt; g.koFlash=s.ko;
   if(THEMES[s.th]) g.theme=THEMES[s.th];
   s.f.forEach((d,i)=>applyFighter(g.f[i],d));
-  g.particles=s.P.map(a=>({x:a[0],y:a[1],t:a[2],size:a[3],color:a[4]}));
+  g.particles=s.P.map(a=>({x:a[0],y:a[1],t:a[2],size:a[3],color:a[4],pf:a[5]||0}));
   g.floats=s.fl.map(a=>({x:a[0],y:a[1],txt:a[2],color:a[3],size:a[4],t:a[5]}));
   g.projectiles=s.pr.map(a=>({x:a[0],y:a[1],vx:a[2],color:a[3],size:a[4],kind:a[5],school:a[6]||null}));
   g.slashes=s.sl.map(a=>({x:a[0],y:a[1],dir:a[2],t:a[3],T:a[4],color:a[5],kind:a[6]}));

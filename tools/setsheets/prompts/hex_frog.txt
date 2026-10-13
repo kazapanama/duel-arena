@@ -1,0 +1,10 @@
+Pixel-art sprite sheet for a 2D fighting game: the frog from World of Warcraft's shaman spell Hex (an enemy turned into a small frog).
+- Image 1 is an approved sheet from the same game: copy ONLY its pixel size, crisp dark outline, cel shading, palette depth and the 3x2 grid layout with thin black lines on flat magenta. Do not copy the wolf.
+- Draw ONE and the SAME frog in all six cells: plump green toad-like frog, darker olive-green back with a few darker spots, pale yellow-green belly and throat, big round golden eyes with black slit pupils on top of the head, wide mouth line, webbed feet. Side view facing RIGHT, the whole body visible, same size and same colors in every cell.
+- Cell 1 (top left): sitting at rest — front legs straight, hind legs folded under the body.
+- Cell 2 (top middle): same sitting pose, throat puffed out into a round pale vocal sac.
+- Cell 3 (top right): same sitting pose with eyes closed (blink).
+- Cell 4 (bottom left): crouched low just before a jump — body pressed to the ground and tilted forward, hind legs compressed.
+- Cell 5 (bottom middle): mid-jump — body stretched diagonally up and forward, hind legs fully extended backwards, front legs reaching forward.
+- Cell 6 (bottom right): landing — front legs reaching down to touch the ground, hind legs swinging forward and tucking in.
+- The frog's feet rest on the same baseline near the bottom of each cell (except cell 5, which is in the air). Every frog fits inside its cell with margin. Flat pure magenta #FF00FF background, no shadow on the ground, no text, no effects.
