@@ -1526,8 +1526,6 @@ class Fighter{
       const r=52+Math.sin(g.time*6)*2;
       drawPxArc(0,-66,r,r,0,Math.PI*2,2,'#8cc8ff',0.7,{fill:0.1});
     }
-    // кайдани біля ніг: крижана брила (Frost Nova) або лози (Entangling Roots)
-    if(this.rootT>0) this.drawRoot(g);
     // страх: фіолетовий піксельний череп над головою, що тремтить
     if(this.fearT>0){
       const jx=Math.round(Math.sin(g.time*40)*2), sy=-182;
@@ -1584,6 +1582,8 @@ class Fighter{
   // стани поверх бійця (локальні координати: 0 — між ступнями)
   drawStatesFront(g){
     const t=g.time;
+    // кайдани біля ніг: крижана брила (Frost Nova) або лози (Entangling Roots) — поверх бійця, ноги в них
+    if(this.rootT>0) this.drawRoot(g);
     if(this.immoT>0) this.drawImmo(g,true);
     if(this.invulnT>0){ // Divine Shield: золотий купол
       const p=0.5+0.5*Math.sin(t*6), r=70+p*3;
@@ -1691,15 +1691,7 @@ class Fighter{
       // кристали по коліна (projectiles.js); тане — прозорішає через globalAlpha вище
       drawIce(72,52,Math.min(1,(this.rootDur-this.rootT)/0.18),g.time);
     } else {
-      // лози обвивають ноги, з листками
-      ctx.strokeStyle='#3f7a22'; ctx.lineWidth=5; ctx.lineCap='square';
-      for(const s of [-1,1]){ ctx.beginPath(); ctx.moveTo(s*30,4);
-        for(let yy=0;yy<=52*k;yy+=6) ctx.lineTo(s*(10+Math.sin(yy*0.22+g.time*2+s)*14),-yy);
-        ctx.stroke(); }
-      ctx.strokeStyle='#6fbf3a'; ctx.lineWidth=2;
-      for(const s of [-1,1]){ ctx.beginPath(); ctx.moveTo(s*26,2); for(let yy=0;yy<=46*k;yy+=6) ctx.lineTo(s*(8+Math.sin(yy*0.22+g.time*2+s)*12),-yy); ctx.stroke(); }
-      ctx.fillStyle='#9dff70';
-      for(let n=0;n<5;n++){ const yy=-8-n*10*k, xx=Math.sin(n*1.7+g.time)*20; ctx.fillRect(xx-3,yy-2,6,4); }
+      drawVines(Math.min(1,(this.rootDur-this.rootT)/0.25),g.time);   // лози обвивають ноги (projectiles.js)
     }
     ctx.restore();
   }

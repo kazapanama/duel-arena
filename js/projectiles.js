@@ -360,6 +360,33 @@ function drawPxArc(x,y,rx,ry,a0,a1,th,col,alpha,o={}){
   g.restore();
 }
 
+/* ---------- Entangling Roots: дві лози спіраллю обвивають ноги, з листками ----------
+   Пікселі LOW: темний контур і світла серцевина; витки «за ногою» (cos<0) темніші. ctx — у точці між ступнями */
+function drawVines(k,time){
+  const {X,Y,s}=toLow(0,0), g=ctx; g.save(); g.setTransform(1,0,0,1,0,0);
+  const Hm=60*s*k, R=19*s, edge=new Path2D(), back=new Path2D(), body=new Path2D(), core=new Path2D(), leaves=[];
+  const T=Math.max(2,Math.round(5*s));   // товщина лози, пікселів LOW
+  for(const ph of [0,Math.PI]){
+    for(let j=0;j<=Hm;j++){
+      const u=j/Hm, a=u*Math.PI*3.2+ph+Math.sin(time*1.5+ph)*0.15, sx=Math.sin(a), cx=Math.cos(a);
+      const w=Math.max(1,Math.round(T*(1-u*0.55))), x=Math.round(X+sx*R*(1-u*0.3)), y=Math.round(Y-j);
+      if(cx<0){ back.rect(x-(w>>1),y,w,1); continue; }
+      edge.rect(x-(w>>1)-1,y-1,w+2,3); body.rect(x-(w>>1),y,w,1); if(w>2) core.rect(x-(w>>1)+1,y,1,1);
+      if(j>3&&j%Math.max(5,Math.round(9*s))===0) leaves.push([x+(sx>0?w>>1:-(w>>1)),y,sx>0]);
+    }
+  }
+  g.globalAlpha=Math.min(1,k*3);
+  g.fillStyle='#1e3a14'; g.fill(back);
+  g.fillStyle='#14260c'; g.fill(edge);
+  g.fillStyle='#4a8a2a'; g.fill(body);
+  g.fillStyle='#8ad04a'; g.fill(core);
+  for(const [x,y,r] of leaves){   // листок удвічі більший за листя Tranquility
+    g.fillStyle='#14260c'; for(const [dx,dy,w,h] of LEAF) g.fillRect(x+(r?dx*2:-dx*2-w*2)-1,y+dy*2-1,w*2+2,h*2+2);
+    g.fillStyle='#6fbf3a'; for(const [dx,dy,w,h] of LEAF) g.fillRect(x+(r?dx*2:-dx*2-w*2),y+dy*2,w*2,h*2);
+    g.fillStyle='#c8f090'; for(const [dx,dy,w,h] of LEAF_VEIN) g.fillRect(x+(r?dx*2:-dx*2-w*2),y+dy*2,w*2,h); }
+  g.restore();
+}
+
 /* ---------- Hex: кадр жаби (img/cutout/fx_frog.js, tools/setsheets/frog.py) ----------
    Кадр масштабується під камеру один раз (кеш за масштабом) і отримує поріг прозорості — чіткий край, як у бійців
    із деталей; малюється туди ж, куди й вони: у шар повної роздільності (SPR_HD), інакше в поточний ctx */
