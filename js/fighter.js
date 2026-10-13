@@ -482,7 +482,7 @@ class Fighter{
         if(a.feather){ this.featherT=a.dur; }
         if(a.instantCast){ this.pomT=a.dur; game.burst(this.x,this.y-this.h*0.7,'#9fd0ff',16); }
         if(a.haste){ this.hasteT=a.dur; this.hasteMult=a.haste; }
-        if(a.immo){ this.immo=a.immo; this.immoT=this.immoDur=a.dur; this.immoAcc=0; game.ring(this.x,this.y-this.h/2,a.immo.r,'#ff7a2a'); game.burst(this.x,GROUND-20,'#ffb03a',24); }
+        if(a.immo){ this.immo=a.immo; this.immoT=this.immoDur=a.dur; this.immoAcc=0; }   // спалах і хвилю вогню малює drawImmoAura
         if(!a.immo) game.burst(this.x,this.y-this.h/2,a.disperse?'#a878ff':(a.feather?'#ffffff':(a.dmgTakenMult?'#9fd7ff':'#ffb03a')),16);
         break;
       case 'aoe':{
@@ -1191,9 +1191,6 @@ class Fighter{
         const d=I.dps*0.5*this.dmgMult();
         if(foe.alive&&Math.abs(foe.x-this.x)<I.r+foe.w/2&&Math.abs(foe.y-this.y)<120) foe.takeDamage(d,this,game,{dotTick:true,silent:true});
         game.splashPet(this,this.x,I.r,d); }
-      if(game.particles) for(let k=Math.floor(dt*60+Math.random());k>0;k--){   // язики полум'я по колу аури
-        const ox=rnd(-1,1)*I.r;
-        game.particles.push({x:this.x+ox,y:GROUND-rnd(0,10),vx:rnd(-12,12),vy:-rnd(70,170)*(1-Math.abs(ox)/I.r*0.5),t:rnd(0.25,0.55),color:['#fff0b0','#ffb03a','#ff6a1a','#ff3a1a'][(Math.random()*4)|0],size:rnd(3,6),g:-90}); }
     }
     if(this.freezeT>0){ // брила льоду; Deep Freeze наприкінці розколюється
       this.freezeT=Math.max(0,this.freezeT-dt);
@@ -1588,27 +1585,9 @@ class Fighter{
   drawPost(g){ ctx.save(); ctx.translate(this.x,this.y); this.drawStatesFront(g); ctx.restore(); }
   // Immolation Aura: кільце вогню довкола ніг — задня половина за бійцем (front=false), передня поверх нього
   drawImmo(g,front){
-    const t=g.time, r=(this.immo||{r:135}).r, dur=this.immoDur||6;
-    const k=Math.min(1,(dur-this.immoT)/0.25,this.immoT/0.4), R=r*(0.6+0.4*Math.min(1,(dur-this.immoT)/0.25));
-    ctx.save(); ctx.globalCompositeOperation='lighter';
-    if(!front){   // жар на землі
-      const gr=ctx.createRadialGradient(0,0,4,0,0,R);
-      gr.addColorStop(0,`rgba(255,150,40,${0.35*k})`); gr.addColorStop(0.7,`rgba(255,80,20,${0.22*k})`); gr.addColorStop(1,'rgba(255,40,0,0)');
-      ctx.fillStyle=gr; ctx.save(); ctx.scale(1,0.2); ctx.beginPath(); ctx.arc(0,0,R,0,7); ctx.fill(); ctx.restore();
-    }
-    const N=28;
-    for(let i=0;i<N;i++){
-      const a=i/N*Math.PI*2+t*1.6, sy=Math.sin(a);
-      if((sy>=0)!==front) continue;                       // передні язики — ближче до глядача, нижче на екрані
-      const fx=Math.cos(a)*R, fy=sy*R*0.2;
-      const h=(22+14*Math.sin(t*13+i*1.7)+8*Math.sin(t*7.3+i*0.9))*k*(front?1:0.8);
-      if(h<3) continue;
-      const w=Math.max(4,h*0.42);
-      ctx.globalAlpha=0.75*k; ctx.fillStyle='#ff4a14'; ctx.fillRect(fx-w/2,fy-h,w,h);
-      ctx.fillStyle='#ffa030'; ctx.fillRect(fx-w*0.32,fy-h*0.78,w*0.64,h*0.78);
-      ctx.fillStyle='#fff0b0'; ctx.fillRect(fx-w*0.15,fy-h*0.42,w*0.3,h*0.42);
-    }
-    ctx.restore();
+    const r=(this.immo||{r:135}).r, dur=this.immoDur||6, age=dur-this.immoT;
+    const k=Math.min(1,age/0.15,this.immoT/0.4), R=r*(0.6+0.4*Math.min(1,age/0.25));
+    drawImmoAura(k,R,g.time,front,this.h,age);   // піксельне полум'я — projectiles.js
   }
   // стани поверх бійця (локальні координати: 0 — між ступнями)
   drawStatesFront(g){

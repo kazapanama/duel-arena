@@ -216,6 +216,127 @@ function drawFaller(f,time){
   g.restore();
 }
 
+/* ---------- Immolation Aura (форма демона): піксельне кільце полум'я довкола ніг ----------
+   Два проходи: задня половина кільця, жар землі й полум'я за тілом — до бійця (front=false), передня половина
+   й іскри — поверх нього. Усе рахується від часу без частинок, тож однаково виглядає й у мережевій грі.
+   ctx перед викликом переведено в точку між ступнями бійця */
+const IMMO_PAL=['#fffbe0','#ffe070','#ffa030','#ff5a14','#c8260c','#6a1022'];   // ядро → край язика → темний кінчик
+const hash1=(i,k)=>{ const v=Math.sin(i*12.9898+k*78.233)*43758.5453; return v-Math.floor(v); };
+// язик полум'я: найширший у нижній третині, вершина хитається сильніше за основу; рядки пікселів — у шляхи за кольором.
+// c — фаза циклу анімації 0…1 (кадр атласу)
+function pxFlame(paths,X,Y,w,h,ph,c){
+  if(h<2||w<1) return;
+  const add=(ci,cx,y,half)=>{ const x0=Math.round(cx-half), x1=Math.max(x0+1,Math.round(cx+half)); paths[ci].rect(x0,y,x1-x0,1); };
+  const A=c*Math.PI*2;
+  for(let j=0;j<h;j++){
+    const u=j/h, prof=Math.min(1,(u+0.1)/0.32)*Math.pow(1-u,0.62), half=w*0.5*prof;
+    if(half<0.55) continue;   // без однопіксельних «волосин» на вершині — вони читаються як подряпини
+    const cx=X+Math.sin(A+ph+u*3.4)*u*u*w*0.6, y=Y-j-1;
+    add(u<0.45?3:(u<0.86||half>1.2?4:5),cx,y,half);
+    if(u<0.66) add(u<0.32?1:2,cx,y,half*0.6);
+    if(u<0.3) add(0,cx,y,half*0.26);
+  }
+  // відірваний клаптик полум'я над язиком: здіймається й гасне
+  const q=(c+ph*0.37)%1, r=Math.round(w*0.24*(1-q));
+  if(r>=1&&q<0.7) add(q<0.35?2:3,X+Math.sin(A+ph)*w*0.3,Math.round(Y-h-q*h*0.7),r);
+}
+// атлас язиків: для кожної висоти й пропорції — IMMO_F кадрів, мальованих один раз піксель у піксель; у бою кожен язик —
+// один drawImage з найближчої клітинки з масштабом близько 1 (шляхи щокадру коштували ~4 мс, а сильне зменшення
+// «найближчим пікселем» з'їдало стовпці — язики ставали тонкими, як трава)
+const IMMO_F=8, IMMO_HB=[6,9,13,18,25,34,46,62,84], IMMO_RB=[0.34,0.5,0.72];
+let IMMO_ATLAS=null;
+function immoAtlas(){
+  if(IMMO_ATLAS) return IMMO_ATLAS;
+  const cells=[]; let y=0, W=0;
+  for(const H of IMMO_HB) for(const r of IMMO_RB){
+    const fw=Math.max(2,Math.round(H*r)), cw=Math.ceil(fw*2.6)+2, ch=Math.ceil(H*1.75)+2;
+    cells.push({H,r,fw,cw,ch,y}); y+=ch; W=Math.max(W,cw*IMMO_F);
+  }
+  const cv=document.createElement('canvas'); cv.width=W; cv.height=y;
+  const g=cv.getContext('2d'), paths=IMMO_PAL.map(()=>new Path2D());
+  for(const c of cells) for(let f=0;f<IMMO_F;f++) pxFlame(paths,f*c.cw+Math.floor(c.cw/2),c.y+c.ch,c.fw,c.H,0,f/IMMO_F);
+  for(let c=5;c>=0;c--){ g.fillStyle=IMMO_PAL[c]; g.fill(paths[c]); }
+  return IMMO_ATLAS={cv,cells};
+}
+// язик шириною w і висотою h (пікселі LOW) з основою в (X,Y); ph — зсув кадру, щоб сусіди не рухались в унісон
+function drawFlame(g,X,Y,w,h,ph,time){
+  if(h<2||w<1) return;
+  const A=immoAtlas(), f=(Math.floor(time*12+ph*3.7)%IMMO_F+IMMO_F)%IMMO_F;
+  let hi=0, ri=0;
+  for(let i=1;i<IMMO_HB.length;i++) if(Math.abs(Math.log(IMMO_HB[i]/h))<Math.abs(Math.log(IMMO_HB[hi]/h))) hi=i;
+  for(let i=1;i<IMMO_RB.length;i++) if(Math.abs(Math.log(IMMO_RB[i]*h/w))<Math.abs(Math.log(IMMO_RB[ri]*h/w))) ri=i;
+  const c=A.cells[hi*IMMO_RB.length+ri], kx=w/c.fw, ky=h/c.H;
+  const dw=Math.max(1,Math.round(c.cw*kx)), dh=Math.max(1,Math.round(c.ch*ky));
+  g.drawImage(A.cv,f*c.cw,c.y,c.cw,c.ch,Math.round(X-dw/2),Math.round(Y)-dh,dw,dh);
+}
+function drawImmoAura(k,R,time,front,bodyH,age){
+  const g=ctx, {X,Y,s}=toLow(0,0);
+  g.save(); g.setTransform(1,0,0,1,0,0); g.imageSmoothingEnabled=false;
+  const P=IMMO_PAL, Rx=R*s, Ry=Rx*0.22, fa=Math.min(1,k*1.4);
+  const erupt=age<0.4?1+0.9*(1-age/0.4):1;               // перші миті — полум'я вибухає вище
+  const ring=(rx,ry,col,alpha,step,th=1)=>{              // піксельний еліпс: лише своя половина (задня/передня)
+    g.globalAlpha=alpha; g.fillStyle=col;
+    const n=Math.max(16,Math.round(rx*0.8));
+    for(let i=0;i<n;i+=step){ const a=i/n*Math.PI*2, sy=Math.sin(a); if((sy>=0)!==front) continue;
+      g.fillRect(Math.round(X+Math.cos(a)*rx)-1-(th>>1),Math.round(Y+sy*ry)-(th>>1),3+th,th); }
+  };
+  if(!front){
+    // обпалена земля, жар під ногами й розпечений обідок, де стоїть полум'я
+    const sc=g.createRadialGradient(X,Y,0,X,Y,Rx);
+    sc.addColorStop(0,'rgba(30,6,4,.45)'); sc.addColorStop(0.8,'rgba(30,6,4,.35)'); sc.addColorStop(1,'rgba(30,6,4,0)');
+    g.globalAlpha=k; g.fillStyle=sc; g.save(); g.translate(X,Y); g.scale(1,0.22); g.beginPath(); g.arc(0,0,Rx,0,7); g.fill(); g.restore();
+    g.globalCompositeOperation='lighter';
+    const gr=g.createRadialGradient(X,Y,0,X,Y,Rx);
+    gr.addColorStop(0,'rgba(255,140,40,.55)'); gr.addColorStop(0.55,'rgba(255,80,20,.3)'); gr.addColorStop(0.85,'rgba(255,60,10,.42)'); gr.addColorStop(1,'rgba(255,40,0,0)');
+    g.globalAlpha=k; g.fillStyle=gr; g.save(); g.translate(X,Y); g.scale(1,0.22); g.beginPath(); g.arc(0,0,Rx,0,7); g.fill(); g.restore();
+    g.globalCompositeOperation='source-over';
+    // високі язики за спиною — обрамлюють силует демона
+    g.globalAlpha=fa;
+    for(let i=0;i<7;i++){
+      const o=(i/6-0.5)*2, fl2=0.7+0.3*Math.sin(time*7.7+i*2.3)+0.12*Math.sin(time*19+i*4.1);
+      const hh=bodyH*s*(0.62-Math.abs(o)*0.3+hash1(i,3)*0.12)*fl2*k*Math.min(1.25,erupt), ww=Rx*(0.2+hash1(i,4)*0.06);
+      drawFlame(g,X+o*Rx*0.42,Y-Math.round(Ry*0.35),ww,hh,i*1.9,time);
+    }
+  }
+  ring(Rx,Ry,P[3],0.9*k,1); ring(Rx,Ry,P[1],0.8*k,3);    // обідок
+  if(age<0.45){ const e=age/0.45, m=0.35+e*0.95;           // хвиля вогню на старті
+    ring(Rx*m,Ry*m,P[3],1-e,1,4); ring(Rx*m,Ry*m,P[1],1-e,1,2); ring(Rx*m,Ry*m,P[0],(1-e)*0.9,2,1); }
+  // кільце язиків, що повільно обертається; задні менші й темніші (далі від глядача)
+  g.globalAlpha=fa;
+  const N=36, M=44;
+  for(let i=0;i<N+M;i++){
+    const big=i<N, j=big?i:i-N, n=big?N:M;
+    const a=(j+hash1(i,11)*0.6)/n*Math.PI*2+time*(big?0.8:0.8), sy=Math.sin(a);
+    if((sy>=0)!==front) continue;
+    const depth=0.5+0.5*sy, fl=0.6+0.32*Math.sin(time*(6.3+hash1(i,12)*3)+i*2.1)+0.14*Math.sin(time*17.1+i*5.3);
+    const tall=big?(hash1(i,13)<0.25?1.45:1):0.42;     // зрідка — високий язик, щоб кільце не було рівним «парканом»
+    const hh=(24+18*hash1(i,1))*tall*s*fl*(0.7+0.4*depth)*k*erupt, ww=(big?13+6*hash1(i,2):9+4*hash1(i,2))*s*(0.8+0.3*depth);
+    drawFlame(g,X+Math.cos(a)*Rx,Math.round(Y+sy*Ry)+1,ww,hh,i*2.7,time);
+  }
+  // іскри: здіймаються від кільця й гаснуть, хитаючись
+  for(let i=0;i<26;i++){
+    if((i%2===0)!==front) continue;
+    const q=(time*(0.45+hash1(i,5)*0.5)+hash1(i,6))%1, a=hash1(i,7)*Math.PI*2;
+    const x=X+Math.cos(a)*Rx*(0.3+0.7*hash1(i,8))+Math.sin(time*3+i)*3, y=Y+Math.sin(a)*Ry-q*bodyH*s*(0.8+0.5*hash1(i,9));
+    g.globalAlpha=k*(1-q); g.fillStyle=q<0.35?P[0]:(q<0.7?P[1]:P[3]);
+    const z=hash1(i,10)<0.3?2:1; g.fillRect(Math.round(x),Math.round(y),z,z);
+  }
+  // сяйво над кільцем: вогонь світиться, а не лише лежить пікселями
+  g.globalCompositeOperation='lighter'; g.globalAlpha=k*(0.8+0.2*Math.sin(time*11));
+  const hg=g.createRadialGradient(X,Y,Rx*0.55,X,Y,Rx*1.12);
+  hg.addColorStop(0,'rgba(255,120,30,0)'); hg.addColorStop(0.75,'rgba(255,120,30,.22)'); hg.addColorStop(1,'rgba(255,90,20,0)');
+  g.fillStyle=hg; g.save(); g.translate(X,Y-Ry*0.6); g.scale(1,0.34); g.translate(-X,-Y);
+  g.beginPath(); g.arc(X,Y,Rx*1.12,front?0:Math.PI,front?Math.PI:Math.PI*2); g.fill(); g.restore();
+  g.globalCompositeOperation='source-over';
+  if(front){ // відблиск вогню на ногах бійця
+    const hy=bodyH*s*0.5, lg=g.createRadialGradient(X,Y,0,X,Y,hy);
+    lg.addColorStop(0,'rgba(255,140,40,.3)'); lg.addColorStop(1,'rgba(255,90,20,0)');
+    g.globalCompositeOperation='lighter'; g.globalAlpha=k; g.fillStyle=lg;
+    g.save(); g.translate(X,Y); g.scale(Rx*0.5/hy,1); g.translate(-X,-Y); g.beginPath(); g.arc(X,Y,hy,Math.PI,0); g.fill(); g.restore();
+  }
+  g.restore();
+}
+
 /* ---------- банер ультимейта: затемнення, діагональна смуга кольору класу, назва ---------- */
 function drawUltBanner(u){
   const k=1-u.t/u.T, a=Math.min(1,k/0.06,u.t/0.3), dir=u.side===0?1:-1;
