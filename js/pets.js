@@ -67,6 +67,7 @@ function demonFormModel(){
   SET_LOOK[skin.name]=D.L;
   const m=resolveModel(cls,spec,skin);
   m.style=D.style; m.front=m.main; m.back=m.off; m.glowEye=true;
+  m.stance={...(m.stance||{}),py:4,bfx:-13,ffx:15};   // стійка claw присідає на 9 — у демона ближнє стегно лягало горизонтально, нога ніби піднята
   return m;
 }
 function petAnim(kind){ return WOLF_LOOK[kind]?new CatAnimCtl():new AnimCtl(PET_LOOK[kind].style,PET_LOOK[kind].L.stance); }

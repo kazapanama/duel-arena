@@ -65,7 +65,15 @@ function cutoutImgs(name){
     im.src=src[k]; set[k]=im; }
   return CUTOUT_IMGS[name]=set;
 }
-const cutDef=name=>(typeof CUTOUT_AUTO!=='undefined'&&CUTOUT_AUTO[name])||null;
+// ручні поправки поверх точок пакувальника (img/cutout/*.js згенеровано й оптимізовано — правимо тут, а не там).
+// helmDy — голову нижче на стільки одиниць: у демона під щелепою «комір», і за низом деталі вона висіла над плечима
+const CUTOUT_FIX={form_demon:{helmDy:8}};
+function cutDef(name){
+  const D=(typeof CUTOUT_AUTO!=='undefined'&&CUTOUT_AUTO[name])||null, F=CUTOUT_FIX[name];
+  if(D&&F&&!D._fixed){ D._fixed=true;
+    if(F.helmDy&&D.helm) D.helm.to=D.helm.to.map(([x,y])=>[x,y+F.helmDy]); }
+  return D;
+}
 function cutoutReady(name){
   return !!(cutoutImgs(name)&&CUTOUT_DONE[name]&&cutDef(name));
 }
