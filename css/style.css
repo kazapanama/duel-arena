@@ -501,6 +501,9 @@ body.touch .sel-keys,body.touch .nav-hint,body.touch .foot-hint{visibility:hidde
   .logo{transform:scale(.82); transform-origin:50% 0}
   .press{font-size:2.8cqw}
   .nav-hint{display:none}
+  /* «Двоє гравців» на одному пристрої: сенсорне керування лише одне (гравець 1), тож без клавіатури
+     чи другого геймпада (гравець 2) пункт ховаємо. Він з'являється, щойно натиснуто клавішу чи підключено 2-й пад */
+  body:not(.kb):not(.pads2) .mi[data-act="pvp"]{display:none}
 }
 /* колонка вибору: ростер, спеки, скіни й кнопки не стискаються (WebKit на iPad стискав сітку ростера, і плитки з
    aspect-ratio наїжджали на спеки) — місце, якщо його бракує, віддає список здібностей (прокручується) */

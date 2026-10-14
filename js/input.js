@@ -6,6 +6,7 @@ addEventListener('keydown',e=>{
   if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space','Backspace'].includes(e.code)) e.preventDefault();
   if(e.repeat) return;
   ac();
+  document.body.classList.add('kb');   // є справжня клавіатура: на телефоні/планшеті з нею з'являється «Двоє гравців» (style.css)
   if(e.code==='KeyM'){ muted=!muted; if(typeof savePrefs==='function'){ savePrefs(); renderMenuVals(); } }
   // меню, вибір бійця, пауза, фінал — клавіші обробляє інтерфейс
   if(typeof setDevice==='function') setDevice('kb');   // підказки інтерфейсу — під клавіатуру
@@ -102,5 +103,7 @@ function pollPads(){
     if(btn(9)&&!padPrev[i][9]&&!menuOpen) togglePause(); // Start (у меню Start обробляє інтерфейс)
     for(const b of [0,1,2,3,4,5,6,7,9,12]) padPrev[i][b]=btn(b);
   }
+  // другий пад = є чим керувати гравцю 2: на телефоні/планшеті показуємо «Двоє гравців» (style.css)
+  if(padConnected[1]!==pollPads.two){ pollPads.two=padConnected[1]; document.body.classList.toggle('pads2',padConnected[1]); }
 }
 
