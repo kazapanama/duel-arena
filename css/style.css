@@ -593,15 +593,34 @@ body.touch .stab span{font-size:1.6cqw; line-height:1; margin-top:.3cqw}
 /* поки картка відкрита — спеки й підказка під нею не визирають краями */
 .sel-center.info-open>.specs{visibility:hidden}
 .info-open .abil.strip::before{content:none}
-/* кнопки: рамки під палець замість тексту з вогником */
+/* кнопки (і на екрані арени): рамки під палець замість тексту з вогником */
 body.touch .sel-center>.sel-actions{gap:1cqw}
-body.touch #select .sel-actions .mi{--c:.8cqw; height:6.2cqw; padding:0 1.7cqw; font-size:2.3cqw; transform:none;
+body.touch .sel-actions .mi{--c:.8cqw; height:6.2cqw; padding:0 1.7cqw; font-size:2.3cqw; transform:none;
   background:linear-gradient(180deg,#4a3528,#2a1c15); box-shadow:inset 0 0 0 .3cqw #8a5a1a;
   clip-path:polygon(var(--c) 0,calc(100% - var(--c)) 0,100% var(--c),100% calc(100% - var(--c)),calc(100% - var(--c)) 100%,var(--c) 100%,0 calc(100% - var(--c)),0 var(--c))}
-body.touch #select .sel-actions .mi::before{content:none}
-body.touch #select .sel-actions .mi:active{filter:brightness(1.3)}
-body.touch #select .cta{flex:1; height:6.2cqw; font-size:2.8cqw; padding:0 1.5cqw}
-body.touch #select .cta:active{filter:brightness(1.15)}
+body.touch .sel-actions .mi::before{content:none}
+body.touch .sel-actions .mi:active{filter:brightness(1.3)}
+body.touch .sel-actions .cta{height:6.2cqw; font-size:2.8cqw; padding:0 1.5cqw}
+body.touch #select .cta{flex:1}
+body.touch .sel-actions .cta:active{filter:brightness(1.15)}
 /* крок вигляду: великі картки скінів */
 body.touch .stage-skin .skin span{font-size:1.85cqw}
 body.touch .stage-skin .skin span b{font-size:2.2cqw; margin-bottom:.2cqw}
+
+/* ============================================================
+   ВИБІР АРЕНИ НА ТЕЛЕФОНІ: 15 плиток (випадкова + 14 арен) — сітка 5×3 на всю висоту,
+   без прокрутки; назви до двох рядків крупним шрифтом. На ПК плитки дрібні, а пів екрана порожнє —
+   там клавіатура й миша, тож лишаємо як є.
+   ============================================================ */
+body.touch #arenaSel{padding:1cqw 2.4cqw 1.1cqw; gap:1cqw}
+body.touch #arenaSel .sel-title{font-size:3.3cqw}
+body.touch .arena-grid{grid-template-columns:repeat(5,minmax(0,1fr)); grid-auto-rows:minmax(0,1fr); align-content:stretch; gap:1.2cqw; padding:.5cqw}
+body.touch .atile{--c:.9cqw; --b:.36cqw; height:auto; min-height:0; padding:.4cqw}
+body.touch .atile span{left:.4cqw; right:.4cqw; bottom:.4cqw; padding:1.6cqw .7cqw .5cqw; font-size:1.9cqw; line-height:1.05;
+  white-space:normal; display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; background:linear-gradient(transparent,rgba(0,0,0,.6) 35%,rgba(0,0,0,.9))}
+body.touch .atile.on span{color:var(--goldL)}
+body.touch .atile .q{font-size:6cqw; padding-bottom:2.4cqw}
+body.touch .atile:active{transform:scale(.97)}
+body.touch #arenaSel .sel-actions{justify-content:space-between; gap:1.2cqw}
+body.touch .arena-name{flex:1; min-width:0; font-size:2.6cqw; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+body.touch #arenaGo{min-width:24cqw}
