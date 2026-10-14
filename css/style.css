@@ -265,6 +265,8 @@ img.broken{display:none}
 .sc-class{display:block; font-size:3.2cqw; letter-spacing:.25cqw; color:var(--cc); text-shadow:0 .28cqw 0 #120806, .2cqw 0 0 #120806, -.2cqw 0 0 #120806, 0 -.2cqw 0 #120806, 0 0 2cqw color-mix(in srgb,var(--cc) 60%,transparent)}
 .sc-spec{display:block; font-size:1.55cqw; color:var(--parch); text-shadow:0 .2cqw 0 #000}
 .sc-class.long{font-size:2.5cqw}
+.sc-spec small{font-size:inherit}
+.sc-spec small::before{content:', '}   /* на ПК скін — у тому ж рядку через кому; на телефоні — другим рядком (нижче) */
 .sc-tags{display:flex; justify-content:center; gap:.5cqw; margin-top:.45cqw}
 .sc-tags i{font-style:normal; font-size:1.05cqw; padding:.05cqw .6cqw; color:var(--parch); background:rgba(0,0,0,.45); border:.12cqw solid color-mix(in srgb,var(--cc) 70%,#000)}
 .showcase.waiting .sc-cv{filter:brightness(0) opacity(.6)}
@@ -533,3 +535,73 @@ body.touch .sel-keys,body.touch .nav-hint,body.touch .foot-hint{visibility:hidde
 #arenaSel .sel-actions{width:100%; justify-content:center; align-items:center; gap:2cqw}
 .arena-name{font:400 1.8cqw var(--display); color:var(--goldL); min-width:24cqw; text-align:center}
 @media (hover:none) and (pointer:coarse){ .atile span{font-size:1.3cqw} }
+
+/* ============================================================
+   ВИБІР БІЙЦЯ НА ТЕЛЕФОНІ (body.touch, touch.js). Кадр гри там ~640×360 px, тобто 1cqw ≈ 6.5 px:
+   ПК-розміри (.9–1.3cqw) дають текст 6–8 px. Тут текст ≥1.6cqw (~11 px), цілі для пальця ≥5.8cqw (~38 px).
+   Список здібностей з описами замінено рядком круглих іконок (renderAbilStrip у ui.js), опис — у картці на тап.
+   Ширини: поле 1.2 + вітрина 23 + проміжок 1.2 + центр 49.2 + … = 100cqw; плитка ростеру = (49.2 − 4×.8)/5 = 9.2cqw.
+   ============================================================ */
+body.touch #select{padding:1cqw 1.2cqw 1.1cqw; gap:.6cqw}
+body.touch .sel-keys{display:none}
+body.touch .sel-title{font-size:3.3cqw}
+body.touch .side-tag{font-size:2cqw; padding:.45cqw 1.4cqw}
+body.touch .sel-body{grid-template-columns:23cqw minmax(0,1fr) 23cqw; gap:1.2cqw}
+/* вітрина: клас, спек, скін окремим рядком, ролі */
+body.touch .sc-class{font-size:3.4cqw}
+body.touch .sc-class.long{font-size:2.75cqw}
+body.touch .sc-spec{font-size:2.2cqw; line-height:1.1}
+body.touch .sc-spec small{display:block; font-size:1.75cqw; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+body.touch .sc-spec small::before{content:none}
+body.touch .sc-tags{gap:.7cqw; margin-top:.6cqw}
+body.touch .sc-tags i{font-size:1.65cqw; padding:.1cqw .8cqw; border-width:.18cqw}
+body.touch .sc-stamp{font-size:4.2cqw}
+/* центр: ростер → спеки → (вільне місце) → іконки здібностей → кнопки */
+body.touch .sel-center{gap:1cqw}
+body.touch .sel-center>.roster{gap:.8cqw; grid-auto-rows:9.2cqw}
+body.touch .sel-center>.roster>.rtile{height:9.2cqw; --c:.9cqw; --b:.36cqw; padding:.6cqw}
+body.touch .rtile .mk{font-size:1.6cqw; padding:0 .45cqw; top:.3cqw}
+body.touch .rtile .mk.m0{left:.3cqw} body.touch .rtile .mk.m1{right:.3cqw}
+/* вкладки спеків — картками: іконка над назвою (довгі назви на кшталт Assassination у рядок з іконкою не влазять) */
+body.touch .specs{gap:.8cqw}
+body.touch .stab{--c:.9cqw; --b:.34cqw; flex-direction:column; justify-content:center; gap:.5cqw; padding:.9cqw .4cqw .8cqw; text-align:center; min-height:9.6cqw}
+body.touch .stab img,body.touch .stab .ico-fb{width:3.8cqw; height:3.8cqw; font-size:2.4cqw}
+body.touch .stab b{font-size:2cqw; line-height:1; white-space:nowrap}
+body.touch .stab span{font-size:1.6cqw; line-height:1; margin-top:.3cqw}
+/* іконки здібностей: кільця кольорів кнопок бою */
+.abil.strip{position:relative; z-index:5; flex:none !important; overflow:visible !important; margin-top:auto;
+  flex-direction:row; justify-content:center; align-items:center; gap:1.5cqw; padding:.8cqw 0 .6cqw}
+/* підказка над іконками (картка опису, коли відкрита, лягає поверх неї) */
+.abil.strip::before{content:'Торкнись іконки — опис здібності'; position:absolute; left:0; right:0; bottom:calc(100% + .2cqw); text-align:center; font-size:1.6cqw; color:var(--ink); pointer-events:none}
+.aico{--ring:var(--gold); position:relative; flex:none; width:6.4cqw; height:6.4cqw; border-radius:50%; overflow:hidden; display:grid; place-items:center;
+  background:radial-gradient(circle at 50% 35%,#3b2a22,#140d0b);
+  box-shadow:0 0 0 .38cqw var(--ring), 0 0 0 .7cqw #140a06, 0 .5cqw .8cqw rgba(0,0,0,.5);
+  transition:transform .1s, box-shadow .1s}
+.aico img{display:block; width:100%; height:100%; image-rendering:pixelated}
+.aico .ico-fb{width:100%; height:100%; font-size:3.2cqw; background:none}
+.aico.on{transform:translateY(-.5cqw) scale(1.08); box-shadow:0 0 0 .38cqw #fff4d0, 0 0 0 .7cqw #140a06, 0 0 2cqw var(--ring)}
+.aico.s0,.ainfo.s0{--ring:var(--sx)} .aico.s1,.ainfo.s1{--ring:var(--sy)} .aico.s2,.ainfo.s2{--ring:var(--sb)}
+.aico.s3,.ainfo.s3{--ring:var(--sa)} .aico.s4,.ainfo.s4{--ring:var(--sf)} .aico.su,.ainfo.su{--ring:var(--gold)}
+/* картка опису — над іконками, поверх ростеру й спеків */
+.ainfo{--c:1cqw; --b:.34cqw; position:absolute; left:0; right:0; bottom:calc(100% + .6cqw); padding:1.4cqw 1.9cqw 1.6cqw; text-align:left; animation:infoIn .14s ease-out both}
+@keyframes infoIn{from{opacity:0; transform:translateY(1cqw)}}
+.ai-head{display:flex; align-items:center; gap:1.3cqw; margin-bottom:.9cqw}
+.ai-head img,.ai-head .ico-fb{flex:none; width:5cqw; height:5cqw; font-size:3cqw; border-radius:50%; box-shadow:0 0 0 .32cqw var(--ring), 0 0 0 .58cqw #140a06; image-rendering:pixelated}
+.ai-head b{display:block; font:400 2.4cqw var(--display); line-height:1.05; letter-spacing:.1cqw; text-transform:uppercase; color:var(--goldL)}   /* у Tiny5 мала «е» ламана — великими */
+.ai-head span{display:block; font-size:1.8cqw; margin-top:.25cqw; color:var(--ring)}
+.ainfo p{margin:0; font-size:2.15cqw; line-height:1.2; color:var(--parch)}
+/* поки картка відкрита — спеки й підказка під нею не визирають краями */
+.sel-center.info-open>.specs{visibility:hidden}
+.info-open .abil.strip::before{content:none}
+/* кнопки: рамки під палець замість тексту з вогником */
+body.touch .sel-center>.sel-actions{gap:1cqw}
+body.touch #select .sel-actions .mi{--c:.8cqw; height:6.2cqw; padding:0 1.7cqw; font-size:2.3cqw; transform:none;
+  background:linear-gradient(180deg,#4a3528,#2a1c15); box-shadow:inset 0 0 0 .3cqw #8a5a1a;
+  clip-path:polygon(var(--c) 0,calc(100% - var(--c)) 0,100% var(--c),100% calc(100% - var(--c)),calc(100% - var(--c)) 100%,var(--c) 100%,0 calc(100% - var(--c)),0 var(--c))}
+body.touch #select .sel-actions .mi::before{content:none}
+body.touch #select .sel-actions .mi:active{filter:brightness(1.3)}
+body.touch #select .cta{flex:1; height:6.2cqw; font-size:2.8cqw; padding:0 1.5cqw}
+body.touch #select .cta:active{filter:brightness(1.15)}
+/* крок вигляду: великі картки скінів */
+body.touch .stage-skin .skin span{font-size:1.85cqw}
+body.touch .stage-skin .skin span b{font-size:2.2cqw; margin-bottom:.2cqw}

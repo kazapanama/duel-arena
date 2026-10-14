@@ -217,7 +217,7 @@ function renderFighterTo(view,f,scale,gx,gy,t){
 /* ============================================================
    ВИБІР БІЙЦЯ
    ============================================================ */
-const SEL={side:0,sides:[null,null],shows:[],thumbs:[],t:0,fx:[null,null]};
+const SEL={side:0,sides:[null,null],shows:[],thumbs:[],t:0,fx:[null,null],info:null};   // info — номер іконки, чия картка опису відкрита (телефон)
 const newFx=()=>({parts:[],acc:0,flash:0,ring:-1});
 function specIconOf(spec){ return spec.img||spec.abilities[1].img||spec.abilities[0].img; }
 // іконка з набору або, якщо набору нема, емодзі на її місці
@@ -243,7 +243,7 @@ function pickDefaults(side){
   const spec=CLASSES[ci].specs[si]; return [ci,si,spec.skins.indexOf(preferredSkin(CLASSES[ci],spec))];
 }
 function openSelect(){
-  SEL.side=NET.on?NET.side:0; SEL.fx=[newFx(),newFx()];   // у мережі кожен обирає свого бійця одночасно
+  SEL.side=NET.on?NET.side:0; SEL.fx=[newFx(),newFx()]; SEL.info=null;   // у мережі кожен обирає свого бійця одночасно
   for(const s of [0,1]){ const [ci,si,ki]=pickDefaults(s); SEL.sides[s]=makeSide(s,ci,si,ki); }
   buildSelectDom();
   show('select');
@@ -271,7 +271,7 @@ function buildSelectDom(){
 function curSide(){ return SEL.sides[SEL.side]; }
 function rebuildFighter(side){
   const s=SEL.sides[side]; const n=makeSide(side,s.ci,s.si,s.ki); n.locked=s.locked; n.stage=s.stage; SEL.sides[side]=n;
-  n.f.shiftT=0.35; // спалах при зміні
+  n.f.shiftT=0.35; SEL.info=null; // спалах при зміні; картка опису — від старого спеку, закриваємо
   const fx=SEL.fx[side]; fx.flash=Math.max(fx.flash,.7); fxBurst(fx,62,168,CLASSES[n.ci].color,18,1);
 }
 function selSetClass(ci){
@@ -313,7 +313,7 @@ function lockSide(side){
 }
 function selLock(){
   const s=curSide(); if(s.locked) return;
-  if(s.stage==='spec'){ s.stage='skin'; sfx('ok'); renderSelect(); return; }   // клас і спек обрано — далі вигляд
+  if(s.stage==='spec'){ s.stage='skin'; SEL.info=null; sfx('ok'); renderSelect(); return; }   // клас і спек обрано — далі вигляд
   const spec=CLASSES[s.ci].specs[s.si];
   rememberSkin(CLASSES[s.ci],spec,spec.skins[s.ki]);
   lockSide(SEL.side);
@@ -338,7 +338,10 @@ function selBack(){
 const abilRowHtml=(a,i,keys)=>`<i class="slot s${i}">${keys?keys[i]:''}</i>${iconHtml(a.img,a.icon)}<div><b>${a.name}</b><span>${descr(a)}</span></div>`;
 const ultRowHtml=(cls,spec,keys,side)=>{ const U=ULTS[cls.id+'/'+spec.name];
   return `<i class="slot su">${keys?(keys===KEYS_PAD?'RT':(side===0?'O':'6')):'★'}</i>${iconHtml(U.img,U.icon)}<div><b>${U.ua} <small>ультимейт</small></b><span>${U.d}</span></div>`; };
-const formRowHtml=(spec,keys)=>`<i class="slot s4">${keys?keys[4]:''}</i>${iconHtml(spec.form.img,spec.form.em)}<div><b>${spec.form.name}</b><span>${spec.form.abilities.map(a=>a.name).join(', ')}, ${spec.form.classAb.name}. ${spec.form.note}</span></div>`;
+const formDescr=spec=>`${spec.form.abilities.map(a=>a.name).join(', ')}, ${spec.form.classAb.name}. ${spec.form.note}`;
+const formRowHtml=(spec,keys)=>`<i class="slot s4">${keys?keys[4]:''}</i>${iconHtml(spec.form.img,spec.form.em)}<div><b>${spec.form.name}</b><span>${formDescr(spec)}</span></div>`;
+// спек і скін у табличці вітрини: на ПК — одним рядком через кому, на телефоні — скін другим рядком (style.css)
+const specLineHtml=(spec,skin)=>skin.tier?`${spec.name}<small>${skin.name}</small>`:spec.name;
 const specTabHtml=sp=>`${iconHtml(specIconOf(sp),sp.em)}<div><b>${sp.name}</b><span>${sp.role}</span></div>`;
 
 /* ПРОГРІВ ЕКРАНА ВИБОРУ. Перше перемикання на кожен клас смикалося: (1) холодний шейпінг нових слів шрифтом
@@ -384,7 +387,7 @@ function warmTexts(cls,spec,si){
   if(spec.form) out.push(['.abil','arow form',formRowHtml(spec,keys),ab]);
   if(si===0) out.push(['.specs','pf stab',cls.specs.map(specTabHtml).join('')]);
   out.push(['.sc-plate',cls.name.length>9?'sc-class long':'sc-class',cls.name]);
-  for(const sk of spec.skins) out.push(['.sc-plate','sc-spec',sk.tier?`${spec.name}, ${sk.name}`:spec.name]);
+  for(const sk of spec.skins) out.push(['.sc-plate','sc-spec',specLineHtml(spec,sk)]);
   out.push(['.sc-plate','sc-tags',`<i>${spec.role}</i><i>Дальній бій</i><i>Ближній бій</i>`]);
   return out;
 }
@@ -426,6 +429,38 @@ function warmLUT(m,t){
   return true;
 }
 
+/* ТЕЛЕФОН: замість списку з описами — рядок круглих іконок. Кільце того ж кольору, що й кнопка цієї здібності в бою
+   (touch.js), тож вибір заодно вчить розкладки. Тап — боєць показує прийом і відкривається картка з описом
+   (повторний тап або тап повз — закриває). Описи дрібним шрифтом на екрані телефона нечитні, тому — лише на вимогу. */
+const ABIL_KIND=['Швидкий удар','Сильний удар','Особливий','Спецприйом'];
+function abilStripItems(cls,spec){
+  const list=[...spec.abilities,spec.classAb||cls.classAb], U=ULTS[cls.id+'/'+spec.name];
+  const it=list.map((a,i)=>({s:'s'+i,img:a.img,em:a.icon,name:a.name,kind:ABIL_KIND[i],d:descr(a),
+    play:f=>{ const an=actionForAbility(f,a,i); if(an) f.anim.play(an); }}));
+  it.push({s:'su',img:U.img,em:U.icon,name:U.ua,kind:'Ультимейт',d:U.d,play:f=>f.anim.play('roar')});
+  if(spec.form) it.push({s:'s4',img:spec.form.img,em:spec.form.em,name:spec.form.name,kind:'Форма',d:formDescr(spec),
+    play:f=>{ f.setForm(f.form==='base'?'alt':'base'); f.shiftT=0.35; }});
+  return it;
+}
+function renderAbilStrip(al,cls,spec){
+  al.className='abil strip';
+  const items=abilStripItems(cls,spec);
+  items.forEach((x,i)=>{
+    const b=document.createElement('button'); b.className=`aico ${x.s}`+(SEL.info===i?' on':''); b.setAttribute('aria-label',x.name);
+    b.innerHTML=iconHtml(x.img,x.em);
+    b.addEventListener('click',()=>{ x.play(curSide().f); SEL.info=SEL.info===i?null:i; sfx('tick'); renderSelect(); });
+    al.appendChild(b);
+  });
+  const x=items[SEL.info]; al.parentNode.classList.toggle('info-open',!!x); if(!x) return;
+  const c=document.createElement('div'); c.className=`pf ainfo ${x.s}`;
+  c.innerHTML=`<div class="ai-head">${iconHtml(x.img,x.em)}<div><b>${x.name}</b><span>${x.kind}</span></div></div><p>${x.d}</p>`;
+  al.appendChild(c);
+}
+// тап повз іконки й картку — картку закрити
+screens.select.addEventListener('pointerdown',e=>{
+  if(SEL.info!==null&&!e.target.closest('.aico,.ainfo')){ SEL.info=null; renderSelect(); }
+});
+
 function renderSelect(){
   const ai=state.mode==='ai';
   $('selTagL').textContent=NET.on?(NET.side===0?'Ти':'Суперник'):'Гравець 1';
@@ -441,7 +476,7 @@ function renderSelect(){
     sh.el.style.setProperty('--cc',cls.color);
     screens.select.style.setProperty('--c'+side,selWaiting(side)?'#555':cls.color);
     const cn=sh.el.querySelector('.sc-class'); cn.textContent=cls.name; cn.classList.toggle('long',cls.name.length>9);
-    sh.el.querySelector('.sc-spec').textContent=skin.tier?`${spec.name}, ${skin.name}`:spec.name;
+    sh.el.querySelector('.sc-spec').innerHTML=specLineHtml(spec,skin);
     const ranged=spec.abilities[0].type!=='melee';
     sh.el.querySelector('.sc-tags').innerHTML=`<i>${spec.role}</i><i>${ranged?'Дальній бій':'Ближній бій'}</i>`;
     sh.el.classList.toggle('active',SEL.side===side&&!s.locked);
@@ -469,22 +504,26 @@ function renderSelect(){
   // здібності (наведення — анімація на бійці)
   const spec=cls.specs[s.si], keys=keyLabels(SEL.side);
   const list=[...spec.abilities,spec.classAb||cls.classAb];
-  const al=$('abilList'); al.innerHTML=''; al.classList.toggle('five',true); al.classList.toggle('six',!!spec.form);
-  list.forEach((a,i)=>{
-    const row=document.createElement('div'); row.className='arow';
-    row.innerHTML=abilRowHtml(a,i,keys);
-    row.addEventListener('pointerenter',()=>{ const f=curSide().f; const an=actionForAbility(f,a,i); if(an) f.anim.play(an); });
-    al.appendChild(row);
-  });
-  { const row=document.createElement('div'); row.className='arow ult';
-    row.innerHTML=ultRowHtml(cls,spec,keys,SEL.side);
-    row.addEventListener('pointerenter',()=>{ const f=curSide().f; f.anim.play('roar'); });
-    al.appendChild(row); }
-  if(spec.form){
-    const row=document.createElement('div'); row.className='arow form';
-    row.innerHTML=formRowHtml(spec,keys);
-    row.addEventListener('pointerenter',()=>{ const f=curSide().f; f.setForm(f.form==='base'?'alt':'base'); f.shiftT=0.35; });
-    al.appendChild(row);
+  const al=$('abilList'); al.innerHTML='';
+  if(TOUCH.on) renderAbilStrip(al,cls,spec);
+  else {
+    al.className='pf abil five'+(spec.form?' six':'');
+    list.forEach((a,i)=>{
+      const row=document.createElement('div'); row.className='arow';
+      row.innerHTML=abilRowHtml(a,i,keys);
+      row.addEventListener('pointerenter',()=>{ const f=curSide().f; const an=actionForAbility(f,a,i); if(an) f.anim.play(an); });
+      al.appendChild(row);
+    });
+    { const row=document.createElement('div'); row.className='arow ult';
+      row.innerHTML=ultRowHtml(cls,spec,keys,SEL.side);
+      row.addEventListener('pointerenter',()=>{ const f=curSide().f; f.anim.play('roar'); });
+      al.appendChild(row); }
+    if(spec.form){
+      const row=document.createElement('div'); row.className='arow form';
+      row.innerHTML=formRowHtml(spec,keys);
+      row.addEventListener('pointerenter',()=>{ const f=curSide().f; f.setForm(f.form==='base'?'alt':'base'); f.shiftT=0.35; });
+      al.appendChild(row);
+    }
   }
   // скіни
   const ss=$('skinStrip'); ss.innerHTML=''; SEL.thumbs=[];
@@ -494,7 +533,8 @@ function renderSelect(){
     b.addEventListener('click',()=>{ if(s.ki===ki) selLock(); else selSetSkin(ki); });   // повторний тап — підтвердити
     ss.appendChild(b);
     const f=new Fighter(cls,spec,SEL.side,sk); f.preview=true; f.facing=1; f.x=0; f.y=0;
-    SEL.thumbs.push({view:new PixelView(b.querySelector('canvas'),72,112),f,w:72,h:112,k:0.8});
+    // боєць дивиться праворуч і зброя стирчить уперед (габарити скінів: від −32 до +65 од.), тож центр зсунуто ліворуч
+    SEL.thumbs.push({view:new PixelView(b.querySelector('canvas'),72,112),f,w:72,h:112,k:0.8,cx:26});
   });
   $('selLock').textContent=stg==='spec'?'Далі':'Готово';
   if(NET.on) netSendSel();   // суперник бачить мій вибір наживо (дублікати не шлються)
@@ -520,7 +560,7 @@ function frameSelect(dt){
   for(const th of SEL.thumbs){
     th.f.anim.update(dt,{mode:'idle',speed:0,vy:0});
     const g=th.view.g; g.setTransform(1,0,0,1,0,0); g.clearRect(0,0,th.w,th.h);
-    renderFighterTo(th.view,th.f,th.k,th.w/2,th.h-3,SEL.t);
+    renderFighterTo(th.view,th.f,th.k,th.cx,th.h-3,SEL.t);
     th.view.present('center');
   }
 }
