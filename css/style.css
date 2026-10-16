@@ -415,6 +415,17 @@ img.broken{display:none}
 .net-note{margin:0; font-size:1.6cqw; line-height:1.25; color:var(--parch)}
 .net-note b{color:var(--goldL); font-weight:700}
 .net-note code{font:400 1.4cqw var(--display); color:var(--gold); background:rgba(0,0,0,.45); padding:.05cqw .5cqw}
+/* мультиплеєр через GitHub (p2p.js): ліворуч QR чи камера, праворуч текст і кнопки */
+.p2p-panel{flex-direction:row; align-items:center; gap:2.4cqw; max-width:80cqw; text-align:left}
+.p2p-side{display:flex; flex-direction:column; align-items:flex-start; gap:.9cqw; max-width:44cqw; min-width:30cqw}
+.p2p-side .net-status{font-size:2.2cqw}
+.p2p-btns{display:flex; flex-direction:column; align-items:flex-start; gap:.3cqw}
+.p2p-qr,.p2p-video{flex:none; width:23cqw; height:23cqw; background:#fff; image-rendering:pixelated; border:.35cqw solid #2a1206; cursor:zoom-in}
+.p2p-video{object-fit:cover; background:#000; cursor:default}
+.p2p-qr.big{position:fixed; inset:0; margin:auto; z-index:60; width:min(94vh,94vw); height:min(94vh,94vw); cursor:zoom-out; box-shadow:0 0 0 100vmax rgba(0,0,0,.85)}
+.p2p-in{width:100%; box-sizing:border-box; font:400 1.6cqw var(--display); color:var(--ink); background:rgba(0,0,0,.55); border:.2cqw solid var(--gold); padding:.6cqw .9cqw; outline:none}
+.p2p-in:focus{border-color:var(--goldL)}
+.p2p-in::placeholder{color:rgba(255,255,255,.35)}
 body.net .net-off{display:none}
 body.touch .sel-keys,body.touch .nav-hint,body.touch .foot-hint{visibility:hidden !important}   /* на телефоні клавіш нема */
 

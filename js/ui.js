@@ -5,7 +5,7 @@
    UI.key(code) і UI.pad(button) — точки входу з input.js.
    ============================================================ */
 const $=id=>document.getElementById(id);
-const screens={arenaSel:$('arenaSel'),title:$('title'),settings:$('settings'),controls:$('controls'),gallery:$('gallery'),netLobby:$('netLobby'),select:$('select'),versus:$('versus'),pauseMenu:$('pauseMenu'),overlay:$('overlay')};
+const screens={arenaSel:$('arenaSel'),title:$('title'),settings:$('settings'),controls:$('controls'),gallery:$('gallery'),netLobby:$('netLobby'),p2pLobby:$('p2pLobby'),select:$('select'),versus:$('versus'),pauseMenu:$('pauseMenu'),overlay:$('overlay')};
 // картинка, якої нема (набір іконок не в репозиторії), просто ховається — не лишає «битої» рамки
 addEventListener('error',e=>{ if(e.target instanceof HTMLImageElement) e.target.classList.add('broken'); },true);
 for(const im of document.images) if(im.complete&&!im.naturalWidth&&im.getAttribute('src')) im.classList.add('broken'); // ті, що впали до цього рядка
@@ -37,7 +37,7 @@ function show(name){
   if(name&&screens[name]) screens[name].classList.remove('hidden');
   UI.cur=name||null;
   state.screen=name&&name!=='overlay'&&name!=='pauseMenu'?name:'fight';
-  if(name==='title'||name==='settings'||name==='controls'||name==='gallery'||name==='netLobby'||name==='overlay'||name==='pauseMenu') focusFirst(name);
+  if(name==='title'||name==='settings'||name==='controls'||name==='gallery'||name==='netLobby'||name==='p2pLobby'||name==='overlay'||name==='pauseMenu') focusFirst(name);
 }
 function listItems(scr){ return [...screens[scr].querySelectorAll('[data-nav]')].filter(el=>el.offsetParent!==null); }
 function setFocus(el,quiet){
@@ -87,13 +87,20 @@ function act(a,dir=1,el){
     case 'pvp': sfx('ok'); state.mode='pvp'; openSelect(); break;
     case 'net': sfx('ok'); netOpen(); break;
     case 'netRetry': sfx('tick'); netOpen(); break;
+    case 'p2p': sfx('ok'); p2pOpen(); break;
+    case 'p2pHost': sfx('ok'); p2pHost(); break;
+    case 'p2pJoin': sfx('ok'); P2P.role=''; p2pView('join','Приєднатися до гри','Встав посилання від друга, який створив гру (або скануй його QR).'); break;
+    case 'p2pCopy': p2pCopy(); break;
+    case 'p2pPaste': sfx('tick'); p2pPaste(); break;
+    case 'p2pScan': sfx('tick'); p2pScan(); break;
+    case 'p2pScanStop': sfx('tick'); p2pStopScan(); break;
     case 'diff': state.aiSkill=(state.aiSkill+dir+3)%3; savePrefs(); renderMenuVals(); sfx('tick'); break;
     case 'sound': muted=!muted; savePrefs(); renderMenuVals(); sfx('tick'); break;
     case 'gfx': GFX.mode=GFX_MODES[(GFX_MODES.indexOf(GFX.mode)+dir+3)%3]; GFX.autoFast=false; savePrefs(); renderMenuVals(); sfx('tick'); break;   // «авто» — заново оцінює пристрій
     case 'controls': sfx('ok'); show('controls'); break;
     case 'settings': sfx('ok'); show('settings'); break;
     case 'gallery': sfx('ok'); GAL.open(); break;
-    case 'back': sfx('tick'); if(UI.cur==='select') selBack(); else { if(UI.cur==='netLobby') netLeave(); backToTitle(); } break;
+    case 'back': sfx('tick'); if(UI.cur==='select') selBack(); else { if(UI.cur==='netLobby'||UI.cur==='p2pLobby') netLeave(); backToTitle(); } break;
     case 'random': selRandom(); break;
     case 'lock': selLock(); break;
     case 'resume': togglePause(); break;
@@ -104,7 +111,7 @@ function act(a,dir=1,el){
   }
 }
 function backToTitle(){
-  const from=UI.cur==='netLobby'?'net':UI.cur; show('title');
+  const from=UI.cur==='netLobby'?'net':UI.cur==='p2pLobby'?'p2p':UI.cur; show('title');
   const el=screens.title.querySelector(`[data-act="${from}"]`); if(el) setFocus(el,true);
 }
 // «Інші бійці»: з паузи чи фіналу — назад до вибору (у мережі — обидва гравці разом)
@@ -734,7 +741,7 @@ UI.key=function(code){
   else if(K_L.includes(code)||K_R.includes(code)){ const el=UI.focusEl; if(el&&el.hasAttribute('data-cycle')) act(el.dataset.act,K_L.includes(code)?-1:1,el); }
   else if(K_OK.includes(code)){ const el=UI.focusEl; if(el) act(el.dataset.act,1,el); }
   else if(code==='Escape'||code==='Backspace'){
-    if(cur==='controls'||cur==='settings'||cur==='netLobby') act('back'); else if(cur==='pauseMenu') togglePause();
+    if(cur==='controls'||cur==='settings'||cur==='netLobby'||cur==='p2pLobby') act('back'); else if(cur==='pauseMenu') togglePause();
   }
   return true;
 };
