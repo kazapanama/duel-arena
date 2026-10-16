@@ -30,7 +30,6 @@
       <button class="mi" data-nav data-act="ai">Бій із ботом</button>
       <button class="mi" data-nav data-act="pvp">Двоє гравців</button>
       <button class="mi" data-nav data-act="net">Гра по мережі</button>
-      <button class="mi" data-nav data-act="p2p">Мультиплеєр через GitHub</button>
       <button class="mi" data-nav data-act="controls">Керування</button>
       <button class="mi" data-nav data-act="gallery">Галерея бійців</button>
       <button class="mi" data-nav data-act="settings">Налаштування</button>
@@ -61,31 +60,6 @@
     </div>
     <nav class="mainmenu center">
       <button class="mi small hidden" data-nav data-act="netRetry" id="netRetry">Підключитися знову</button>
-      <button class="mi small" data-nav data-act="back">Назад</button>
-    </nav>
-  </section>
-
-  <!-- МУЛЬТИПЛЕЄР ЧЕРЕЗ GITHUB: WebRTC без сервера, обмін посиланням чи QR (p2p.js) -->
-  <section id="p2pLobby" class="screen dim hidden">
-    <h2 class="screen-title">Мультиплеєр через GitHub</h2>
-    <div class="pf net-panel p2p-panel">
-      <canvas id="p2pQr" class="p2p-qr hidden" aria-label="QR-код"></canvas>
-      <video id="p2pVideo" class="p2p-video hidden" playsinline muted></video>
-      <div class="p2p-side">
-        <p class="net-status" id="p2pStatus"></p>
-        <p class="net-note" id="p2pNote"></p>
-        <input id="p2pIn" class="p2p-in hidden" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Встав сюди посилання або код">
-        <div class="p2p-btns">
-          <button class="mi small" data-nav data-act="p2pHost">Створити гру</button>
-          <button class="mi small" data-nav data-act="p2pJoin">Приєднатися</button>
-          <button class="mi small hidden" data-nav data-act="p2pCopy">Копіювати посилання</button>
-          <button class="mi small hidden" data-nav data-act="p2pPaste">Вставити з буфера</button>
-          <button class="mi small hidden" data-nav data-act="p2pScan">Сканувати QR</button>
-          <button class="mi small hidden" data-nav data-act="p2pScanStop">Скасувати</button>
-        </div>
-      </div>
-    </div>
-    <nav class="mainmenu center">
       <button class="mi small" data-nav data-act="back">Назад</button>
     </nav>
   </section>
@@ -295,8 +269,6 @@
 <script src="js/ui.js"></script>
 <script src="js/snap.js"></script>
 <script src="js/net.js"></script>
-<script src="js/qr.js"></script>
-<script src="js/p2p.js"></script>
 <script src="js/menubg.js"></script>
 <script src="js/gallery.js"></script>
 <script src="js/main.js"></script>

@@ -24,7 +24,7 @@ function netOpen(){
     return;
   }
   if(location.hostname.endsWith('github.io')){ // статичний хостинг: сервера-ретранслятора тут нема
-    netLobby('На сайті цей режим недоступний.',[],'Для гри через інтернет обери «Мультиплеєр через GitHub». А цей режим працює в домашній Wi-Fi: завантаж гру з GitHub, запусти на комп\'ютері <code>node tools/server.js</code> і відкрий адресу, яку він покаже, на обох пристроях.',false);
+    netLobby('На сайті гра по мережі недоступна.',[],'Вона працює в домашній Wi-Fi: завантаж гру з GitHub, запусти на комп\'ютері <code>node tools/server.js</code> і відкрий адресу, яку він покаже, на обох пристроях.',false);
     return;
   }
   netLobby('Підключення до сервера…');
@@ -48,7 +48,13 @@ function netConnect(){
   try{ ws=new WebSocket(`${location.protocol==='https:'?'wss':'ws'}://${location.host}/ws`); }
   catch(e){ netLobby('Не вдалося підключитися.',[],'',true); return; }
   NET.ws=ws;
-  ws.onmessage=e=>netOnRaw(e.data);
+  ws.onmessage=e=>{
+    // знімок (~60 на секунду) лише запам'ятовуємо: розбираємо останній, коли малюємо кадр (netFrame).
+    // Слабкий телефон малює менше кадрів, ніж приходить знімків, — розбирати кожен для нього марна робота
+    if(e.data.startsWith('{"t":"s"')){ NET.snap=e.data; return; }
+    let m; try{ m=JSON.parse(e.data); }catch(x){ return; }
+    netOnMsg(m);
+  };
   ws.onclose=()=>{
     if(NET.ws!==ws) return;                 // це старе з'єднання, ми вже перепідключились
     const was=NET.paired;
@@ -58,15 +64,8 @@ function netConnect(){
       'Перевір, що на комп\'ютері працює <code>node tools/server.js</code>, а телефон у тій самій мережі.',true);
   };
 }
-// повідомлення від сервера (чи від хоста у p2p.js). Знімок (~60 на секунду) лише запам'ятовуємо: розбираємо останній,
-// коли малюємо кадр (netFrame). Слабкий телефон малює менше кадрів, ніж приходить знімків, — розбирати кожен для нього марна робота
-function netOnRaw(data){
-  if(data.startsWith('{"t":"s"')){ NET.snap=data; return; }
-  let m; try{ m=JSON.parse(data); }catch(x){ return; }
-  netOnMsg(m);
-}
 function netClose(){ const ws=NET.ws; NET.ws=null; if(ws){ ws.onclose=null; try{ ws.close(); }catch(e){} } }
-function netLeave(){ netClose(); netDropPeer(); p2pStopAll(); NET.side=-1; state.mode='ai'; }
+function netLeave(){ netClose(); netDropPeer(); NET.side=-1; state.mode='ai'; }
 // суперник зник: прибрати все, що трималося на ньому
 function netDropPeer(){
   NET.paired=false; NET.snap=null; NET.remoteSel=null; NET.sentSel=''; NET.vsPending=false; NET.out=null; NET.rtt=0;
@@ -77,14 +76,14 @@ function netDropPeer(){
 
 function netOnMsg(m){
   switch(m.t){
-    case 'welcome': NET.side=m.side; NET.urls=m.urls||[]; if(!NET.paired&&!NET.p2p) netWaiting(); break;
+    case 'welcome': NET.side=m.side; NET.urls=m.urls||[]; if(!NET.paired) netWaiting(); break;
     case 'full': netClose(); netLobby('Тут уже грають двоє.',[],'Зачекай, поки хтось вийде з мережевої гри.',true); break;
     case 'paired':
       NET.paired=true; NET.remoteSel=null; NET.sentSel=''; NET.vsPending=false; NET.out=null;
       document.body.classList.add('net');
       state.mode='net'; sfx('ok'); openSelect();
       break;
-    case 'peer-left': netDropPeer(); if(NET.p2p) p2pPeerLeft(); else { show('netLobby'); netWaiting('Суперник вийшов.'); } sfx('tick'); break;
+    case 'peer-left': netDropPeer(); show('netLobby'); netWaiting('Суперник вийшов.'); sfx('tick'); break;
     case 'sel': netApplySel(m); break;
     case 'vs': if(NET.guest){ NET.vsPending=true; state.picks=m.p.map(netPick); state.arena=THEMES[m.a]||null; setTimeout(()=>{ if(NET.on&&NET.vsPending) openVersus(); },650); } break;   // vsPending — бій ще не почався (хост міг пропустити VS)
     case 'fight': netStartMirror(m.a); break;
@@ -92,7 +91,7 @@ function netOnMsg(m){
     case 'end': if(state.game) showOverlay(state.game.f[m.w]); break;
     case 'chars': if(UI.cur!=='select') toSelect(); break;
     case 'pong': NET.rtt=performance.now()-m.c; break;
-    case 'err': if(NET.p2p){ p2pFail('Не вдалося почати бій.',m.msg||''); break; } netDropPeer(); show('netLobby'); netLobby('Сервер не зміг почати бій.',[],m.msg||'',true); break;
+    case 'err': netDropPeer(); show('netLobby'); netLobby('Сервер не зміг почати бій.',[],m.msg||'',true); break;
   }
 }
 

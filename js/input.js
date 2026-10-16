@@ -3,7 +3,6 @@
 const keys=new Set();
 const pressed=new Set();
 addEventListener('keydown',e=>{
-  if(e.target instanceof HTMLInputElement) return;   // друкуємо в полі (p2p.js): ні керування, ні меню
   if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space','Backspace'].includes(e.code)) e.preventDefault();
   if(e.repeat) return;
   ac();

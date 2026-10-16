@@ -11,7 +11,6 @@
    ============================================================ */
 const http=require('http'), fs=require('fs'), path=require('path'), crypto=require('crypto'), os=require('os'), zlib=require('zlib');
 const {createSim}=require('./netsim');
-const {createRoom}=require('../js/room');
 
 const ROOT=path.resolve(__dirname,'..');
 const PORT=+(process.argv[2]||process.env.PORT||8080);
@@ -78,7 +77,7 @@ function frame(str){
 }
 class Peer{
   constructor(sock){
-    this.sock=sock; this.buf=Buffer.alloc(0); this.parts=[]; this.side=-1; this.open=true; this.info=sock.remoteAddress;
+    this.sock=sock; this.buf=Buffer.alloc(0); this.parts=[]; this.side=-1; this.open=true;
     sock.setNoDelay(true); // без затримки Nagle — ввід іде одразу
     sock.on('data',d=>this.onData(d));
     sock.on('close',()=>this.gone());
@@ -109,21 +108,94 @@ class Peer{
       if(op===0xA) continue;
       if(op===0x1||op===0x0){
         this.parts.push(payload);
-        if(fin){ const msg=Buffer.concat(this.parts).toString('utf8'); this.parts=[]; room.message(this,msg); }
+        if(fin){ const msg=Buffer.concat(this.parts).toString('utf8'); this.parts=[]; onMessage(this,msg); }
       }
     }
   }
-  close(){ this.gone(); }
-  gone(){ if(!this.open) return; this.open=false; try{ this.sock.destroy(); }catch(e){} room.leave(this); }
+  gone(){ if(!this.open) return; this.open=false; try{ this.sock.destroy(); }catch(e){} onLeave(this); }
 }
 
-/* ---------- кімната на двох і бій на сервері ---------- */
-// кімната й цикл бою — js/room.js (ті самі, що у «Мультиплеєрі через GitHub»); сервер лише приймає сокети
-const log=m=>console.log(`[${new Date().toLocaleTimeString('uk-UA')}] ${m}`);
-let sim=null, room;
-try{ sim=createSim(ROOT,w=>room.broadcast({t:'end',w})); }
+/* ---------- кімната на двох ---------- */
+const room=[null,null];
+const other=p=>room[p.side===0?1:0];
+function welcome(p){ p.send({t:'welcome',side:p.side,urls:urls()}); }
+function onJoin(p){
+  const slot=room[0]?(room[1]?-1:1):0;
+  if(slot<0){ p.send({t:'full'}); setTimeout(()=>p.gone(),200); return; }
+  p.side=slot; room[slot]=p; welcome(p);
+  log(`гравець ${slot+1} підключився (${p.sock.remoteAddress})`);
+  if(room[0]&&room[1]){ room[0].send({t:'paired'}); room[1].send({t:'paired'}); log('пара зібрана — бій можна починати'); }
+}
+function onLeave(p){
+  if(p.side<0||room[p.side]!==p) return;
+  log(`гравець ${p.side+1} відключився`);
+  room[p.side]=null;
+  stopMatch();
+  const o=room[0]||room[1];
+  if(o){
+    // хто лишився — стає хостом і чекає нового суперника
+    room[0]=o; room[1]=null; o.side=0;
+    o.send({t:'peer-left'}); welcome(o);
+  }
+}
+const broadcast=obj=>{ const s=JSON.stringify(obj); for(const q of room) if(q) q.sendRaw(s); };
+
+/* ---------- бій на сервері ---------- */
+let sim=null;
+try{ sim=createSim(ROOT,w=>broadcast({t:'end',w})); }
 catch(e){ console.error('Не вдалося завантажити гру для бою на сервері — гра по мережі не працюватиме:',e); }
-room=createRoom({sim,log,urls});
+// picks/arena/random — з оголошення VS (хост); ready — чиї картинки вже завантажились
+const M={on:false,pending:false,picks:null,arena:0,random:false,ready:[false,false],t0:0,started:false,last:0,timer:null};
+function startMatch(arena){
+  stopMatch();
+  if(!sim){ broadcast({t:'err',msg:'Сервер не зміг завантажити гру — подивись повідомлення у вікні сервера.'}); return; }
+  let r;
+  try{ r=sim.start(M.picks,arena); }
+  catch(e){ log('не вдалося почати бій: '+e.message); broadcast({t:'err',msg:e.message}); return; }
+  Object.assign(M,{on:true,ready:[false,false],t0:Date.now(),started:false,last:performance.now()});
+  broadcast({t:'fight',a:r.arena});
+  log('бій: '+r.title);
+  tick();
+}
+function stopMatch(){ M.on=false; M.pending=false; clearTimeout(M.timer); M.timer=null; if(sim) sim.stop(); }
+/* Крок бою й знімок обом — за таймером (~64 разів/с) і одразу після вводу гравця. Таймери Windows мають крок ~15.6 мс,
+   а кожне вхідне повідомлення ще й відсуває найближчий на цілий крок — тож ввід, що чекав таймера, запізнювався на 16 мс.
+   dt — реальний, як у браузері */
+function tick(){
+  clearTimeout(M.timer); M.timer=null;
+  if(!M.on) return;
+  const now=performance.now(), dt=Math.min(0.1,(now-M.last)/1000);
+  M.last=now;
+  // відлік раунду — коли обидва телефони завантажили картинки (або минуло 12 с)
+  if(!M.started&&((M.ready[0]&&M.ready[1])||Date.now()-M.t0>12000)) M.started=true;
+  if(M.started){
+    try{ sim.step(dt); }
+    catch(e){ console.error('Помилка в бою на сервері:',e); broadcast({t:'err',msg:'Помилка в бою на сервері: '+e.message}); stopMatch(); return; }
+    if(!M.on) return;                       // матч міг скінчитися посеред кроку
+    const k=sim.sfx(); if(k.length) broadcast({t:'x',k});   // звуки окремо: телефон розбирає лише останній знімок, а звуки потрібні всі
+    const s=sim.snap();
+    for(const q of room) if(q) q.sendRaw(s);
+  }
+  M.timer=setTimeout(tick,Math.max(1,15-(performance.now()-now)));
+}
+
+function onMessage(p,msg){
+  let m; try{ m=JSON.parse(msg); }catch(e){ return; }
+  switch(m.t){
+    case 'i': case 'a': case 'f': case 'u': if(M.on){ sim.input(p.side,m); if(M.started) tick(); } return;
+    case 'p': if(M.on) sim.pause(); return;
+    case 'ready': if(M.on) M.ready[p.side]=true; return;
+    case 'ping': p.send({t:'pong',c:m.c}); return;
+    case 'start': if(p.side===0&&M.pending) startMatch(M.arena); return;   // хост: VS скінчився
+    case 'rematch': if(M.on&&M.picks&&sim.phase==='matchEnd') startMatch(M.random?Math.floor(Math.random()*sim.themes):M.arena); return;
+    case 'vs':                                 // хост оголосив пару й арену — пересилаємо гостю нижче
+      if(p.side!==0||!Array.isArray(m.p)) return;
+      stopMatch(); Object.assign(M,{pending:true,picks:m.p,arena:m.a|0,random:!!m.r});
+      break;
+    case 'chars': stopMatch(); break;          // «Змінити бійців» — бій скасовано, суперник теж іде до вибору
+  }
+  const o=other(p); if(o) o.sendRaw(msg);
+}
 
 server.on('upgrade',(req,sock)=>{
   if(new URL(req.url,'http://x').pathname!=='/ws'){ sock.destroy(); return; }
@@ -132,9 +204,10 @@ server.on('upgrade',(req,sock)=>{
   const accept=crypto.createHash('sha1').update(key+'258EAFA5-E914-47DA-95CA-C5AB0DC85B11').digest('base64');
   sock.write('HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\n'+
     `Sec-WebSocket-Accept: ${accept}\r\n\r\n`);
-  room.join(new Peer(sock));
+  onJoin(new Peer(sock));
 });
 
+const log=m=>console.log(`[${new Date().toLocaleTimeString('uk-UA')}] ${m}`);
 server.on('error',e=>{
   if(e.code==='EADDRINUSE') console.error(`Порт ${PORT} зайнятий. Запусти з іншим: node tools/server.js 8081`);
   else console.error(e);
