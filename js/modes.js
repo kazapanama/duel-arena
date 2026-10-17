@@ -65,7 +65,7 @@ function runRematch(){
 function vsTagR(){
   const R=state.run;
   if(soloRun()&&R&&R.bout) return R.bout.tag;
-  return state.mode==='train'?'Манекен':'Бот';
+  return state.mode==='train'||state.mode==='learn'?'Манекен':'Бот';
 }
 
 /* ---------- налаштування бою за режимом (кличе startFight) ---------- */
@@ -81,6 +81,7 @@ function modeFightOpts(p1,p2){
       return {toWin:B.toWin,label:B.label};
     }
     case 'train': { p2.isAI=true; trainReset(state.train); return {train:state.train}; }
+    case 'learn': { p2.isAI=true; p2.skill=0; p2.tag='МАНЕКЕН'; trainReset(state.train); return {train:state.train,tut:new Tutorial()}; }
   }
   return {};
 }
@@ -88,6 +89,7 @@ function modeFightOpts(p1,p2){
 /* ---------- підсумок матчу: статистика і (для забігу) що далі. null — звичайний фінальний екран ---------- */
 function modeResult(winner){
   const g=state.game, loser=g&&g.other?g.other(winner):null;
+  if(state.mode==='learn') return {title:'Навчання пройдено!',sub:'Тепер ти знаєш усе потрібне. Заглянь в аркаду або потренуйся ще.',sting:'win',next:'В аркаду',rematch:'Пройти ще раз',chars:true};
   if(loser) statsRecord(winner,loser);
   const R=state.run;
   if(!soloRun()||!R||!g) return null;
@@ -181,3 +183,86 @@ function renderStats(){
     +`<span>Аркада: <b>${A.clears?`пройдено ${A.clears}`:'ще ні'}</b>${A.clears?` · найшвидше ${fmtTime(A.bestTime)} · мінімум продовжень ${A.fewest}`:''}</span>`
     +`<span>Виживання: <b>${S.best?`${S.best} поспіль`:'—'}</b>${sc?` · ${sc.name}, ${sp[1]}`:''}</span>`;
 }
+
+/* ---------- навчання: покроковий урок у тренуванні (state.mode 'learn') ----------
+   Бій без таймера проти манекена. Game шле події (game.emit) і щокадру кличе tut.update; панель з завданням малює drawTutPanel.
+   Крок закінчується, коли зібрано need дій (on повертає, скільки зараховано) або tick повертає потрібну кількість */
+const TUT_STEPS=[
+  {name:'Рух',need:1,
+   text:t=>t?'Торкнись лівої половини екрана й веди палець убік — персонаж піде. Підійди до манекена.':'A і D — рух, W — стрибок. Підійди до манекена впритул.',
+   tick:g=>Math.abs(g.f[0].x-g.f[1].x)<150?1:0},
+  {name:'Удар',need:3,
+   text:t=>t?'Кнопки здібностей — праворуч. Вдар манекена тричі.':'J, K, L, U — здібності. Вдар манекена тричі.',
+   on:k=>k==='hit'?1:0},
+  {name:'Здібності',need:4,
+   text:t=>t?'У кожної кнопки своя здібність і свій відкат. Спробуй усі чотири.':'У кожної клавіші своя здібність. Спробуй усі чотири: J, K, L, U.',
+   on:(k,v,T)=>{ if(k!=='ab'||T.mask&(1<<v)) return 0; T.mask|=1<<v; return 1; }},
+  {name:'Блок',need:2,dummy:'fight',res:'god',
+   text:t=>t?'Манекен б’є у відповідь. Тримай кнопку «Блок» (або веди палець униз) — блок гасить більшість шкоди.':'Манекен б’є у відповідь. Тримай S, дивлячись на нього, — блок гасить більшість шкоди.',
+   on:k=>k==='block'?1:0},
+  {name:'Парирування',need:2,dummy:'fight',res:'god',tell:3,
+   text:t=>t?'Манекен замахується повільно. Торкнись «Блок», коли кільце над тобою стане золотим (кнопка теж спалахне): удар не шкодить, а ворог оглушений.':'Манекен замахується повільно. Натисни S, коли кільце над тобою стане золотим: удар не шкодить, а ворог оглушений.',
+   late:'Не виходить? Вікно парирування — лише 0,2 с: натискай, коли кільце вже майже стислося.',
+   on:k=>k==='parry'?1:0},
+  {name:'Ультимейт',need:1,res:'god',
+   text:t=>t?'Шкала ульти росте від ударів. Коли вона повна — торкнись великої кнопки «Ульта».':'Шкала ульти росте від ударів. Коли вона повна — натисни O.',
+   on:k=>k==='ult'?1:0},
+];
+class Tutorial{
+  constructor(){ this.i=-1; this.fin=0; this.flash=0; this.skipTo(0); }
+  get step(){ return TUT_STEPS[this.i]; }
+  skipTo(i){
+    this.i=i; this.n=0; this.mask=0; this.t=0;
+    const s=this.step, T=state.train; if(!s||!T) return;
+    T.dummy=s.dummy||'stand'; T.res=s.res||'cd';
+  }
+  on(kind,f,v){
+    const g=state.game, s=this.step; if(!g||!s||!s.on||f!==g.f[0]) return;
+    this.add(s.on(kind,v,this));
+  }
+  add(k){ if(k>0){ this.n+=k; if(this.n>=this.step.need) this.done(); } }
+  done(){
+    sfx('lock'); this.flash=0.6;
+    if(this.i+1<TUT_STEPS.length) this.skipTo(this.i+1);
+    else{ this.i=TUT_STEPS.length; this.fin=2.2; STATS.tut=1; saveStats(); }   // урок пройдено
+  }
+  skip(){ if(this.step) this.done(); }
+  update(dt,g){
+    this.flash=Math.max(0,this.flash-dt);
+    if(this.fin>0){ if((this.fin-=dt)<=0){ g.phase='matchEnd'; showOverlay(g.f[0]); } return; }
+    const s=this.step; if(!s) return;
+    this.t+=dt; g.f[1].tell=s.tell||1;   // у кроці парирування манекен б’є втричі повільніше
+    if(s.tick){ const k=s.tick(g,this); if(k>this.n){ this.n=k; if(k>=s.need) this.done(); } }
+  }
+}
+// панель завдання зверху: назва кроку, текст, прогрес
+function drawTutPanel(g,T){
+  const c=ctx, w=700, x=W/2-w/2, y=116, s=T.step, touch=TOUCH.on;
+  c.save(); c.textBaseline='alphabetic';
+  const fin=!s, text=fin?'Урок пройдено! Зараз покажемо підсумок…':s.text(touch)+(s.late&&T.t>28?'  '+s.late:'');
+  c.font='19px "Tiny5",sans-serif';
+  const lines=[]; let cur='';
+  for(const word of text.split(' ')){ const t=cur?cur+' '+word:word; if(c.measureText(t).width>w-32&&cur){ lines.push(cur); cur=word; } else cur=t; }
+  if(cur) lines.push(cur);
+  const h=48+lines.length*25+(fin?0:14);
+  c.fillStyle=T.flash>0?`rgba(40,90,48,${0.78+T.flash*0.2})`:'rgba(8,12,20,.8)'; roundRect(x,y,w,h,10); c.fill();
+  c.strokeStyle=T.flash>0?'#7dff8a':'#f5cf62'; c.lineWidth=2; roundRect(x,y,w,h,10); c.stroke();
+  c.font='15px "Tiny5",sans-serif'; c.textAlign='left'; c.fillStyle='#f5cf62';
+  c.fillText(fin?'НАВЧАННЯ':`НАВЧАННЯ · КРОК ${T.i+1} З ${TUT_STEPS.length} · ${s.name.toUpperCase()}`,x+16,y+26);
+  if(!fin){   // крапки прогресу кроку
+    c.textAlign='right';
+    for(let i=0;i<s.need;i++){ c.fillStyle=i<T.n?'#7dff8a':'rgba(255,255,255,.25)'; c.beginPath(); c.arc(x+w-20-i*18,y+21,6,0,7); c.fill(); }
+  }
+  c.font='19px "Tiny5",sans-serif'; c.textAlign='left'; c.fillStyle='#e6edf8';
+  lines.forEach((l,i)=>c.fillText(l,x+16,y+54+i*25));
+  c.restore();
+}
+function learnStart(){
+  const player=state.picks[0], war=CLASSES.find(c=>c.id==='warrior')||CLASSES[0], spec=war.specs.find(s=>s.name==='Protection')||war.specs[0];
+  state.picks=[player,{cls:war,spec,skin:spec.skins[0]}];
+  state.arena=THEMES[Math.floor(Math.random()*THEMES.length)];
+  state.run=null;
+  openVersus();
+}
+// після уроку — одразу в аркаду тим самим бійцем
+function learnToArcade(){ state.mode='arcade'; state.run=null; runStart(); }

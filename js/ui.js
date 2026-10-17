@@ -5,7 +5,7 @@
    UI.key(code) і UI.pad(button) — точки входу з input.js.
    ============================================================ */
 const $=id=>document.getElementById(id);
-const screens={arenaSel:$('arenaSel'),title:$('title'),modes:$('modes'),stats:$('stats'),install:$('install'),settings:$('settings'),controls:$('controls'),gallery:$('gallery'),netLobby:$('netLobby'),select:$('select'),versus:$('versus'),pauseMenu:$('pauseMenu'),overlay:$('overlay')};
+const screens={arenaSel:$('arenaSel'),title:$('title'),modes:$('modes'),stats:$('stats'),install:$('install'),tcfg:$('tcfg'),settings:$('settings'),controls:$('controls'),gallery:$('gallery'),netLobby:$('netLobby'),select:$('select'),versus:$('versus'),pauseMenu:$('pauseMenu'),overlay:$('overlay')};
 // картинка, якої нема (набір іконок не в репозиторії), просто ховається — не лишає «битої» рамки
 addEventListener('error',e=>{ if(e.target instanceof HTMLImageElement) e.target.classList.add('broken'); },true);
 for(const im of document.images) if(im.complete&&!im.naturalWidth&&im.getAttribute('src')) im.classList.add('broken'); // ті, що впали до цього рядка
@@ -16,7 +16,7 @@ const save=(k,v)=>{ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} 
 const SKIN_PREF=store('aa_skins',{});
 if(SKIN_PREF['rogue/Outlaw']&&!SKIN_PREF['rogue/Combat']) SKIN_PREF['rogue/Combat']=SKIN_PREF['rogue/Outlaw']; // спек перейменовано
 const PREFS=store('aa_prefs',{aiSkill:1,muted:false});
-state.aiSkill=PREFS.aiSkill??1; muted=!!PREFS.muted;
+state.aiSkill=PREFS.aiSkill??1; muted=!!PREFS.muted; vibeOn=PREFS.vibe!==false; state.parryHint=PREFS.hint!==false;
 if(['auto','high','fast'].includes(PREFS.gfx)) GFX.mode=PREFS.gfx; GFX.autoFast=!!PREFS.gfxAutoFast;
 function skinKey(cls,spec){ return cls.id+'/'+spec.name; }
 // вибір пам'ятаємо за назвою сету (сети на спеку можуть переставлятися); старі збереження — номер, де 0 був «Класичний»
@@ -26,7 +26,7 @@ function preferredSkin(cls,spec){
   return k||spec.skins[0];
 }
 function rememberSkin(cls,spec,skin){ SKIN_PREF[skinKey(cls,spec)]=skin.name; save('aa_skins',SKIN_PREF); }
-function savePrefs(){ save('aa_prefs',{aiSkill:state.aiSkill,muted,gfx:GFX.mode,gfxAutoFast:GFX.autoFast}); }
+function savePrefs(){ save('aa_prefs',{aiSkill:state.aiSkill,muted,gfx:GFX.mode,gfxAutoFast:GFX.autoFast,vibe:vibeOn,hint:state.parryHint}); }
 const GFX_MODES=['auto','high','fast'], GFX_NAMES={auto:'авто',high:'висока',fast:'швидка'};
 const DIFF_NAMES=['Легко','Нормально','Важко'];
 
@@ -37,7 +37,7 @@ function show(name){
   if(name&&screens[name]) screens[name].classList.remove('hidden');
   UI.cur=name||null;
   state.screen=name&&name!=='overlay'&&name!=='pauseMenu'?name:'fight';
-  if(name==='title'||name==='modes'||name==='stats'||name==='install'||name==='settings'||name==='controls'||name==='gallery'||name==='netLobby'||name==='overlay'||name==='pauseMenu') focusFirst(name);
+  if(name==='title'||name==='modes'||name==='stats'||name==='install'||name==='tcfg'||name==='settings'||name==='controls'||name==='gallery'||name==='netLobby'||name==='overlay'||name==='pauseMenu') focusFirst(name);
 }
 function listItems(scr){ return [...screens[scr].querySelectorAll('[data-nav]')].filter(el=>el.offsetParent!==null); }
 function setFocus(el,quiet){
@@ -85,9 +85,10 @@ function act(a,dir=1,el){
   switch(a){
     case 'solo': sfx('ok'); openModes(); break;
     case 'ai': sfx('ok'); state.mode='ai'; openSelect(); break;
-    case 'arcade': case 'survival': case 'train': sfx('ok'); state.mode=a; state.run=null; if(a==='train') trainBegin(); openSelect(); break;
+    case 'arcade': case 'survival': case 'train': case 'learn': sfx('ok'); state.mode=a; state.run=null; if(a==='train'||a==='learn') trainBegin(); openSelect(); break;
+    case 'tutSkip': if(state.game&&state.game.tut){ state.game.tut.skip(); sfx('tick'); togglePause(); } break;
     case 'stats': sfx('ok'); renderStats(); show('stats'); break;
-    case 'next': sfx('ok'); runNext(); break;
+    case 'next': sfx('ok'); if(state.mode==='learn') learnToArcade(); else runNext(); break;
     case 'dummy': trainCycle('dummy',DUMMY_MODES,dir); sfx('tick'); break;
     case 'infres': trainCycle('res',RES_MODES,dir); sfx('tick'); break;
     case 'resetDps': trainReset(state.train); sfx('tick'); break;
@@ -97,6 +98,14 @@ function act(a,dir=1,el){
     case 'diff': state.aiSkill=(state.aiSkill+dir+3)%3; savePrefs(); renderMenuVals(); sfx('tick'); break;
     case 'sound': muted=!muted; savePrefs(); renderMenuVals(); sfx('tick'); break;
     case 'gfx': GFX.mode=GFX_MODES[(GFX_MODES.indexOf(GFX.mode)+dir+3)%3]; GFX.autoFast=false; savePrefs(); renderMenuVals(); sfx('tick'); break;   // «авто» — заново оцінює пристрій
+    case 'hint': state.parryHint=!state.parryHint; savePrefs(); renderMenuVals(); sfx('tick'); break;
+    case 'vibe': vibeOn=!vibeOn; savePrefs(); renderMenuVals(); sfx('tick'); if(vibeOn) haptic(40); break;
+    case 'tcfg': sfx('ok'); openTcfg(UI.cur==='pauseMenu'?'pause':'settings'); break;
+    case 'tk': TCFG.k=TK[(TK.indexOf(TCFG.k)+dir+TK.length)%TK.length]; tcfgChanged(); break;
+    case 'ta': TCFG.a=TA[(TA.indexOf(TCFG.a)+dir+TA.length)%TA.length]; tcfgChanged(); break;
+    case 'thand': TCFG.left=!TCFG.left; TCFG.pos={}; tcfgChanged(); break;   // зеркалимо: старі місця були для іншої руки
+    case 'treset': TCFG.k=1; TCFG.a=0.85; TOUCH.resetPos(); tcfgChanged(); break;
+    case 'tdone': sfx('ok'); closeTcfg(); break;
     case 'install': sfx('ok'); pwaInstall(); break;
     case 'offline': sfx('ok'); pwaOffline(); break;
     case 'controls': sfx('ok'); show('controls'); break;
@@ -105,6 +114,7 @@ function act(a,dir=1,el){
     case 'back': sfx('tick');
       if(UI.cur==='select') selBack();
       else if(UI.cur==='stats') openModes('stats');
+      else if(UI.cur==='tcfg') closeTcfg();
       else { if(UI.cur==='netLobby') netLeave(); backToTitle(); }
       break;
     case 'random': selRandom(); break;
@@ -119,6 +129,7 @@ function act(a,dir=1,el){
 // екран «Один гравець»; act — пункт, на якому стає курсор (звідки прийшли)
 function openModes(act){
   show('modes');
+  $('learnSub').textContent=STATS.tut?'Пройдено — можна повторити з будь-яким бійцем.':'Короткий урок: рух, удари, блок, парирування й ультимейт.';
   const el=screens.modes.querySelector(`[data-act="${act||'ai'}"]`); if(el) setFocus(el,true);
 }
 function backToTitle(){
@@ -130,7 +141,25 @@ function toSelect(){
   closePause(); screens.overlay.classList.add('hidden'); state.game=null;
   NET.remoteSel=null; openSelect();
 }
-function renderMenuVals(){ $('diffVal').textContent=DIFF_NAMES[state.aiSkill]; $('soundVal').textContent=muted?'вимкнено':'увімкнено';
+// екран «Кнопки на екрані»: з налаштувань (меню) чи з паузи (бій лишається на паузі позаду)
+let tcfgFrom='settings';
+function openTcfg(from){
+  tcfgFrom=from; TOUCH.edit=true;
+  if(from==='pause'){ screens.pauseMenu.classList.add('hidden'); screens.tcfg.classList.remove('hidden'); UI.cur='tcfg'; focusFirst('tcfg'); }
+  else show('tcfg');
+  renderTcfg();
+}
+function closeTcfg(){
+  TOUCH.edit=false; tcfgSave(); screens.tcfg.classList.add('hidden');
+  if(tcfgFrom==='pause'){ screens.pauseMenu.classList.remove('hidden'); UI.cur='pauseMenu'; focusFirst('pauseMenu'); }
+  else show('settings');
+}
+function tcfgChanged(){ tcfgSave(); TOUCH.apply(); renderTcfg(); sfx('tick'); }
+function renderTcfg(){
+  $('tkVal').textContent=Math.round(TCFG.k*100)+'%'; $('taVal').textContent=Math.round(TCFG.a*100)+'%';
+  $('thandVal').textContent=TCFG.left?'лівша':'правша'; screens.tcfg.dataset.hand=TCFG.left?'left':'right';
+}
+function renderMenuVals(){ $('hintVal').textContent=state.parryHint?'увімкнено':'вимкнено'; $('vibeVal').textContent=vibeOn?'увімкнено':'вимкнено'; $('diffVal').textContent=DIFF_NAMES[state.aiSkill]; $('soundVal').textContent=muted?'вимкнено':'увімкнено';
   $('gfxVal').textContent=GFX_NAMES[GFX.mode]+(GFX.mode==='auto'&&GFX.autoFast?' (швидка)':''); }
 renderMenuVals();
 renderHints();
@@ -336,7 +365,7 @@ function selLock(){
   rememberSkin(CLASSES[s.ci],spec,spec.skins[s.ki]);
   lockSide(SEL.side);
   if(NET.on){ renderSelect(); netCheckVersus(); return; }
-  if(soloRun()){ renderSelect(); setTimeout(()=>{ if(UI.cur==='select'&&SEL.sides[0].locked) runStart(); },650); return; }   // аркада й виживання: суперників добирає забіг
+  if(autoFoe()){ renderSelect(); setTimeout(()=>{ if(UI.cur==='select'&&SEL.sides[0].locked) (state.mode==='learn'?learnStart:runStart)(); },650); return; }   // аркада, виживання, навчання: суперників добирає режим
   if(SEL.side===0){ SEL.side=1; }
   else { setTimeout(openArenaSel,650); }
   renderSelect();
@@ -480,7 +509,7 @@ screens.select.addEventListener('pointerdown',e=>{
   if(SEL.info!==null&&!e.target.closest('.aico,.ainfo')){ SEL.info=null; renderSelect(); }
 });
 
-const SEL_TAG_R={arcade:'Аркада',survival:'Виживання',train:'Манекен'};   // праворуч, коли суперник — не «Бот, рівень»
+const SEL_TAG_R={arcade:'Аркада',survival:'Виживання',train:'Манекен',learn:'Манекен'};   // праворуч, коли суперник — не «Бот, рівень»
 function renderSelect(){
   const ai=vsBot();
   $('selTagL').textContent=NET.on?(NET.side===0?'Ти':'Суперник'):'Гравець 1';
@@ -759,7 +788,7 @@ UI.key=function(code){
   else if(K_L.includes(code)||K_R.includes(code)){ const el=UI.focusEl; if(el&&el.hasAttribute('data-cycle')) act(el.dataset.act,K_L.includes(code)?-1:1,el); }
   else if(K_OK.includes(code)){ const el=UI.focusEl; if(el) act(el.dataset.act,1,el); }
   else if(code==='Escape'||code==='Backspace'){
-    if(cur==='controls'||cur==='settings'||cur==='netLobby'||cur==='modes'||cur==='stats'||cur==='install') act('back'); else if(cur==='pauseMenu') togglePause();
+    if(cur==='controls'||cur==='settings'||cur==='netLobby'||cur==='modes'||cur==='stats'||cur==='install'||cur==='tcfg') act('back'); else if(cur==='pauseMenu') togglePause();
   }
   return true;
 };

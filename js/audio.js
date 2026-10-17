@@ -3,10 +3,27 @@
 /* ============================================================
    ЗВУК (WebAudio, синтезовані ефекти)
    ============================================================ */
-let AC=null, muted=false;
+let AC=null, muted=false, vibeOn=true;
+/* Вібрація: на Android — navigator.vibrate; iPhone Safari її не має, там пробуємо перемикач-«світч» (iOS 17.4+): клік по ньому дає легкий тактильний відгук.
+   Працює лише з жесту дотику, тож на старіших iPhone просто нічого не станеться. p — мс чи масив «вібрація, пауза, вібрація…» */
+const HAP={sw:null};
+function haptic(p){
+  if(!vibeOn||typeof navigator==='undefined') return;
+  try{
+    if(navigator.vibrate){ navigator.vibrate(p); return; }
+    if(!/iP(hone|ad|od)/.test(navigator.userAgent)) return;
+    if(!HAP.sw){
+      const l=document.createElement('label'), i=document.createElement('input');
+      l.style.cssText='position:fixed;left:-99px;top:0;width:1px;height:1px;opacity:0;pointer-events:none';
+      i.type='checkbox'; i.setAttribute('switch',''); l.appendChild(i); document.body.appendChild(l); HAP.sw=l;
+    }
+    let t=0; for(const [k,v] of [].concat(p).entries()){ if(k%2===0) setTimeout(()=>HAP.sw.click(),t); t+=v; }
+  }catch(e){}
+}
 function ac(){ if(!AC){ try{ AC=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } return AC; }
 function sfx(kind){
   if(NET.sim){ NET.sfxQ.push(kind); if(NET.sfxQ.length>24) NET.sfxQ.shift(); return; } // бій на сервері: звуки їдуть гравцям у знімку
+  if(kind.charCodeAt(0)===126){ if(typeof feelEvt==='function') feelEvt(kind); return; }   // «~»: подія бою для вібрації й спалаху (touch.js), не звук
   if(muted) return;
   const c=ac(); if(!c) return;
   if(c.state==='suspended') c.resume();

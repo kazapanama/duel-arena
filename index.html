@@ -54,6 +54,18 @@
     </div>
   </section>
 
+  <!-- КНОПКИ НА ЕКРАНІ (touch.js): розмір, прозорість, лівша, перетягування -->
+  <section id="tcfg" class="screen hidden">
+    <div class="pf set-panel">
+      <p class="set-note">Перетягуй кнопки пальцем, куди зручно.</p>
+      <button class="mi" data-nav data-act="tk" data-cycle>Розмір <span class="val" id="tkVal"></span></button>
+      <button class="mi" data-nav data-act="ta" data-cycle>Прозорість <span class="val" id="taVal"></span></button>
+      <button class="mi" data-nav data-act="thand" data-cycle>Рука <span class="val" id="thandVal"></span></button>
+      <button class="mi" data-nav data-act="treset">Скинути розкладку</button>
+      <button class="mi" data-nav data-act="tdone">Готово</button>
+    </div>
+  </section>
+
   <!-- НАЛАШТУВАННЯ -->
   <section id="settings" class="screen dim hidden">
     <h2 class="screen-title">Налаштування</h2>
@@ -61,6 +73,9 @@
       <button class="mi" data-nav data-act="diff" data-cycle>Складність бота <span class="val" id="diffVal"></span></button>
       <button class="mi" data-nav data-act="sound" data-cycle>Звук <span class="val" id="soundVal"></span></button>
       <button class="mi" data-nav data-act="gfx" data-cycle>Графіка <span class="val" id="gfxVal"></span></button>
+      <button class="mi" data-nav data-act="hint" data-cycle>Підказка парирування <span class="val" id="hintVal"></span></button>
+      <button class="mi t-only" data-nav data-act="vibe" data-cycle>Вібрація <span class="val" id="vibeVal"></span></button>
+      <button class="mi t-only" data-nav data-act="tcfg">Кнопки на екрані</button>
       <button class="mi" data-nav data-act="offline">Завантажити для офлайну <span class="val off-val"></span></button>
       <button class="mi hidden" data-nav data-act="install" id="installBtn">Встановити на пристрій</button>
       <p class="set-note hidden" id="iosHint">iPhone, iPad: «Поділитися» → «На початковий екран» — гра відкриватиметься на весь екран і працюватиме без мережі.</p>
@@ -74,6 +89,7 @@
     <h2 class="screen-title">Один гравець</h2>
     <div class="pf set-panel mode-panel">
       <button class="mi" data-nav data-act="ai"><span class="mt">Швидкий бій</span><small>Один матч проти бота: обери обох бійців і арену.</small></button>
+      <button class="mi" data-nav data-act="learn"><span class="mt">Навчання</span><small id="learnSub">Короткий урок: рух, удари, блок, парирування й ультимейт.</small></button>
       <button class="mi" data-nav data-act="arcade"><span class="mt">Аркада</span><small>Сім суперників поспіль, останній — бос. Складність росте з кожним боєм.</small></button>
       <button class="mi" data-nav data-act="survival"><span class="mt">Виживання</span><small>Один раунд за бій, здоров'я майже не відновлюється. Скільки хвиль витримаєш?</small></button>
       <button class="mi" data-nav data-act="train"><span class="mt">Тренування</span><small>Манекен без таймера, безкінечні ресурси й таблиця шкоди за здібностями.</small></button>
@@ -258,6 +274,8 @@
     <h2 class="screen-title">Пауза</h2>
     <nav class="mainmenu center">
       <button class="mi" data-nav data-act="resume">Продовжити</button>
+      <button class="mi t-only" data-nav data-act="tcfg">Кнопки на екрані</button>
+      <button class="mi p-learn" data-nav data-act="tutSkip">Пропустити крок</button>
       <button class="mi p-train" data-nav data-act="dummy" data-cycle>Манекен <span class="val" id="dummyVal"></span></button>
       <button class="mi p-train" data-nav data-act="infres" data-cycle>Ресурси <span class="val" id="resVal"></span></button>
       <button class="mi p-train" data-nav data-act="resetDps">Скинути таблицю шкоди</button>

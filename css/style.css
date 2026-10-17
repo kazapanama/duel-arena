@@ -424,16 +424,17 @@ body.touch .sel-keys,body.touch .nav-hint,body.touch .foot-hint{visibility:hidde
    більше 5.5px, щоб на планшеті кнопки не розросталися на пів екрана).
    Кнопки задаються центром: --r/--b від правого нижнього кута, --s — діаметр.
    ============================================================ */
-#touch{position:fixed; inset:0; z-index:40; touch-action:none; --u:min(.85vmin,4.7px)}
+#touch{position:fixed; inset:0; z-index:40; touch-action:none; --ub:min(.85vmin,4.7px); --u:var(--ub)}   /* --k, --ta, --r, --b ставить touch.js (розкладка) */
 #touch *{touch-action:none}
 .t-btn{
   position:absolute; width:calc(var(--s)*var(--u)); height:calc(var(--s)*var(--u));
+  --u:calc(var(--ub)*var(--k,1)); --tx:50%;
   right:calc(var(--r)*var(--u) + env(safe-area-inset-right)); bottom:calc(var(--b)*var(--u) + env(safe-area-inset-bottom));
-  transform:translate(50%,50%); border-radius:50%; overflow:hidden; display:grid; place-items:center;
+  transform:translate(var(--tx),50%); border-radius:50%; overflow:hidden; display:grid; place-items:center;
   --ring:var(--gold);
   background:radial-gradient(circle at 50% 35%,rgba(59,42,34,.5),rgba(20,13,11,.5));
   box-shadow:0 0 0 calc(.55*var(--u)) var(--ring), 0 0 0 calc(.95*var(--u)) rgba(20,10,6,.85), 0 calc(.8*var(--u)) calc(2*var(--u)) rgba(0,0,0,.5);
-  opacity:.85; transition:transform .06s, filter .06s;
+  opacity:var(--ta,.85); transition:transform .06s, filter .06s;
 }
 .t-btn img{position:absolute; inset:9%; width:82%; height:82%; border-radius:50%; image-rendering:pixelated; pointer-events:none}
 .t-btn .t-em{font:400 calc(var(--s)*var(--u)*.45) serif; pointer-events:none}
@@ -443,18 +444,25 @@ body.touch .sel-keys,body.touch .nav-hint,body.touch .foot-hint{visibility:hidde
   font:400 calc(var(--s)*var(--u)*.34) var(--display); color:#fff; text-shadow:0 0 calc(.6*var(--u)) #000, 0 calc(.3*var(--u)) 0 #000}
 .t-btn .t-lbl{position:absolute; bottom:6%; left:0; right:0; text-align:center; pointer-events:none;
   font:400 calc(2*var(--u)) var(--display); color:var(--parch); text-shadow:0 calc(.25*var(--u)) 0 #000}
-.t-btn.on{transform:translate(50%,50%) scale(.9); filter:brightness(1.35); opacity:1}
+.t-btn.on{transform:translate(var(--tx),50%) scale(.9); filter:brightness(1.35); opacity:1}
+/* лівша: кнопки від лівого краю, стік справа */
+#touch.lefty .t-btn{right:auto; --tx:-50%; left:calc(var(--r)*var(--u) + env(safe-area-inset-left))}
 .t-btn.gcd img{filter:brightness(.55)}
 .t-btn.lit{--ring:#7dff8a; opacity:1}
 /* розкладка справа: великий «швидкий» удар під великим пальцем, решта — дугою навколо */
-.t-ab.s0{--s:21; --r:15; --b:16; --ring:var(--sx)}
-.t-ab.s1{--s:15; --r:36; --b:11; --ring:var(--sy)}
-.t-ab.s2{--s:15; --r:33; --b:30; --ring:var(--sb)}
-.t-ab.s3{--s:15; --r:15; --b:37; --ring:var(--sa)}
-.t-blk{--s:14; --r:54; --b:10}
-.t-form{--s:12; --r:50; --b:28; --ring:var(--sf)}
-.t-ult{--s:15; --r:33; --b:50; --ring:var(--gold)}
-.t-ult:not(.ready){opacity:.55}
+.t-ab.s0{--s:21; --ring:var(--sx)}
+.t-ab.s1{--s:15; --ring:var(--sy)}
+.t-ab.s2{--s:15; --ring:var(--sb)}
+.t-ab.s3{--s:15; --ring:var(--sa)}
+.t-blk{--s:14}
+/* підказка парирування: пульс — ворог замахнувся, золоте світіння й збільшення — тисни зараз */
+.t-blk.cue{--ring:#fff; opacity:1; animation:cuePulse .35s ease-in-out infinite alternate}
+.t-blk.go{--ring:#ffe27a; opacity:1; filter:brightness(1.5); transform:translate(var(--tx),50%) scale(1.22);
+  box-shadow:0 0 0 calc(.7*var(--u)) #ffe27a, 0 0 calc(5*var(--u)) #ffd23a}
+@keyframes cuePulse{to{box-shadow:0 0 0 calc(.9*var(--u)) #fff, 0 0 calc(3*var(--u)) rgba(255,255,255,.7)}}
+.t-form{--s:12; --ring:var(--sf)}
+.t-ult{--s:15; --ring:var(--gold)}
+.t-ult:not(.ready){opacity:calc(var(--ta,.85)*.65)}
 .t-ult.ready{opacity:1; animation:ultPulse .7s ease-in-out infinite alternate}
 @keyframes ultPulse{to{box-shadow:0 0 0 calc(.55*var(--u)) #fff4b0, 0 0 0 calc(.95*var(--u)) rgba(20,10,6,.85), 0 0 calc(4*var(--u)) #ffd23a}}
 .t-blk img{filter:saturate(.6)}
@@ -657,8 +665,9 @@ body.touch #arenaGo{min-width:24cqw}
 .stat-row .sa.on{color:var(--gold)}
 .stat-row.none{opacity:.45}
 /* пауза: пункти тренування лише в ньому, «Почати заново» — не в аркаді й виживанні (інакше можна скинути невдалий бій) */
-.p-train{display:none}
+.p-train,.p-learn{display:none}
 #pauseMenu[data-mode="train"] .p-train{display:block}
+#pauseMenu[data-mode="learn"] .p-learn{display:block}
 #pauseMenu[data-mode="arcade"] .p-restart,#pauseMenu[data-mode="survival"] .p-restart{display:none}
 /* телефон: текст статистики й описів режимів — не дрібніший за ~10 px, меню компактніше, щоб шість пунктів з описами вміщались */
 @media (hover:none) and (pointer:coarse){
@@ -670,3 +679,13 @@ body.touch #arenaGo{min-width:24cqw}
   .stat-card h3{font-size:2cqw} .stat-row{font-size:1.75cqw}
   .stat-card{padding:.9cqw 1.2cqw 1cqw; gap:.4cqw}
 }
+
+/* налаштування кнопок (екран #tcfg): шар кнопок не ловить дотики, окрім самих кнопок, які тягнуться пальцем */
+#touch.edit{pointer-events:none}
+#touch.edit .t-btn{pointer-events:auto; cursor:grab; opacity:1; outline:calc(.5*var(--u)) dashed rgba(255,226,122,.9); outline-offset:calc(1*var(--u))}
+#touch.edit .t-btn.drag{filter:brightness(1.3); cursor:grabbing}
+#touch.edit .t-stick{display:none}
+#tcfg{justify-content:flex-start}
+#tcfg .set-panel{position:absolute; left:6cqw; top:6cqw; min-width:36cqw; gap:.4cqw}
+#tcfg[data-hand="left"] .set-panel{left:auto; right:6cqw}
+body:not(.touch) .t-only{display:none !important}

@@ -213,7 +213,7 @@ class Fighter{
     const was=this.meter;
     this.meter=Math.min(ULT_MAX,this.meter+n);
     if(was<ULT_MAX&&this.meter>=ULT_MAX&&game&&!this.preview){
-      game.float(this.x,this.y-this.h-40,'УЛЬТА ГОТОВА','#ffe27a',16); sfx('ok');
+      game.float(this.x,this.y-this.h-40,'УЛЬТА ГОТОВА','#ffe27a',16); sfx('ok'); game.emit('rdy',this);
     }
   }
   takeDamage(raw,src,game,opts={}){
@@ -239,7 +239,7 @@ class Fighter{
       else { this.parry(src,game); return 0; }
     }
     if(front&&this.blocking){
-      dmg*=heavy?0.55:0.25; blocked=true; this.lastBlocked=true;   // важкий удар пробиває блок частково
+      dmg*=heavy?0.55:0.25; blocked=true; this.lastBlocked=true; game.emit('block',this,heavy);   // важкий удар пробиває блок частково
       this.guard-=Math.min(70,raw*(heavy?0.6:0.3)); this.guardDelay=1.2;   // не більше 70 за удар: злам — щонайменше з двох
       this.kbV=-this.facing*(heavy?280:110);
       if(this.guard<=0) this.guardBreak(game);
@@ -269,6 +269,7 @@ class Fighter{
       this.hp=Math.max(0,this.hp-dmg);
       if(game.train) game.trainHit(this,dmg,src,opts);   // тренування: таблиця шкоди (game.js)
       this.hitT=0.18;
+      if(!tick&&!blocked){ game.emit('hurt',this,heavy); if(foeF) game.emit('hit',foeF,heavy); }
       this.addMeter(dmg*(blocked?0.04:0.06),game);
       if(foeF){
         foeF.addMeter(dmg*0.08,game);
@@ -322,7 +323,7 @@ class Fighter{
       this.kbV=Math.sign(this.x-(src?src.x:this.x-1))*opts.knockback*4;
       this.vy=Math.min(this.vy,-200);
     }
-    if(this.hp<=0 && !this.ko){ this.ko=true; this.casting=null; this.windup=null; this.anim.play('die'); sfx('ko'); game.onKO(this); }
+    if(this.hp<=0 && !this.ko){ this.ko=true; this.casting=null; this.windup=null; this.anim.play('die'); sfx('ko'); game.emit('ko',this); game.onKO(this); }
     return dmg;
   }
 
@@ -335,7 +336,7 @@ class Fighter{
     game.hitstop=Math.max(game.hitstop,0.15);
     game.float(this.x,this.y-this.h-34,'ПАРИРУВАННЯ!','#ffe27a',18);
     game.spark(this.x+this.facing*28,this.y-this.h*0.6,this.facing,'#fff2b0',true);
-    sfx('big');
+    sfx('big'); game.emit('parry',this);
     if(src instanceof Fighter && Math.abs(src.x-this.x)<220){
       src.staggerT=Math.max(src.staggerT,0.8); src.windup=null;
       src.kbV=Math.sign(src.x-this.x)*300; src.anim.play('hurt');
@@ -343,7 +344,7 @@ class Fighter{
   }
   guardBreak(game){
     this.guard=GUARD_MAX; this.blocking=false;
-    this.stunT=Math.max(this.stunT,1.1);
+    this.stunT=Math.max(this.stunT,1.1); game.emit('break',this);
     game.float(this.x,this.y-this.h-34,'ЗАХИСТ ЗЛАМАНО!','#ff6a5a',17);
     game.hitstop=Math.max(game.hitstop,0.12);
     game.shake=Math.max(game.shake,8);
@@ -356,6 +357,26 @@ class Fighter{
     this.anim.play('tossed');
   }
   onBlockPress(){ if(this.parryCd<=0){ this.parryT=0.2; this.parryCd=0.9; } }
+  /* Підказка парирування: що летить у мене. {t — секунд до удару, can — блок зараз можна натиснути, turn — стою спиною, no — удар не парирується}
+     або null, якщо загрози нема. Парирування — натиснути блок за ≤0.2 с до удару, тож «go» (t≤0.3) — натискай просто зараз */
+  parryCue(game){
+    if(this.ko||this.stunT>0||this.staggerT>0||this.casting||this.windup||this.tossed||this.leap||game.phase!=='fight') return null;
+    const foe=game.other(this); if(!foe||foe.ko) return null;
+    let t=-1, no=false;
+    const w=foe.windup;
+    if(w&&Math.sign(this.x-foe.x)===foe.facing){
+      const a=foe.abilities[w.i], reach=a.type==='melee'?(a.range||95)+80:(a.type==='aoe'?(a.radius||150)+40:0);
+      if(reach&&Math.abs(foe.x-this.x)<reach){ t=w.t; no=foe.wingsT>0; }
+    }
+    for(const p of game.projectiles){
+      if(p.owner===this) continue;
+      const d=this.x-p.x; if(!p.vx||Math.sign(d)!==Math.sign(p.vx)) continue;
+      const tt=(Math.abs(d)-30)/Math.abs(p.vx);
+      if(tt>=0&&tt<0.8&&(t<0||tt<t)){ t=tt; no=!!(p.riders&&p.riders.unblock); }
+    }
+    if(t<0) return null;
+    return {t,can:this.parryCd<=0&&this.onGround,turn:Math.sign(foe.x-this.x)!==this.facing,no};
+  }
 
   healSelf(n,game,quiet){
     if(this.ko||n<=0) return;
@@ -390,14 +411,14 @@ class Fighter{
       sfx('cast');
       return true;
     }
-    this.cds[i]=a.cd;
+    this.cds[i]=a.cd; game.emit('ab',this,i);
     if(a.chan){ // канал: КД одразу, ефект тиками, поки стоїш
       const n=a.chan.ticks||a.count||1;
       this.casting={i,t:a.chan.dur,total:a.chan.dur,chan:true,n:0,ticks:n,every:a.chan.dur/n,beamT:0,tier:abilityTier(a,i)};
       this.anim.stop(); this.model.castCol=a.pcolor||this.accent; sfx('cast');
       return true;
     }
-    let su=startupOf(a,i);
+    let su=startupOf(a,i)*(this.tell||1);   // tell — навчання: манекен замахується повільніше, щоб було видно, коли парирувати
     if(cancel){ su=Math.min(su,0.12); this.cancelT=0; game.float(this.x,this.y-this.h-30,'СКАСУВАННЯ','#ffd23a',13); }
     this.playAbilityAnim(a,i);
     if(su>0){ this.windup={i,t:su,total:su,tier:abilityTier(a,i)}; this.attackT=su+0.08;
@@ -643,7 +664,7 @@ class Fighter{
     this.ultActT=0.6;   // замах ульти: слабші удари її не збивають (actTier)
     game.ultFx={t:1.15,T:1.15,side:this.idx,name:U.ua,color:this.cls.color,em:U.icon};
     game.hitstop=Math.max(game.hitstop,0.55); game.cam.punch=Math.max(game.cam.punch,0.1);
-    sfx('ult');
+    sfx('ult'); game.emit('ult',this);
     this.runUlt(U,game);
     return true;
   }
@@ -1706,6 +1727,19 @@ class Fighter{
   }
 
   /* ---------- Табличка і смуга касту (екранні координати, повна роздільність) ---------- */
+  // кільце-підказка над бійцем: стискається до мітки — тоді блок ПАРИРУЄ. Біле — готуйся, золоте — тисни зараз, червоне — не парирується
+  drawParryCue(g,top){
+    const c=this.parryCue(g); if(!c) return;
+    const go=c.t<=0.3&&c.can&&!c.turn, sc=Math.max(0.8,g.cam.scale);
+    const r=(14+Math.min(1,c.t/0.8)*34)*sc, cx=top.x, cy=top.y-46*sc;
+    ctx.save(); ctx.lineWidth=go?5:3;
+    ctx.strokeStyle=c.no?'#ff6a5a':(go?'#ffe27a':(c.turn?'rgba(160,170,190,.6)':'rgba(255,255,255,.75)'));
+    ctx.beginPath(); ctx.arc(cx,cy,r,0,7); ctx.stroke();
+    ctx.strokeStyle='rgba(0,0,0,.55)'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(cx,cy,14*sc,0,7); ctx.stroke();
+    ctx.fillStyle=c.no?'#ff6a5a':(go?'#ffe27a':'#fff'); ctx.font=`${Math.round(18*sc)}px "Tiny5",sans-serif`; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(c.no?'×':'!',cx,cy+1);
+    ctx.restore();
+  }
   drawOverlay(g,toS){
     if(this.ko||this.preview) return;
     const top=toS(this.x,this.y-150), sc=g.cam.scale;
@@ -1719,6 +1753,7 @@ class Fighter{
     ctx.strokeText(tag,top.x,top.y-10);
     ctx.fillText(tag,top.x,top.y-10);
     ctx.restore();
+    if((state.parryHint||g.tut)&&!this.isAI&&!NET.on&&(!g.train||g.tut)) this.drawParryCue(g,top);
     if(this.casting){
       const cw=Math.max(56,86*sc),chh=7,cx0=top.x-cw/2,cy0=top.y;
       const p=this.casting.chan?this.casting.t/this.casting.total:1-this.casting.t/this.casting.total; // канал — спадає

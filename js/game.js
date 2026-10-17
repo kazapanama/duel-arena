@@ -1,11 +1,12 @@
 "use strict";
 /* ---------- Гра ---------- */
+const FEEL_KINDS=new Set(['parry','block','hurt','hit','break','ko','rdy','ult']);   // події, що їдуть до touch.js feelEvt (вібрація, спалах краю)
 class Game{
   /* opts (js/modes.js): toWin — скільки раундів виграти (типово 2); label — підпис бою (аркада, виживання);
      train — стан тренування: манекен, безкінечні ресурси й таблиця шкоди, без раундів і таймера */
   constructor(p1,p2,opts={}){
     this.f=[p1,p2];
-    this.opts=opts; this.toWin=opts.toWin||2; this.train=opts.train||null;
+    this.opts=opts; this.toWin=opts.toWin||2; this.train=opts.train||null; this.tut=opts.tut||null;   // tut — урок (modes.js Tutorial)
     this.projectiles=[]; this.zones=[]; this.particles=[]; this.floats=[]; this.delayed=[];
     this.slashes=[]; this.beams=[]; this.rings=[]; this.trails=[];
     this.marks=[]; this.fallers=[]; this.erupts=[]; this.portals=[]; this.ultFx=null; // ультимейти й портали
@@ -59,7 +60,7 @@ class Game{
     this.cam.punch=Math.max(0,this.cam.punch-(dt||0)*0.5);
     let tx=(this.f[0].x+this.f[1].x)/2;
     const touch=typeof TOUCH!=='undefined'&&TOUCH.on;
-    if(touch) tx+=90/this.cam.scale*1.2;   // сенсорне керування: кнопки закривають правий край — дивимось трохи правіше, бійці зсуваються ліворуч
+    if(touch) tx+=(TCFG.left?-90:90)/this.cam.scale*1.2;   // сенсорне керування: кнопки закривають правий край — дивимось трохи правіше, бійці зсуваються ліворуч
     const k=dt?Math.min(1,dt*4):1;
     this.cam.scale+=(ts-this.cam.scale)*k;
     this.cam.x+=(tx-this.cam.x)*k;
@@ -70,6 +71,12 @@ class Game{
     this.cam.offY=(H-128)-GROUND*this.cam.scale; // земля вище: під нею — панелі здібностей
   }
   other(f){ return this.f[f===this.f[0]?1:0]; }
+  /* Подія бою: kind — parry, block, hurt, hit, break, ko, rdy, ult, ab; f — кому вона; v — важкий удар чи номер здібності.
+     Навчання слухає всі, а для вібрації й спалаху краю (touch.js feelEvt) подія їде як «звук» «~kind[H]індекс»: так її чує й гравець по мережі */
+  emit(kind,f,v){
+    if(this.tut) this.tut.on(kind,f,v);
+    if(FEEL_KINDS.has(kind)) sfx('~'+kind+(v===true?'H':'')+f.idx);
+  }
   after(t,fn){ this.delayed.push({t,fn}); }
   float(x,y,txt,color,size=17){ this.floats.push({x,y,txt,color,size,t:1}); }
   // число шкоди: удари по одній цілі впродовж 0.35 с зливаються в одне число
@@ -168,6 +175,7 @@ class Game{
     if(!this._rang){ this._rang=true; sfx('round'); }   // гонг раунду — коли все завантажилось і почався відлік
     this.shake=Math.max(0,this.shake-dt*30);
     this.koFlash=Math.max(0,(this.koFlash||0)-dt);
+    if(this.edge&&(this.edge.t-=dt)<=0) this.edge=null;
     if(this.ultFx){ this.ultFx.t-=dt; if(this.ultFx.t<=0) this.ultFx=null; }   // банер ультимейта йде й під час кінопаузи
     // хітстоп: увесь світ завмирає на кілька кадрів після влучання
     if(this.hitstop>0){ this.hitstop-=dt; this.updateCam(dt); return; }
@@ -180,7 +188,7 @@ class Game{
     } else if(this.phase==='roundEnd'){
       this.phaseT-=dt;
       if(this.phaseT<=0) this.nextRound();
-    } else if(this.phase==='fight'&&this.train) this.trainTick();
+    } else if(this.phase==='fight'&&this.train){ this.trainTick(); if(this.tut) this.tut.update(dt,this); }
     else if(this.phase==='fight'){
       this.roundTimer-=dt;
       if(this.roundTimer<=0){
@@ -568,6 +576,11 @@ class Game{
       const lb=this.opts.label, head=lb?(this.toWin>1?`${lb} · Раунд ${this.round}`:lb):`Раунд ${this.round}`;
       ctx.fillText(`${head} · ${this.theme.name}`,W/2,H/2-90);
     }
+    if(this.edge){   // спалах по краях кадра: пальці закривають бійця, тож парирування, блок і удар видно з краю (touch.js feelEvt)
+      const k=this.edge.t/this.edge.T, g=ctx.createRadialGradient(W/2,H/2,H*0.35,W/2,H/2,W*0.62);
+      g.addColorStop(0,'rgba(0,0,0,0)'); g.addColorStop(1,this.edge.c);
+      ctx.save(); ctx.globalAlpha=Math.min(1,k*1.4)*this.edge.a; ctx.fillStyle=g; ctx.fillRect(0,0,W,H); ctx.restore();
+    }
     if(this.koFlash>0){ // великий K.O. з «ударним» наїздом
       const k=clamp((1.3-this.koFlash)/0.18,0,1);
       bannerText('K.O.!','#ff4a3a',Math.round(170-50*k));
@@ -788,7 +801,7 @@ class Game{
     roundRect(W/2-45,20,90,48,10); ctx.fill();
     ctx.fillStyle=this.roundTimer<15?'#ff6a5a':'#fff';
     ctx.fillText(this.train?'∞':`${Math.max(0,Math.ceil(this.roundTimer))}`,W/2,56);
-    if(this.train) this.drawTrain();
+    if(this.tut) drawTutPanel(this,this.tut); else if(this.train) this.drawTrain();
   }
 }
 Game.headless=false;   // true — бій на сервері (tools/netsim.js): без картинок і малювання
