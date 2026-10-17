@@ -490,6 +490,8 @@ body.touch .sel-keys,body.touch .nav-hint,body.touch .foot-hint{visibility:hidde
 #title .mainmenu::before{content:''; position:absolute; inset:-4cqw -9cqw -3cqw -4.5cqw; z-index:-1; pointer-events:none;
   background:radial-gradient(ellipse 70% 65% at 30% 55%,rgba(8,4,6,.78),rgba(8,4,6,.45) 55%,transparent 80%)}
 #title .mi{font-size:2.9cqw}
+#title .dl{position:absolute; right:3cqw; bottom:4.4cqw; visibility:hidden; font-size:2.2cqw}
+#title.awake .dl{visibility:visible; animation:scrIn .5s .3s both}
 /* телефони й планшети: меню крупніше, щоб пальцем влучати */
 @media (hover:none) and (pointer:coarse){
   .mi{font-size:3.6cqw; padding:.45cqw .6cqw .45cqw 4cqw}
@@ -498,6 +500,8 @@ body.touch .sel-keys,body.touch .nav-hint,body.touch .foot-hint{visibility:hidde
   .mi.small{font-size:2.6cqw; padding-left:3cqw}
   .mi.focus::before{width:2.4cqw; height:3cqw}
   #title .mainmenu{left:3.5cqw; bottom:4cqw}
+  #install .set-note{font-size:2.6cqw; margin-left:2.4cqw; max-width:none}
+  #title .dl{font-size:3.4cqw; bottom:4cqw; right:3.5cqw}
   .screen-title{font-size:5cqw}
   .logo{transform:scale(.82); transform-origin:50% 0}
   .press{font-size:2.8cqw}

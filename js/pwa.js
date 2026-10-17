@@ -17,6 +17,7 @@ if('serviceWorker' in navigator){
 function pwaSyncUi(){
   const btn=document.getElementById('installBtn'), hint=document.getElementById('iosHint');
   if(btn) btn.classList.toggle('hidden',!PWA.prompt||PWA.standalone);
+  const dl=document.getElementById('dlBtn'); if(dl) dl.classList.toggle('hidden',PWA.standalone);   // на титулі — завжди, поки гру не встановлено
   // Safari на iPhone/iPad не вміє запит на встановлення — лише «Поділитися → На початковий екран»
   const ios=/iP(hone|ad|od)/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
   if(hint) hint.classList.toggle('hidden',!ios||PWA.standalone);
@@ -24,9 +25,20 @@ function pwaSyncUi(){
 addEventListener('beforeinstallprompt',e=>{ e.preventDefault(); PWA.prompt=e; pwaSyncUi(); });
 addEventListener('appinstalled',()=>{ PWA.prompt=null; PWA.standalone=true; pwaSyncUi(); });
 function pwaInstall(){
-  const p=PWA.prompt; if(!p) return;
+  const p=PWA.prompt;
+  if(!p){ pwaHowTo(); return; }   // браузер не вміє запит (iPhone, Firefox…) — показуємо, де це робиться вручну
   PWA.prompt=null; pwaSyncUi();
   p.prompt(); p.userChoice.catch(()=>{});
+}
+function pwaHowTo(){
+  const ua=navigator.userAgent, ios=/iP(hone|ad|od)/.test(ua)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+  const t=ios?(/EdgiOS/.test(ua)?'Edge на iPhone/iPad: натисни кнопку меню (три крапки) унизу екрана → «Поділитися» → «На початковий екран» → «Додати».'
+      :'Safari на iPhone/iPad: натисни «Поділитися» (квадрат зі стрілкою) → «На початковий екран» → «Додати».')
+      +' Якщо пункту нема в меню Edge — відкрий цю сторінку в Safari й зроби так само.'
+    :/Android/.test(ua)?'Натисни кнопку меню (три крапки) вгорі браузера → «Встановити застосунок» (або «Додати на головний екран»).'
+    :'Натисни значок встановлення в адресному рядку або меню браузера → «Встановити Азерот Арена» (в Edge: меню → «Застосунки»).';
+  document.getElementById('instText').textContent=t+' Після цього гра відкриватиметься на весь екран і працюватиме без мережі.';
+  show('install');
 }
 pwaSyncUi();
 

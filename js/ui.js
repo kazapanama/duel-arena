@@ -5,7 +5,7 @@
    UI.key(code) і UI.pad(button) — точки входу з input.js.
    ============================================================ */
 const $=id=>document.getElementById(id);
-const screens={arenaSel:$('arenaSel'),title:$('title'),modes:$('modes'),stats:$('stats'),settings:$('settings'),controls:$('controls'),gallery:$('gallery'),netLobby:$('netLobby'),select:$('select'),versus:$('versus'),pauseMenu:$('pauseMenu'),overlay:$('overlay')};
+const screens={arenaSel:$('arenaSel'),title:$('title'),modes:$('modes'),stats:$('stats'),install:$('install'),settings:$('settings'),controls:$('controls'),gallery:$('gallery'),netLobby:$('netLobby'),select:$('select'),versus:$('versus'),pauseMenu:$('pauseMenu'),overlay:$('overlay')};
 // картинка, якої нема (набір іконок не в репозиторії), просто ховається — не лишає «битої» рамки
 addEventListener('error',e=>{ if(e.target instanceof HTMLImageElement) e.target.classList.add('broken'); },true);
 for(const im of document.images) if(im.complete&&!im.naturalWidth&&im.getAttribute('src')) im.classList.add('broken'); // ті, що впали до цього рядка
@@ -37,7 +37,7 @@ function show(name){
   if(name&&screens[name]) screens[name].classList.remove('hidden');
   UI.cur=name||null;
   state.screen=name&&name!=='overlay'&&name!=='pauseMenu'?name:'fight';
-  if(name==='title'||name==='modes'||name==='stats'||name==='settings'||name==='controls'||name==='gallery'||name==='netLobby'||name==='overlay'||name==='pauseMenu') focusFirst(name);
+  if(name==='title'||name==='modes'||name==='stats'||name==='install'||name==='settings'||name==='controls'||name==='gallery'||name==='netLobby'||name==='overlay'||name==='pauseMenu') focusFirst(name);
 }
 function listItems(scr){ return [...screens[scr].querySelectorAll('[data-nav]')].filter(el=>el.offsetParent!==null); }
 function setFocus(el,quiet){
@@ -121,7 +121,7 @@ function openModes(act){
   const el=screens.modes.querySelector(`[data-act="${act||'ai'}"]`); if(el) setFocus(el,true);
 }
 function backToTitle(){
-  const from=UI.cur==='netLobby'?'net':(UI.cur==='modes'?'solo':UI.cur); show('title');
+  const from=UI.cur==='netLobby'?'net':(UI.cur==='modes'?'solo':(UI.cur==='install'?'install':UI.cur)); show('title');
   const el=screens.title.querySelector(`[data-act="${from}"]`); if(el) setFocus(el,true);
 }
 // «Інші бійці»: з паузи чи фіналу — назад до вибору (у мережі — обидва гравці разом)
@@ -758,7 +758,7 @@ UI.key=function(code){
   else if(K_L.includes(code)||K_R.includes(code)){ const el=UI.focusEl; if(el&&el.hasAttribute('data-cycle')) act(el.dataset.act,K_L.includes(code)?-1:1,el); }
   else if(K_OK.includes(code)){ const el=UI.focusEl; if(el) act(el.dataset.act,1,el); }
   else if(code==='Escape'||code==='Backspace'){
-    if(cur==='controls'||cur==='settings'||cur==='netLobby'||cur==='modes'||cur==='stats') act('back'); else if(cur==='pauseMenu') togglePause();
+    if(cur==='controls'||cur==='settings'||cur==='netLobby'||cur==='modes'||cur==='stats'||cur==='install') act('back'); else if(cur==='pauseMenu') togglePause();
   }
   return true;
 };
