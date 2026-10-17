@@ -6,18 +6,19 @@
 let AC=null, muted=false, vibeOn=true;
 /* Вібрація: на Android — navigator.vibrate; iPhone Safari її не має, там пробуємо перемикач-«світч» (iOS 17.4+): клік по ньому дає легкий тактильний відгук.
    Працює лише з жесту дотику, тож на старіших iPhone просто нічого не станеться. p — мс чи масив «вібрація, пауза, вібрація…» */
-const HAP={sw:null};
+function tick(){
+  const l=document.createElement('label'), i=document.createElement('input');
+  l.setAttribute('aria-hidden','true'); l.style.display='none';
+  i.type='checkbox'; i.setAttribute('switch',''); l.appendChild(i); document.head.appendChild(l);
+  l.click(); setTimeout(()=>l.remove(),50);
+}
 function haptic(p){
   if(!vibeOn||typeof navigator==='undefined') return;
   try{
     if(navigator.vibrate){ navigator.vibrate(p); return; }
     if(!/iP(hone|ad|od)/.test(navigator.userAgent)) return;
-    if(!HAP.sw){
-      const l=document.createElement('label'), i=document.createElement('input');
-      l.style.cssText='position:fixed;left:-99px;top:0;width:1px;height:1px;opacity:0;pointer-events:none';
-      i.type='checkbox'; i.setAttribute('switch',''); l.appendChild(i); document.body.appendChild(l); HAP.sw=l;
-    }
-    let t=0; for(const [k,v] of [].concat(p).entries()){ if(k%2===0) setTimeout(()=>HAP.sw.click(),t); t+=v; }
+    // як у перевірених бібліотеках: щоразу новий прихований label із switch у head, клік по label перемикає його — iOS 17.4+ дає відгук
+    let t=0; for(const [k,v] of [].concat(p).entries()){ if(k%2===0){ if(t) setTimeout(tick,t); else tick(); } t+=v; }
   }catch(e){}
 }
 function ac(){ if(!AC){ try{ AC=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } return AC; }
