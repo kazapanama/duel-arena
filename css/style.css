@@ -424,16 +424,16 @@ body.touch .sel-keys,body.touch .nav-hint,body.touch .foot-hint{visibility:hidde
    більше 5.5px, щоб на планшеті кнопки не розросталися на пів екрана).
    Кнопки задаються центром: --r/--b від правого нижнього кута, --s — діаметр.
    ============================================================ */
-#touch{position:fixed; inset:0; z-index:40; touch-action:none; --u:min(1vmin,5.5px)}
+#touch{position:fixed; inset:0; z-index:40; touch-action:none; --u:min(.85vmin,4.7px)}
 #touch *{touch-action:none}
 .t-btn{
   position:absolute; width:calc(var(--s)*var(--u)); height:calc(var(--s)*var(--u));
   right:calc(var(--r)*var(--u) + env(safe-area-inset-right)); bottom:calc(var(--b)*var(--u) + env(safe-area-inset-bottom));
   transform:translate(50%,50%); border-radius:50%; overflow:hidden; display:grid; place-items:center;
   --ring:var(--gold);
-  background:radial-gradient(circle at 50% 35%,rgba(59,42,34,.72),rgba(20,13,11,.72));
+  background:radial-gradient(circle at 50% 35%,rgba(59,42,34,.5),rgba(20,13,11,.5));
   box-shadow:0 0 0 calc(.55*var(--u)) var(--ring), 0 0 0 calc(.95*var(--u)) rgba(20,10,6,.85), 0 calc(.8*var(--u)) calc(2*var(--u)) rgba(0,0,0,.5);
-  opacity:.9; transition:transform .06s, filter .06s;
+  opacity:.6; transition:transform .06s, filter .06s;   /* напівпрозорі: крізь них видно бійців і момент парирування */
 }
 .t-btn img{position:absolute; inset:9%; width:82%; height:82%; border-radius:50%; image-rendering:pixelated; pointer-events:none}
 .t-btn .t-em{font:400 calc(var(--s)*var(--u)*.45) serif; pointer-events:none}
@@ -454,7 +454,7 @@ body.touch .sel-keys,body.touch .nav-hint,body.touch .foot-hint{visibility:hidde
 .t-blk{--s:14; --r:54; --b:10}
 .t-form{--s:12; --r:50; --b:28; --ring:var(--sf)}
 .t-ult{--s:15; --r:33; --b:50; --ring:var(--gold)}
-.t-ult:not(.ready){opacity:.6}
+.t-ult:not(.ready){opacity:.4}
 .t-ult.ready{opacity:1; animation:ultPulse .7s ease-in-out infinite alternate}
 @keyframes ultPulse{to{box-shadow:0 0 0 calc(.55*var(--u)) #fff4b0, 0 0 0 calc(.95*var(--u)) rgba(20,10,6,.85), 0 0 calc(4*var(--u)) #ffd23a}}
 .t-blk img{filter:saturate(.6)}

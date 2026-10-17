@@ -58,11 +58,14 @@ class Game{
     const ts=clamp(W/span,0.9,1.55)+this.cam.punch;
     this.cam.punch=Math.max(0,this.cam.punch-(dt||0)*0.5);
     let tx=(this.f[0].x+this.f[1].x)/2;
+    const touch=typeof TOUCH!=='undefined'&&TOUCH.on;
+    if(touch) tx+=90/this.cam.scale*1.2;   // сенсорне керування: кнопки закривають правий край — дивимось трохи правіше, бійці зсуваються ліворуч
     const k=dt?Math.min(1,dt*4):1;
     this.cam.scale+=(ts-this.cam.scale)*k;
     this.cam.x+=(tx-this.cam.x)*k;
     const half=(W/2)/this.cam.scale;
-    this.cam.x=clamp(this.cam.x,half,WORLD_W-half);
+    const pad=touch?50:0;   // на телефоні камера може трохи виходити за арену (фонова картинка ширша на 50 з кожного боку)
+    this.cam.x=clamp(this.cam.x,half-pad,WORLD_W-half+pad);
     this.cam.offX=W/2-this.cam.x*this.cam.scale;
     this.cam.offY=(H-128)-GROUND*this.cam.scale; // земля вище: під нею — панелі здібностей
   }
