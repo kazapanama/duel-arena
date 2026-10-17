@@ -62,14 +62,39 @@ function pwaAssetList(){
   set.add('img/cutout/fx_frog.js'); set.add('img/cutout/form_demon.js');
   return [...set];
 }
-async function pwaWarm(){
-  // ~9 МБ: лише там, де це нікому не коштує, — не на мобільному інтернеті, не на повільному зв'язку й не з «Економією даних»
+// force — гравець сам натиснув «Завантажити для офлайну»: тоді ні мобільний інтернет, ні «Економія даних» не стоп. onProgress(готово, всього)
+async function pwaWarm(force,onProgress){
+  // ~9 МБ: у фоні — лише там, де це нікому не коштує, — не на мобільному інтернеті, не на повільному зв'язку й не з «Економією даних»
   const conn=navigator.connection;
-  if(conn&&(conn.saveData||conn.type==='cellular'||(conn.effectiveType&&conn.effectiveType!=='4g'))) return;
-  if(!('caches' in window)||!navigator.serviceWorker||!navigator.serviceWorker.controller) return;
-  const todo=[];
-  for(const u of pwaAssetList()) if(!(await caches.match(u))) todo.push(u);
-  const worker=async()=>{ for(let u; (u=todo.shift());){ try{ await fetch(u); }catch(e){ return; } } };   // нема мережі — далі не пробуємо
-  await Promise.all([worker(),worker()]);
+  if(!force&&conn&&(conn.saveData||conn.type==='cellular'||(conn.effectiveType&&conn.effectiveType!=='4g'))) return;
+  if(!('caches' in window)) return;
+  if(!force&&!(navigator.serviceWorker&&navigator.serviceWorker.controller)) return;
+  const all=pwaAssetList(), todo=[];
+  for(const u of all) if(!(await caches.match(u))) todo.push(u);
+  let done=all.length-todo.length, failed=0;
+  if(onProgress) onProgress(done,all.length);
+  // пишемо в той самий кеш, що й service worker (sw.js, ASSETS): так працює навіть до першого перезавантаження
+  const cache=force?await caches.open('aa-assets-v1'):null;
+  const worker=async()=>{
+    for(let u; (u=todo.shift());){
+      try{ const r=await fetch(u); if(!r.ok) throw 0; if(cache) await cache.put(u,r); }
+      catch(e){ if(!navigator.onLine){ todo.length=0; return; } failed++; }   // нема мережі — далі не пробуємо
+      if(onProgress) onProgress(++done,all.length);
+    }
+  };
+  await Promise.all([worker(),worker(),worker()]);
+  return {done:done-failed,total:all.length};
+}
+// кнопки «Завантажити для офлайну» (екран «Завантажити гру» й налаштування)
+let pwaBusy=false;
+async function pwaOffline(){
+  if(pwaBusy) return; pwaBusy=true;
+  const vals=[...document.querySelectorAll('.off-val')], put=t=>vals.forEach(v=>v.textContent=t);
+  try{
+    if(!navigator.onLine){ put('нема мережі'); return; }
+    const r=await pwaWarm(true,(d,t)=>put(Math.round(d/t*100)+'%'));
+    put(r&&r.done>=r.total?'готово':'не все, спробуй ще');
+  }catch(e){ put('помилка'); }
+  finally{ pwaBusy=false; }
 }
 addEventListener('load',()=>setTimeout(()=>warmIdle(()=>pwaWarm().catch(()=>{})),6000));   // warmIdle — з ui.js

@@ -98,6 +98,7 @@ function act(a,dir=1,el){
     case 'sound': muted=!muted; savePrefs(); renderMenuVals(); sfx('tick'); break;
     case 'gfx': GFX.mode=GFX_MODES[(GFX_MODES.indexOf(GFX.mode)+dir+3)%3]; GFX.autoFast=false; savePrefs(); renderMenuVals(); sfx('tick'); break;   // «авто» — заново оцінює пристрій
     case 'install': sfx('ok'); pwaInstall(); break;
+    case 'offline': sfx('ok'); pwaOffline(); break;
     case 'controls': sfx('ok'); show('controls'); break;
     case 'settings': sfx('ok'); show('settings'); break;
     case 'gallery': sfx('ok'); GAL.open(); break;
