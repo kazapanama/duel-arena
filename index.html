@@ -8,7 +8,11 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0c0708">
 <title>Азерот Арена</title>
-<link rel="icon" href="img/vs.svg">
+<meta name="apple-mobile-web-app-title" content="Азерот Арена">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="img/vs.svg" type="image/svg+xml">
+<link rel="icon" href="img/pwa/icon-192.png" type="image/png" sizes="192x192">
+<link rel="apple-touch-icon" href="img/pwa/apple-touch-icon.png">
 <link rel="stylesheet" href="fonts/fonts.css">
 <link rel="stylesheet" href="css/style.css">
 <link rel="preload" as="image" href="img/arenas/menu.webp" fetchpriority="high">
@@ -27,7 +31,7 @@
     </header>
     <p class="press" id="press">Натисни будь-яку клавішу</p>
     <nav class="mainmenu" id="mainMenu" aria-label="Головне меню">
-      <button class="mi" data-nav data-act="ai">Бій із ботом</button>
+      <button class="mi" data-nav data-act="solo">Один гравець</button>
       <button class="mi" data-nav data-act="pvp">Двоє гравців</button>
       <button class="mi" data-nav data-act="net">Гра по мережі</button>
       <button class="mi" data-nav data-act="controls">Керування</button>
@@ -45,9 +49,35 @@
       <button class="mi" data-nav data-act="diff" data-cycle>Складність бота <span class="val" id="diffVal"></span></button>
       <button class="mi" data-nav data-act="sound" data-cycle>Звук <span class="val" id="soundVal"></span></button>
       <button class="mi" data-nav data-act="gfx" data-cycle>Графіка <span class="val" id="gfxVal"></span></button>
+      <button class="mi hidden" data-nav data-act="install" id="installBtn">Встановити на пристрій</button>
+      <p class="set-note hidden" id="iosHint">iPhone, iPad: «Поділитися» → «На початковий екран» — гра відкриватиметься на весь екран і працюватиме без мережі.</p>
       <button class="mi" data-nav data-act="back">Назад</button>
     </div>
     <p class="nav-hint static" id="hintSettings"></p>
+  </section>
+
+  <!-- ОДИН ГРАВЕЦЬ: режими проти бота (modes.js) -->
+  <section id="modes" class="screen dim hidden">
+    <h2 class="screen-title">Один гравець</h2>
+    <div class="pf set-panel mode-panel">
+      <button class="mi" data-nav data-act="ai"><span class="mt">Швидкий бій</span><small>Один матч проти бота: обери обох бійців і арену.</small></button>
+      <button class="mi" data-nav data-act="arcade"><span class="mt">Аркада</span><small>Сім суперників поспіль, останній — бос. Складність росте з кожним боєм.</small></button>
+      <button class="mi" data-nav data-act="survival"><span class="mt">Виживання</span><small>Один раунд за бій, здоров'я майже не відновлюється. Скільки хвиль витримаєш?</small></button>
+      <button class="mi" data-nav data-act="train"><span class="mt">Тренування</span><small>Манекен без таймера, безкінечні ресурси й таблиця шкоди за здібностями.</small></button>
+      <button class="mi" data-nav data-act="stats"><span class="mt">Статистика</span><small>Перемоги за спеками й рекорди.</small></button>
+      <button class="mi" data-nav data-act="back">Назад</button>
+    </div>
+  </section>
+
+  <!-- СТАТИСТИКА (modes.js) -->
+  <section id="stats" class="screen hidden">
+    <h2 class="screen-title">Статистика</h2>
+    <p class="stats-sum" id="statsSum"></p>
+    <div class="stats-grid" id="statsGrid"></div>
+    <div class="screen-foot">
+      <button class="mi small" data-nav data-act="back">Назад</button>
+      <span class="foot-hint">Рахунок перемог:поразок · ★ — аркаду пройдено цим спеком</span>
+    </div>
   </section>
 
   <!-- ГРА ПО МЕРЕЖІ: очікування другого гравця (net.js) -->
@@ -215,7 +245,10 @@
     <h2 class="screen-title">Пауза</h2>
     <nav class="mainmenu center">
       <button class="mi" data-nav data-act="resume">Продовжити</button>
-      <button class="mi net-off" data-nav data-act="restart">Почати бій заново</button>
+      <button class="mi p-train" data-nav data-act="dummy" data-cycle>Манекен <span class="val" id="dummyVal"></span></button>
+      <button class="mi p-train" data-nav data-act="infres" data-cycle>Ресурси <span class="val" id="resVal"></span></button>
+      <button class="mi p-train" data-nav data-act="resetDps">Скинути таблицю шкоди</button>
+      <button class="mi net-off p-restart" data-nav data-act="restart">Почати бій заново</button>
       <button class="mi" data-nav data-act="chars">Змінити бійців</button>
       <button class="mi" data-nav data-act="menu">Вийти в меню</button>
     </nav>
@@ -227,8 +260,9 @@
     <h2 class="win-title" id="winTitle">Перемога</h2>
     <p class="win-sub" id="winSub"></p>
     <nav class="mainmenu center">
-      <button class="mi" data-nav data-act="rematch">Реванш</button>
-      <button class="mi" data-nav data-act="chars">Інші бійці</button>
+      <button class="mi hidden" data-nav data-act="next" id="ovNext">Далі</button>
+      <button class="mi" data-nav data-act="rematch" id="ovRematch">Реванш</button>
+      <button class="mi" data-nav data-act="chars" id="ovChars">Інші бійці</button>
       <button class="mi" data-nav data-act="menu">Головне меню</button>
     </nav>
   </section>
@@ -267,10 +301,12 @@
 <script src="js/fighter.js"></script>
 <script src="js/game.js"></script>
 <script src="js/ui.js"></script>
+<script src="js/modes.js"></script>
 <script src="js/snap.js"></script>
 <script src="js/net.js"></script>
 <script src="js/menubg.js"></script>
 <script src="js/gallery.js"></script>
+<script src="js/pwa.js"></script>
 <script src="js/main.js"></script>
 </body>
 </html>

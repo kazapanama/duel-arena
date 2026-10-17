@@ -157,6 +157,7 @@ button{font:inherit; color:inherit; background:none; border:0; padding:0; cursor
 .set-panel{--c:1.2cqw; display:flex; flex-direction:column; gap:.6cqw; padding:2cqw 3cqw 2cqw 1.6cqw; min-width:40cqw}
 .set-panel .mi{font-size:2.2cqw; text-align:left}
 .set-panel .mi .val{float:right; margin-left:3cqw}
+.set-note{margin:.4cqw 0 0 3.3cqw; max-width:36cqw; font-size:1.3cqw; line-height:1.25; color:var(--ink)}
 
 /* ============================================================
    КЕРУВАННЯ
@@ -627,3 +628,41 @@ body.touch .atile:active{transform:scale(.97)}
 body.touch #arenaSel .sel-actions{justify-content:space-between; gap:1.2cqw}
 body.touch .arena-name{flex:1; min-width:0; font-size:2.6cqw; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
 body.touch #arenaGo{min-width:24cqw}
+
+/* ============================================================
+   ОДИН ГРАВЕЦЬ, СТАТИСТИКА, ТРЕНУВАННЯ (modes.js)
+   ============================================================ */
+.mode-panel{min-width:56cqw; max-width:64cqw; gap:.3cqw}
+.mode-panel .mi{padding-top:.45cqw; padding-bottom:.45cqw; white-space:normal}
+.mode-panel .mi .mt{display:block}
+.mode-panel .mi small{display:block; margin-top:.15cqw; font:500 1.3cqw/1.2 var(--text); color:var(--ink); text-shadow:none; letter-spacing:0}
+.mode-panel .mi.focus small{color:var(--parch)}
+.mode-panel .mi[data-act="back"]{margin-top:.2cqw}
+#stats{background:radial-gradient(ellipse at 50% 40%,rgba(14,8,9,.62),rgba(8,5,6,.93) 80%); padding:0 4cqw 1.2cqw; gap:1cqw}
+#stats .screen-title{margin-top:1.6cqw}
+.stats-sum{display:flex; flex-wrap:wrap; justify-content:center; gap:.3cqw 2.4cqw; margin:.2cqw 0 .6cqw; font-size:1.6cqw; color:var(--ink)}
+.stats-sum b{color:var(--goldL); font-weight:500}
+.stats-grid{display:grid; grid-template-columns:repeat(5,1fr); gap:1.3cqw; width:100%}
+.stat-card{--c:.9cqw; padding:1.2cqw 1.4cqw 1.4cqw; display:flex; flex-direction:column; gap:.7cqw}
+.stat-card h3{display:flex; align-items:center; gap:.8cqw; margin:0 0 .5cqw; font:400 1.75cqw var(--display); color:var(--goldL)}
+.stat-card h3 img,.stat-card h3 .ico-fb{width:3cqw; height:3cqw; flex:none; font-size:1.8cqw; border:.18cqw solid var(--cc,var(--gold))}
+.stat-row{display:grid; grid-template-columns:1fr auto 1.6cqw; gap:.6cqw; align-items:center; font-size:1.5cqw; color:var(--parch)}
+.stat-row .sw{font-family:var(--display)}
+.stat-row .sw i{font-style:normal; color:var(--ink); margin:0 .15cqw}
+.stat-row .sa{text-align:center; color:#4a3a30}
+.stat-row .sa.on{color:var(--gold)}
+.stat-row.none{opacity:.45}
+/* пауза: пункти тренування лише в ньому, «Почати заново» — не в аркаді й виживанні (інакше можна скинути невдалий бій) */
+.p-train{display:none}
+#pauseMenu[data-mode="train"] .p-train{display:block}
+#pauseMenu[data-mode="arcade"] .p-restart,#pauseMenu[data-mode="survival"] .p-restart{display:none}
+/* телефон: текст статистики й описів режимів — не дрібніший за ~10 px, меню компактніше, щоб шість пунктів з описами вміщались */
+@media (hover:none) and (pointer:coarse){
+  .mode-panel{min-width:66cqw; padding:1.2cqw 2.4cqw 1.2cqw 1.2cqw; gap:.1cqw}
+  .mode-panel .mi{font-size:3cqw; padding-top:.2cqw; padding-bottom:.2cqw}
+  .mode-panel .mi small{font-size:1.9cqw; margin-top:0}
+  #modes .screen-title{margin-top:1.4cqw; font-size:4cqw}
+  .stats-sum{font-size:1.9cqw}
+  .stat-card h3{font-size:2cqw} .stat-row{font-size:1.75cqw}
+  .stat-card{padding:.9cqw 1.2cqw 1cqw; gap:.4cqw}
+}

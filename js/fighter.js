@@ -91,6 +91,10 @@ class Fighter{
     this.fxT=0;
     this.isAI=false;
     this.aiT=0; this.aiMove=0; this.aiBlockT=0;
+    // режими гри з ботами (js/modes.js): power — множник шкоди, skill — своя складність замість налаштування, tag — підпис
+    // над бійцем (БОС), dummy — манекен тренування: 'stand' стоїть, 'block' тримає блок, 'fight' б'ється як бот
+    this.power=1; this.skill=null; this.tag=null; this.dummy=null;
+    this.lastAb=null; this.lastAbT=0;   // остання здібність — для таблиці шкоди тренування
     this.meter=0;           // супершкала переходить з раунду в раунд
   }
   /* Дистанція, яку тримає бот. Основний удар (слот X) упритул — ближній бій (Prot Paladin, Unholy: снаряд чи зона
@@ -182,7 +186,7 @@ class Fighter{
     return t;
   }
   get onGround(){ return this.y>=GROUND-0.5; }
-  dmgMult(){ return (this.buffs.dmg.t>0?this.buffs.dmg.mult:1)*(this.dwT>0?1.25:1)*(this.metaT>0?1.2:1)*(this.lustT>0?1.1:1)*(this.bwT>0?1.1:1); }
+  dmgMult(){ return (this.power||1)*(this.buffs.dmg.t>0?this.buffs.dmg.mult:1)*(this.dwT>0?1.25:1)*(this.metaT>0?1.2:1)*(this.lustT>0?1.1:1)*(this.bwT>0?1.1:1); }
   spdMult(){ const fp=this.formPassive; return (this.buffs.spd.t>0?this.buffs.spd.mult:1)*(this.slowT>0?this.slowMult:1)*(fp&&fp.spd||1)
     *(this.lustT>0?1.25:1)*(this.berserkT>0?1.3:1)*(this.stormT>0?0.85:1)*(this.hexT>0?0.6:1)*(this.mcT>0?0.55:1); }
   drMult(){ const fp=this.formPassive; return (this.buffs.dr.t>0?this.buffs.dr.mult:1)*(fp&&fp.dr||1)*(this.stealthT>0?0.7:1)  // у тіні по тобі важче влучити
@@ -263,6 +267,7 @@ class Fighter{
     if(dmg>0&&foeF&&foeF.dwT>0) foeF.healSelf(dmg*0.12,game,true);   // Death Wish: удари лікують
     if(dmg>0){
       this.hp=Math.max(0,this.hp-dmg);
+      if(game.train) game.trainHit(this,dmg,src,opts);   // тренування: таблиця шкоди (game.js)
       this.hitT=0.18;
       this.addMeter(dmg*(blocked?0.04:0.06),game);
       if(foeF){
@@ -376,6 +381,7 @@ class Fighter{
       game.float(this.x,this.y-this.h-30,'Задалеко','#9aa4b5',13); this.gcd=0.2; return false;
     }
     this.gcd=a.gcd??GCD;
+    this.lastAb=a.name; this.lastAbT=game.time;
     if(a.cast&&this.pomT>0){ // Presence of Mind: заряд витрачено — закляття без касту
       this.pomT=0; game.float(this.x,this.y-this.h-30,'Миттєво!','#c9e6ff',14);
     } else if(a.cast){ // кастований спел: КД піде після завершення касту
@@ -632,6 +638,7 @@ class Fighter{
     if(this.hexT>0||this.mcT>0||this.untargT>0||this.stormT>0||this.tranqT>0||this.sleepT>0) return false;
     if(game.phase!=='fight') return false;
     const U=ultOf(this);
+    this.lastAb=U.ua; this.lastAbT=game.time;
     this.meter=0; this.gcd=Math.max(this.gcd,0.4); this.blocking=false; this.stealthT=0;
     this.ultActT=0.6;   // замах ульти: слабші удари її не збивають (actTier)
     game.ultFx={t:1.15,T:1.15,side:this.idx,name:U.ua,color:this.cls.color,em:U.icon};
@@ -1008,7 +1015,8 @@ class Fighter{
     const canAct=game.phase==='fight' && this.stunT<=0 && this.staggerT<=0 && !this.tossed && this.knockT<=0 && !this.leap && !state.paused && this.fearT<=0
       && this.mcT<=0 && this.untargT<=0 && this.sleepT<=0;
     if(canAct){
-      if(this.isAI){ this.aiReact(dt,game); this.aiThink(dt,game); mv=this.aiMove; wantJump=this.aiJump; this.aiJump=false; wantBlock=this.aiBlockT>0; }
+      if(this.isAI&&(this.dummy==='stand'||this.dummy==='block')) wantBlock=this.dummy==='block';   // манекен: стоїть або тримає блок
+      else if(this.isAI){ this.aiReact(dt,game); this.aiThink(dt,game); mv=this.aiMove; wantJump=this.aiJump; this.aiJump=false; wantBlock=this.aiBlockT>0; }
       else if(this.vin){ // гравець по мережі (бій на сервері, tools/netsim.js): лише його ввід із телефона
         const st={mv:0,jump:false,block:false};
         vinApply(this,this.vin,game,st);
@@ -1259,8 +1267,9 @@ class Fighter{
      aiReact — щокадру: реакція на замах ворога і снаряди (блок, парирування, стрибок);
      aiThink — раз на 0.2–0.45 с: дистанція, вибір моменту й здібності.
      Складність = швидкість реакції, точність блоку й «терплячість» (не спамить). */
+  aiLevel(){ return this.skill??state.aiSkill; }
   aiReact(dt,game){
-    const foe=game.other(this), sk=state.aiSkill;
+    const foe=game.other(this), sk=this.aiLevel();
     this.aiBlockT=Math.max(0,this.aiBlockT-dt);
     const dist=Math.abs(foe.x-this.x);
     // відкладене натискання блоку (імітація реакції / тайминг парирування)
@@ -1297,7 +1306,7 @@ class Fighter{
 
   aiThink(dt,game){
     const foe=game.other(this);
-    const sk=state.aiSkill; // 0 легко, 1 норм, 2 важко
+    const sk=this.aiLevel(); // 0 легко, 1 норм, 2 важко
     this.aiT-=dt;
     if(this.aiT>0) return;
     this.aiT=[0.45,0.32,0.22][sk]+rnd(0,0.12);
@@ -1706,7 +1715,7 @@ class Fighter{
     ctx.font='12px "Tiny5",sans-serif';
     ctx.fillStyle=this.idx===0?'#4aa3ff':'#ff6a5a';
     ctx.strokeStyle='rgba(0,0,0,.75)'; ctx.lineWidth=3;
-    const tag=this.isAI?'БОТ':(NET.on&&this.idx===NET.side?'ТИ':(this.idx===0?'P1':'P2'));
+    const tag=this.tag||(this.dummy==='stand'||this.dummy==='block'?'МАНЕКЕН':this.isAI?'БОТ':(NET.on&&this.idx===NET.side?'ТИ':(this.idx===0?'P1':'P2')));
     ctx.strokeText(tag,top.x,top.y-10);
     ctx.fillText(tag,top.x,top.y-10);
     ctx.restore();

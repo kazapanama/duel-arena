@@ -56,7 +56,7 @@ const NET={ws:null,side:-1,paired:false,urls:[],snap:null,sim:false,sfxQ:[],remo
 
 const state = {
   screen:'menu',       // menu | selClass | selSpec | fight
-  mode:'ai',           // ai | pvp | net
+  mode:'ai',           // ai | pvp | net | arcade | survival | train (три останні — js/modes.js)
   aiSkill:1,           // 0..2
   picking:0,           // чий вибір зараз (0 = P1, 1 = P2)
   picks:[null,null],   // {cls, spec, skin}
@@ -64,5 +64,10 @@ const state = {
   pickedSpec:null,
   game:null,
   paused:false,
+  run:null,            // забіг аркади чи виживання (modes.js)
+  train:null,          // налаштування й таблиця шкоди тренування (modes.js)
 };
+// суперник — не людина: звичайний бій, аркада, виживання й тренування. soloRun — забіг із кількох боїв поспіль
+const vsBot=()=>state.mode==='ai'||state.mode==='arcade'||state.mode==='survival'||state.mode==='train';
+const soloRun=()=>state.mode==='arcade'||state.mode==='survival';
 

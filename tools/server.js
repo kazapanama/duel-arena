@@ -15,7 +15,7 @@ const {createSim}=require('./netsim');
 const ROOT=path.resolve(__dirname,'..');
 const PORT=+(process.argv[2]||process.env.PORT||8080);
 const MIME={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8',
-  '.json':'application/json','.svg':'image/svg+xml','.png':'image/png','.jpg':'image/jpeg','.jpeg':'image/jpeg',
+  '.json':'application/json','.webmanifest':'application/manifest+json','.svg':'image/svg+xml','.png':'image/png','.jpg':'image/jpeg','.jpeg':'image/jpeg',
   '.gif':'image/gif','.webp':'image/webp','.ico':'image/x-icon','.woff2':'font/woff2','.woff':'font/woff','.ttf':'font/ttf',
   '.mp3':'audio/mpeg','.wav':'audio/wav','.ogg':'audio/ogg','.md':'text/plain; charset=utf-8','.txt':'text/plain; charset=utf-8'};
 
@@ -36,7 +36,7 @@ const urls=()=>lanAddrs().filter(a=>!a.virt).map(a=>`http://${a.addr}:${PORT}`);
 
 /* ---------- статика ---------- */
 // текст стискаємо gzip (код гри ~650 КБ → ~150 КБ); картинки й шрифти вже стиснені. Стиснене тримаємо в пам'яті до зміни файлу
-const GZIP=/\.(html|js|css|json|svg|txt|md)$/i, GZ_CACHE=new Map();
+const GZIP=/\.(html|js|css|json|webmanifest|svg|txt|md)$/i, GZ_CACHE=new Map();
 const server=http.createServer((req,res)=>{
   let p;
   try{ p=decodeURIComponent(new URL(req.url,'http://x').pathname); }catch(e){ res.writeHead(400); return res.end(); }

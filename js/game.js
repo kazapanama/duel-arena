@@ -1,8 +1,11 @@
 "use strict";
 /* ---------- Гра ---------- */
 class Game{
-  constructor(p1,p2){
+  /* opts (js/modes.js): toWin — скільки раундів виграти (типово 2); label — підпис бою (аркада, виживання);
+     train — стан тренування: манекен, безкінечні ресурси й таблиця шкоди, без раундів і таймера */
+  constructor(p1,p2,opts={}){
     this.f=[p1,p2];
+    this.opts=opts; this.toWin=opts.toWin||2; this.train=opts.train||null;
     this.projectiles=[]; this.zones=[]; this.particles=[]; this.floats=[]; this.delayed=[];
     this.slashes=[]; this.beams=[]; this.rings=[]; this.trails=[];
     this.marks=[]; this.fallers=[]; this.erupts=[]; this.portals=[]; this.ultFx=null; // ультимейти й портали
@@ -11,6 +14,7 @@ class Game{
     this.hitstop=0; this.slowmo=0; // завмирання при влучанні, сповільнення на KO
     this.round=1; this.roundTimer=90;
     this.phase='intro'; this.phaseT=3.6; this.banner='';
+    if(this.train){ this.phase='fight'; this.phaseT=0; this._rang=true; }   // тренування: без відліку й гонгу, бій одразу
     // обрана на екрані арени, випадкова, яку вже почав вантажити екран VS (state.nextArena), або нова випадкова
     const st=typeof state!=='undefined'?state:{};
     this.theme=st.arena||st.nextArena||THEMES[Math.floor(Math.random()*THEMES.length)];
@@ -122,6 +126,11 @@ class Game{
 
   onKO(f){
     if(this.phase!=='fight') return;
+    if(this.train){   // тренування: повалений боєць за мить встає знову, раунду нема
+      this.hitstop=0.12; this.koFlash=1; this.shake=6;
+      this.after(1.3,()=>{ f.reset(f.x,f.facing); this.float(f.x,f.y-f.h-30,'Знову в бою','#9dff70',16); });
+      return;
+    }
     this.hitstop=0.18; this.slowmo=1.1; this.cam.punch=0.12; this.koFlash=1.3; // фінальний удар — драматично
     const winner=this.other(f);
     winner.roundWins++;
@@ -136,9 +145,9 @@ class Game{
   }
 
   nextRound(){
-    if(this.f[0].roundWins>=2||this.f[1].roundWins>=2){
+    if(this.f[0].roundWins>=this.toWin||this.f[1].roundWins>=this.toWin){
       this.phase='matchEnd';
-      this.winner=this.f[0].roundWins>=2?this.f[0]:this.f[1];
+      this.winner=this.f[0].roundWins>=this.toWin?this.f[0]:this.f[1];
       showOverlay(this.winner);
       return;
     }
@@ -168,7 +177,8 @@ class Game{
     } else if(this.phase==='roundEnd'){
       this.phaseT-=dt;
       if(this.phaseT<=0) this.nextRound();
-    } else if(this.phase==='fight'){
+    } else if(this.phase==='fight'&&this.train) this.trainTick();
+    else if(this.phase==='fight'){
       this.roundTimer-=dt;
       if(this.roundTimer<=0){
         const a=this.f[0].hp/this.f[0].maxHp, b=this.f[1].hp/this.f[1].maxHp;
@@ -265,6 +275,58 @@ class Game{
     this.floats=this.floats.filter(f=>f.t>0);
 
     this.updateCam(dt);
+  }
+
+  /* ---------- Тренування (стан — state.train у js/modes.js) ----------
+     Манекен — другий боєць; «ресурси»: без відкатів (кулдауни, глобальний, ульта заряджена) або ще й безсмертя.
+     Таблиця: шкода по манекену за здібностями; нова «сесія» — коли після паузи >4 с влучили знову */
+  trainTick(){
+    const T=this.train, p=this.f[0], d=this.f[1];
+    d.dummy=T.dummy;
+    if(T.res!=='normal'){
+      for(const F of Object.values(p.forms)) F.cds.fill(0);
+      p.gcd=0; p.formCd=0; p.meter=ULT_MAX;
+      if(T.res==='god'&&!p.ko){ p.hp=p.maxHp; p.guard=GUARD_MAX; }
+    }
+  }
+  trainHit(tgt,dmg,src,opts){
+    const T=this.train; if(!T||tgt!==this.f[1]) return;
+    const now=this.time, p=this.f[0];
+    if(T.last>=0&&now-T.last>4) trainReset(T);
+    if(T.t0<0) T.t0=now;
+    T.last=now;
+    const label=opts.dotTick?'Періодична шкода':(opts.tier===2?ultOf(p).ua:(p.lastAb&&now-p.lastAbT<3?p.lastAb:'Інше'));
+    const r=T.rows[label]||(T.rows[label]={n:0,sum:0,max:0});
+    r.n++; r.sum+=dmg; r.max=Math.max(r.max,dmg);
+    T.total+=dmg; T.hits++; T.maxHit=Math.max(T.maxHit,dmg);
+    T.combo=Math.max(T.combo,p.combo||0);
+  }
+  drawTrain(){
+    const T=this.train, c=ctx, w=330, x=W-30-w, y=122;
+    const rows=Object.entries(T.rows).sort((a,b)=>b[1].sum-a[1].sum).slice(0,6);
+    const h=62+Math.max(1,rows.length)*19+(rows.length?8:0);
+    c.save(); c.textBaseline='alphabetic';
+    c.fillStyle='rgba(8,12,20,.78)'; roundRect(x,y,w,h,10); c.fill();
+    c.strokeStyle='#3d4a66'; c.lineWidth=2; roundRect(x,y,w,h,10); c.stroke();
+    const dur=T.t0<0?0:Math.max(1,T.last-T.t0), dps=T.t0<0?0:T.total/dur;
+    c.font='14px "Tiny5",sans-serif'; c.textAlign='left'; c.fillStyle='#f5cf62'; c.fillText('ШКОДА ПО МАНЕКЕНУ',x+12,y+22);
+    c.textAlign='right'; c.fillStyle='#8b95a8'; c.fillText(T.t0<0?'—':`${dur.toFixed(1)} с`,x+w-12,y+22);
+    c.font='13px "Tiny5",sans-serif'; c.textAlign='left';
+    const stat=(label,val,cx,cy)=>{ c.fillStyle='#8b95a8'; c.fillText(label,cx,cy); c.fillStyle='#fff'; c.fillText(val,cx+c.measureText(label+' ').width,cy); };
+    stat('Усього',`${T.total}`,x+12,y+42); stat('DPS',dps.toFixed(0),x+w/2+6,y+42);
+    stat('Влучань',`${T.hits}`,x+12,y+60); stat('Макс.',`${T.maxHit}`,x+w/2+6,y+60);
+    if(rows.length){
+      c.fillStyle='#3d4a66'; c.fillRect(x+12,y+68,w-24,1);
+      rows.forEach(([name,r],i)=>{
+        const ry=y+88+i*19, share=T.total?r.sum/T.total:0;
+        c.fillStyle='rgba(95,211,95,.22)'; c.fillRect(x+12,ry-13,(w-24)*share,17);   // частка у загальній шкоді
+        c.textAlign='left'; c.fillStyle='#e6edf8'; c.fillText(name.length>18?name.slice(0,17)+'…':name,x+16,ry);
+        c.textAlign='right'; c.fillStyle='#cfd8e8'; c.fillText(`${r.n}×  ${r.sum}  ·  ${Math.round(r.sum/r.n)}`,x+w-16,ry);
+      });
+    } else { c.textAlign='left'; c.fillStyle='#8b95a8'; c.fillText('Вдар манекена — тут з’явиться розклад',x+12,y+88); }
+    c.restore();
+    c.save(); c.textAlign='center'; c.font='13px "Tiny5",sans-serif'; c.fillStyle='rgba(201,212,232,.75)';
+    c.fillText(TOUCH.on?'ТРЕНУВАННЯ · II — налаштування манекена':'ТРЕНУВАННЯ · Esc — налаштування манекена',W/2,H-14); c.restore();
   }
 
   /* ---------- Рендер ---------- */
@@ -500,7 +562,8 @@ class Game{
       const txt=this.phaseT>0.6?`${n}`:'БІЙ!';
       bannerText(txt,this.phaseT>0.6?'#fff':'#ffd23a', this.phaseT>0.6?90:110);
       ctx.font='26px "Tiny5",sans-serif'; ctx.fillStyle='#c9d4e8'; ctx.textAlign='center';
-      ctx.fillText(`Раунд ${this.round} · ${this.theme.name}`,W/2,H/2-90);
+      const lb=this.opts.label, head=lb?(this.toWin>1?`${lb} · Раунд ${this.round}`:lb):`Раунд ${this.round}`;
+      ctx.fillText(`${head} · ${this.theme.name}`,W/2,H/2-90);
     }
     if(this.koFlash>0){ // великий K.O. з «ударним» наїздом
       const k=clamp((1.3-this.koFlash)/0.18,0,1);
@@ -560,7 +623,7 @@ class Game{
       // текст
       ctx.font='15px "Tiny5",sans-serif';
       ctx.textAlign=left?'left':'right'; ctx.fillStyle='#fff';
-      const nm=`${f.cls.em} ${f.cls.name} · ${f.spec.name}${f.form==='alt'?' · '+f.formDef.em+' '+f.formDef.name:''}${f.isAI?' 🤖':''}`;
+      const nm=`${f.cls.em} ${f.cls.name} · ${f.spec.name}${f.form==='alt'?' · '+f.formDef.em+' '+f.formDef.name:''}${f.tag==='БОС'?' 👑':(f.dummy?' 🎯':(f.isAI?' 🤖':''))}`;
       ctx.fillText(nm,left?bx+2:bx+bw-2,68);
       ctx.font='13px "Tiny5",sans-serif'; ctx.fillStyle='#cfd8e8';
       ctx.textAlign=left?'right':'left';
@@ -588,7 +651,7 @@ class Game{
         ctx.restore();
       }
       // раундові перемоги
-      for(let r=0;r<2;r++){
+      for(let r=0;r<(this.train?0:this.toWin);r++){
         const px=left?bx+bw+16+r*20:bx-16-r*20;
         ctx.beginPath(); ctx.arc(px,40,7,0,7);
         ctx.fillStyle=f.roundWins>r?'#ffd23a':'#26304a'; ctx.fill();
@@ -610,7 +673,7 @@ class Game{
       if(f.stealthT>0) showB(`👤 ${f.stealthT.toFixed(0)}с`,'#c9d4e8');
 
       // на телефоні здібності й КД показують сенсорні кнопки (touch.js) — панелі на полотні лише заважали б
-      if(TOUCH.on){ ctx.textBaseline='alphabetic'; continue; }
+      if(TOUCH.on||(this.train&&!left)){ ctx.textBaseline='alphabetic'; continue; }   // у тренуванні справа — таблиця шкоди, а не панель манекена
       // панель здібностей: розкладка повторює фізичне розташування кнопок
       const abW=54, gap=8, cell=abW+gap;
       const usePad=padConnected[i]&&!f.isAI;
@@ -721,7 +784,8 @@ class Game{
     ctx.fillStyle='rgba(8,12,20,.75)';
     roundRect(W/2-45,20,90,48,10); ctx.fill();
     ctx.fillStyle=this.roundTimer<15?'#ff6a5a':'#fff';
-    ctx.fillText(`${Math.max(0,Math.ceil(this.roundTimer))}`,W/2,56);
+    ctx.fillText(this.train?'∞':`${Math.max(0,Math.ceil(this.roundTimer))}`,W/2,56);
+    if(this.train) this.drawTrain();
   }
 }
 Game.headless=false;   // true — бій на сервері (tools/netsim.js): без картинок і малювання

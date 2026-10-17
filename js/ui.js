@@ -5,7 +5,7 @@
    UI.key(code) і UI.pad(button) — точки входу з input.js.
    ============================================================ */
 const $=id=>document.getElementById(id);
-const screens={arenaSel:$('arenaSel'),title:$('title'),settings:$('settings'),controls:$('controls'),gallery:$('gallery'),netLobby:$('netLobby'),select:$('select'),versus:$('versus'),pauseMenu:$('pauseMenu'),overlay:$('overlay')};
+const screens={arenaSel:$('arenaSel'),title:$('title'),modes:$('modes'),stats:$('stats'),settings:$('settings'),controls:$('controls'),gallery:$('gallery'),netLobby:$('netLobby'),select:$('select'),versus:$('versus'),pauseMenu:$('pauseMenu'),overlay:$('overlay')};
 // картинка, якої нема (набір іконок не в репозиторії), просто ховається — не лишає «битої» рамки
 addEventListener('error',e=>{ if(e.target instanceof HTMLImageElement) e.target.classList.add('broken'); },true);
 for(const im of document.images) if(im.complete&&!im.naturalWidth&&im.getAttribute('src')) im.classList.add('broken'); // ті, що впали до цього рядка
@@ -37,7 +37,7 @@ function show(name){
   if(name&&screens[name]) screens[name].classList.remove('hidden');
   UI.cur=name||null;
   state.screen=name&&name!=='overlay'&&name!=='pauseMenu'?name:'fight';
-  if(name==='title'||name==='settings'||name==='controls'||name==='gallery'||name==='netLobby'||name==='overlay'||name==='pauseMenu') focusFirst(name);
+  if(name==='title'||name==='modes'||name==='stats'||name==='settings'||name==='controls'||name==='gallery'||name==='netLobby'||name==='overlay'||name==='pauseMenu') focusFirst(name);
 }
 function listItems(scr){ return [...screens[scr].querySelectorAll('[data-nav]')].filter(el=>el.offsetParent!==null); }
 function setFocus(el,quiet){
@@ -83,28 +83,45 @@ function setDevice(d){
 /* ---------- дії ---------- */
 function act(a,dir=1,el){
   switch(a){
+    case 'solo': sfx('ok'); openModes(); break;
     case 'ai': sfx('ok'); state.mode='ai'; openSelect(); break;
+    case 'arcade': case 'survival': case 'train': sfx('ok'); state.mode=a; state.run=null; if(a==='train') trainBegin(); openSelect(); break;
+    case 'stats': sfx('ok'); renderStats(); show('stats'); break;
+    case 'next': sfx('ok'); runNext(); break;
+    case 'dummy': trainCycle('dummy',DUMMY_MODES,dir); sfx('tick'); break;
+    case 'infres': trainCycle('res',RES_MODES,dir); sfx('tick'); break;
+    case 'resetDps': trainReset(state.train); sfx('tick'); break;
     case 'pvp': sfx('ok'); state.mode='pvp'; openSelect(); break;
     case 'net': sfx('ok'); netOpen(); break;
     case 'netRetry': sfx('tick'); netOpen(); break;
     case 'diff': state.aiSkill=(state.aiSkill+dir+3)%3; savePrefs(); renderMenuVals(); sfx('tick'); break;
     case 'sound': muted=!muted; savePrefs(); renderMenuVals(); sfx('tick'); break;
     case 'gfx': GFX.mode=GFX_MODES[(GFX_MODES.indexOf(GFX.mode)+dir+3)%3]; GFX.autoFast=false; savePrefs(); renderMenuVals(); sfx('tick'); break;   // «авто» — заново оцінює пристрій
+    case 'install': sfx('ok'); pwaInstall(); break;
     case 'controls': sfx('ok'); show('controls'); break;
     case 'settings': sfx('ok'); show('settings'); break;
     case 'gallery': sfx('ok'); GAL.open(); break;
-    case 'back': sfx('tick'); if(UI.cur==='select') selBack(); else { if(UI.cur==='netLobby') netLeave(); backToTitle(); } break;
+    case 'back': sfx('tick');
+      if(UI.cur==='select') selBack();
+      else if(UI.cur==='stats') openModes('stats');
+      else { if(UI.cur==='netLobby') netLeave(); backToTitle(); }
+      break;
     case 'random': selRandom(); break;
     case 'lock': selLock(); break;
     case 'resume': togglePause(); break;
     case 'restart': closePause(); startFight(); break;
     case 'chars': if(NET.on) NET.send({t:'chars'}); toSelect(); break;
     case 'menu': closePause(); state.game=null; if(NET.ws) netLeave(); show('title'); break;
-    case 'rematch': if(NET.on) NET.send({t:'rematch'}); else startFight(); break;
+    case 'rematch': if(NET.on) NET.send({t:'rematch'}); else if(soloRun()) runRematch(); else startFight(); break;
   }
 }
+// екран «Один гравець»; act — пункт, на якому стає курсор (звідки прийшли)
+function openModes(act){
+  show('modes');
+  const el=screens.modes.querySelector(`[data-act="${act||'ai'}"]`); if(el) setFocus(el,true);
+}
 function backToTitle(){
-  const from=UI.cur==='netLobby'?'net':UI.cur; show('title');
+  const from=UI.cur==='netLobby'?'net':(UI.cur==='modes'?'solo':UI.cur); show('title');
   const el=screens.title.querySelector(`[data-act="${from}"]`); if(el) setFocus(el,true);
 }
 // «Інші бійці»: з паузи чи фіналу — назад до вибору (у мережі — обидва гравці разом)
@@ -224,7 +241,7 @@ function specIconOf(spec){ return spec.img||spec.abilities[1].img||spec.abilitie
 const iconHtml=(src,em,alt='')=>src?`<img src="${encodeURI(src)}" alt="${alt}">`:`<b class="ico-fb">${em||''}</b>`;
 const KEYS_PAD=['X','Y','B','A','R1'];
 function keyLabels(side){
-  if(state.mode==='ai'&&side===1) return null;              // бот — без клавіш
+  if(vsBot()&&side===1) return null;                       // бот — без клавіш
   if(TOUCH.on) return null;                                 // на телефоні клавіш нема
   if(UI.device==='pad') return KEYS_PAD;
   return side===0?['J','K','L','U','I']:['1','2','3','4','5'];
@@ -318,6 +335,7 @@ function selLock(){
   rememberSkin(CLASSES[s.ci],spec,spec.skins[s.ki]);
   lockSide(SEL.side);
   if(NET.on){ renderSelect(); netCheckVersus(); return; }
+  if(soloRun()){ renderSelect(); setTimeout(()=>{ if(UI.cur==='select'&&SEL.sides[0].locked) runStart(); },650); return; }   // аркада й виживання: суперників добирає забіг
   if(SEL.side===0){ SEL.side=1; }
   else { setTimeout(openArenaSel,650); }
   renderSelect();
@@ -332,7 +350,7 @@ function selBack(){
     return;
   }
   if(SEL.side===1&&!SEL.sides[1].locked){ SEL.side=0; SEL.sides[0].locked=false; SEL.sides[0].stage='skin'; SEL.sides[0].f.anim.stop(); renderSelect(); }
-  else if(SEL.side===0){ show('title'); }
+  else if(SEL.side===0){ if(vsBot()) openModes(state.mode); else show('title'); }
 }
 // розмітка рядків списку здібностей і вкладок спеків (спільна для екрана й прогріву selPrewarm)
 const abilRowHtml=(a,i,keys)=>`<i class="slot s${i}">${keys?keys[i]:''}</i>${iconHtml(a.img,a.icon)}<div><b>${a.name}</b><span>${descr(a)}</span></div>`;
@@ -461,14 +479,15 @@ screens.select.addEventListener('pointerdown',e=>{
   if(SEL.info!==null&&!e.target.closest('.aico,.ainfo')){ SEL.info=null; renderSelect(); }
 });
 
+const SEL_TAG_R={arcade:'Аркада',survival:'Виживання',train:'Манекен'};   // праворуч, коли суперник — не «Бот, рівень»
 function renderSelect(){
-  const ai=state.mode==='ai';
+  const ai=vsBot();
   $('selTagL').textContent=NET.on?(NET.side===0?'Ти':'Суперник'):'Гравець 1';
-  $('selTagR').textContent=ai?`Бот, ${DIFF_NAMES[state.aiSkill].toLowerCase()}`:(NET.on?(NET.side===1?'Ти':'Суперник'):'Гравець 2');
+  $('selTagR').textContent=ai?(SEL_TAG_R[state.mode]||`Бот, ${DIFF_NAMES[state.aiSkill].toLowerCase()}`):(NET.on?(NET.side===1?'Ти':'Суперник'):'Гравець 2');
   $('selTagL').classList.toggle('active',SEL.side===0); $('selTagR').classList.toggle('active',SEL.side===1);
   const stg=curSide().stage;
   $('selTitle').textContent=NET.on?(curSide().locked?(SEL.sides[0].locked&&SEL.sides[1].locked?'Хост обирає арену…':'Чекаємо суперника…'):(stg==='skin'?'Обери вигляд':'Обери бійця'))
-    :(stg==='skin'?(SEL.side===0||!ai?'Обери вигляд':'Вигляд суперника'):(SEL.side===0?'Обери бійця':(ai?'Обери суперника':'Гравець 2 обирає')));
+    :(stg==='skin'?(SEL.side===0||!ai?'Обери вигляд':'Вигляд суперника'):(SEL.side===0?'Обери бійця':(ai?(state.mode==='train'?'Обери манекена':'Обери суперника'):'Гравець 2 обирає')));
   document.querySelector('.sel-center').classList.toggle('stage-skin',stg==='skin');
   // вітрини
   SEL.shows.forEach((sh,side)=>{
@@ -490,7 +509,7 @@ function renderSelect(){
     t.classList.toggle('sel0',SEL.sides[0].ci===ci); t.classList.toggle('sel1',show1);
     t.querySelectorAll('.mk').forEach(m=>m.remove());
     if(SEL.sides[0].ci===ci) t.insertAdjacentHTML('beforeend','<i class="mk m0">1</i>');
-    if(show1) t.insertAdjacentHTML('beforeend',`<i class="mk m1">${state.mode==='ai'?'Б':'2'}</i>`);
+    if(show1) t.insertAdjacentHTML('beforeend',`<i class="mk m1">${vsBot()?'Б':'2'}</i>`);
   });
   // спеки
   const s=curSide(), cls=CLASSES[s.ci];
@@ -613,7 +632,7 @@ function openVersus(){
   VS.views=[new PixelView($('vsL'),120,120),new PixelView($('vsR'),120,120)];
   VS.fs=[a,b].map((p,i)=>{ const f=new Fighter(p.cls,p.spec,i,p.skin); f.preview=true; f.x=0; f.y=0; f.facing=i?-1:1; f.anim.play('roar'); return f; });
   $('vsWhoL').textContent=NET.on?(NET.side===0?'Ти':'Суперник'):'Гравець 1';
-  $('vsWhoR').textContent=state.mode==='ai'?'Бот':(NET.on?(NET.side===1?'Ти':'Суперник'):'Гравець 2');
+  $('vsWhoR').textContent=vsBot()?vsTagR():(NET.on?(NET.side===1?'Ти':'Суперник'):'Гравець 2');
   VS.t=0; VS.warm=null;
   preloadFight();
   // перезапуск CSS-анімацій
@@ -653,17 +672,21 @@ function startFight(){
   const P=state.picks;
   const p1=new Fighter(P[0].cls,P[0].spec,0,P[0].skin);
   const p2=new Fighter(P[1].cls,P[1].spec,1,P[1].skin);
-  if(state.mode==='ai') p2.isAI=true;
-  state.game=new Game(p1,p2);
+  state.game=new Game(p1,p2,modeFightOpts(p1,p2));   // modes.js: бот, складність і правила за режимом
   closePause();
   show(null);
   state.screen='fight';
 }
 function showOverlay(winner){
-  const who=NET.on?(winner.idx===NET.side?'Перемога!':'Поразка'):(winner.isAI?'Бот перемагає':`Перемога гравця ${winner.idx+1}`);
-  sting(NET.on?(winner.idx===NET.side?'win':'lose'):(winner.isAI?'lose':'win'));
+  const R=modeResult(winner);   // modes.js: статистика, а для аркади й виживання — підсумок і що далі
+  const who=R?R.title:(NET.on?(winner.idx===NET.side?'Перемога!':'Поразка'):(winner.isAI?'Бот перемагає':`Перемога гравця ${winner.idx+1}`));
+  sting(R?R.sting:(NET.on?(winner.idx===NET.side?'win':'lose'):(winner.isAI?'lose':'win')));
   $('winTitle').textContent=who;
-  $('winSub').textContent=`${winner.cls.name}, ${winner.spec.name}. ${winner.skin.name}`;
+  $('winSub').textContent=R?R.sub:`${winner.cls.name}, ${winner.spec.name}. ${winner.skin.name}`;
+  // кнопки: у забігу — «Далі» чи «Продовжити» / «Нова …», у звичайному бою — реванш
+  $('ovNext').classList.toggle('hidden',!(R&&R.next)); if(R&&R.next) $('ovNext').textContent=R.next;
+  $('ovRematch').classList.toggle('hidden',!!R&&!R.rematch); $('ovRematch').textContent=R&&R.rematch?R.rematch:'Реванш';
+  $('ovChars').classList.toggle('hidden',!!R&&!R.chars);
   screens.overlay.classList.remove('hidden'); UI.cur='overlay';
   focusFirst('overlay');
   // переможець на п'єдесталі
@@ -691,6 +714,7 @@ function togglePause(){
 }
 function setPaused(on){
   state.paused=on;
+  if(on){ screens.pauseMenu.dataset.mode=state.mode; renderTrainVals(); }   // пункти тренування й «заново» — залежно від режиму (style.css)
   screens.pauseMenu.classList.toggle('hidden',!on);
   if(on){ UI.cur='pauseMenu'; focusFirst('pauseMenu'); }
   else if(UI.cur==='pauseMenu') UI.cur=null;
@@ -734,7 +758,7 @@ UI.key=function(code){
   else if(K_L.includes(code)||K_R.includes(code)){ const el=UI.focusEl; if(el&&el.hasAttribute('data-cycle')) act(el.dataset.act,K_L.includes(code)?-1:1,el); }
   else if(K_OK.includes(code)){ const el=UI.focusEl; if(el) act(el.dataset.act,1,el); }
   else if(code==='Escape'||code==='Backspace'){
-    if(cur==='controls'||cur==='settings'||cur==='netLobby') act('back'); else if(cur==='pauseMenu') togglePause();
+    if(cur==='controls'||cur==='settings'||cur==='netLobby'||cur==='modes'||cur==='stats') act('back'); else if(cur==='pauseMenu') togglePause();
   }
   return true;
 };
