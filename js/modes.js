@@ -137,7 +137,7 @@ const RES_MODES=['normal','cd','god'], RES_NAMES={normal:'звичайні',cd:'
 function trainReset(T){ T.rows={}; T.total=0; T.hits=0; T.maxHit=0; T.t0=-1; T.last=-1; T.combo=0; }
 function trainBegin(){
   const P=store('aa_train',{});
-  const T=state.train={dummy:DUMMY_MODES.includes(P.dummy)?P.dummy:'stand',res:RES_MODES.includes(P.res)?P.res:'cd'};
+  const T=state.train={dummy:DUMMY_MODES.includes(P.dummy)?P.dummy:'stand',res:RES_MODES.includes(P.res)?P.res:'normal'};
   trainReset(T);
 }
 function trainCycle(key,list,dir){

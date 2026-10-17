@@ -682,7 +682,7 @@ body.touch #arenaGo{min-width:24cqw}
 
 /* налаштування кнопок (екран #tcfg): шар кнопок не ловить дотики, окрім самих кнопок, які тягнуться пальцем */
 #touch.edit{pointer-events:none}
-#touch.edit .t-btn{pointer-events:auto; cursor:grab; opacity:1; outline:calc(.5*var(--u)) dashed rgba(255,226,122,.9); outline-offset:calc(1*var(--u))}
+#touch.edit .t-btn{pointer-events:auto; cursor:grab; opacity:var(--ta,.85); outline:calc(.5*var(--u)) dashed rgba(255,226,122,.9); outline-offset:calc(1*var(--u))}
 #touch.edit .t-btn.drag{filter:brightness(1.3); cursor:grabbing}
 #touch.edit .t-stick{display:none}
 #tcfg{justify-content:flex-start}
